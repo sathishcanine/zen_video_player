@@ -1,6 +1,7 @@
+import 'dart:async';
 
-import 'package:flutter/material.dart';
 import 'package:app_links/app_links.dart';
+import 'package:flutter/material.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 import 'package:zen_video_player/video_preview_screen.dart';
 import 'home_screen.dart';
@@ -25,6 +26,7 @@ class DiskwalaApp extends StatefulWidget {
 
 class _DiskwalaAppState extends State<DiskwalaApp> {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
@@ -32,18 +34,35 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     initDeepLinks();
   }
 
-  void initDeepLinks() async {
+  @override
+  void dispose() {
+    _linkSubscription?.cancel();
+    super.dispose();
+  }
+
+  void _pushVideoPreviewFromUri(Uri uri) {
+    final video = uri.queryParameters['url'] ?? '';
+    if (video.isEmpty) return;
+    _navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => VideoPreviewScreen(videoSource: video),
+      ),
+    );
+  }
+
+  Future<void> initDeepLinks() async {
     final appLinks = AppLinks();
-    appLinks.uriLinkStream.listen((uri) {
-      if (uri != null) {
-        String video = uri.queryParameters['url'] ?? "";
-        _navigatorKey.currentState?.push(
-          MaterialPageRoute(
-            builder: (_) => VideoPreviewScreen(videoSource: video),
-          ),
-        );
-      }
-    });
+
+    // Link that launched the app from a terminated process (cold start).
+    final initial = await appLinks.getInitialAppLink();
+    if (initial != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _pushVideoPreviewFromUri(initial);
+      });
+    }
+
+    // Links while app is running or resumed from background.
+    _linkSubscription = appLinks.uriLinkStream.listen(_pushVideoPreviewFromUri);
   }
 
   @override
