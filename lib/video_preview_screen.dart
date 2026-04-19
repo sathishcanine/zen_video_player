@@ -131,17 +131,20 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                       ),
 
                     /// PLAY ICON OVERLAY
-                    Container(
-                      height: 70,
-                      width: 70,
-                      decoration: BoxDecoration(
-                        color: Colors.black45,
-                        borderRadius: BorderRadius.circular(50),
-                      ),
-                      child: const Icon(
-                        Icons.play_arrow,
-                        size: 40,
-                        color: Colors.white,
+                    GestureDetector(
+                      onTap: _playVideo,
+                      child: Container(
+                        height: 70,
+                        width: 70,
+                        decoration: BoxDecoration(
+                          color: Colors.black45,
+                          borderRadius: BorderRadius.circular(50),
+                        ),
+                        child: const Icon(
+                          Icons.play_arrow,
+                          size: 40,
+                          color: Colors.white,
+                        ),
                       ),
                     )
 
@@ -235,7 +238,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
               /// INFO TEXT
               const Center(
                 child: Text(
-                  "Watch ad to unlock video playback",
+                  "Watch and complete a rewarded ad to start playback or download.",
                   style: TextStyle(
                     color: Colors.white54,
                     fontSize: 12,

@@ -194,32 +194,69 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
 
     return Scaffold(
+      backgroundColor: Colors.transparent,
+      extendBodyBehindAppBar: true,
 
       resizeToAvoidBottomInset: true,
 
       appBar: AppBar(
-        title: const Text("Zen Video Player"),
-        centerTitle: true,
+        backgroundColor: Colors.transparent,
+        surfaceTintColor: Colors.transparent,
         elevation: 0,
-      ),
-
-      body: Container(
-
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xff0f0c29),
-              Color(0xff302b63),
-              Color(0xff24243e),
-            ],
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
+        scrolledUnderElevation: 0,
+        titleSpacing: 0,
+        centerTitle: true,
+        title: const Text(
+          "Zen Video Player",
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
+            letterSpacing: .2,
           ),
         ),
+        leading: Padding(
+          padding: const EdgeInsets.only(left: 16),
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(12),
+            child: Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.white.withOpacity(.18)),
+              ),
+              child: Image.asset(
+                "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
+                // The launcher artwork includes extra bottom text, so we crop to the top.
+                alignment: Alignment.topCenter,
+              ),
+            ),
+          ),
+        ),
+      ),
 
-        child: SafeArea(
-
-          child: SingleChildScrollView(
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Color(0xff0f0c29),
+                  Color(0xff302b63),
+                  Color(0xff24243e),
+                ],
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+              ),
+            ),
+          ),
+          SafeArea(
+            child: SingleChildScrollView(
 
             padding: const EdgeInsets.all(20),
 
@@ -355,7 +392,8 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
             ),
           ),
-        ),
+          ),
+        ],
       ),
     );
   }
