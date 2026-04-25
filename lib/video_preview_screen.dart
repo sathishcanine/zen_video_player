@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 import 'package:zen_video_player/thumbnail_service.dart';
 
+import 'ads_manager.dart';
+
 class VideoPreviewScreen extends StatefulWidget {
 
   final String videoSource;
@@ -26,10 +28,12 @@ class VideoPreviewScreen extends StatefulWidget {
 class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
   String? thumbnail;
+  BannerAdWidget? banner;
 
   @override
   void initState() {
     super.initState();
+    banner = BannerAdWidget();
     _loadThumbnail();
   }
 
@@ -193,11 +197,11 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
                 child: ElevatedButton.icon(
 
-                  icon: const Icon(Icons.play_arrow),
+                  icon: const Icon(Icons.play_arrow,color: Colors.white,),
 
                   label: const Text(
                     "Play Video",
-                    style: TextStyle(fontSize: 16),
+                    style: TextStyle(fontSize: 16, color: Colors.white),
                   ),
 
                   onPressed: _playVideo,
@@ -222,11 +226,11 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
                   child: ElevatedButton.icon(
 
-                    icon: const Icon(Icons.download),
+                    icon: const Icon(Icons.download,color: Colors.white),
 
                     label: const Text(
                       "Download Video",
-                      style: TextStyle(fontSize: 16),
+                      style: TextStyle(fontSize: 16, color: Colors.white),
                     ),
 
                     onPressed: _downloadVideo,
@@ -240,23 +244,31 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
                   ),
                 ),
+                const SizedBox(height: 10),
 
+                Center(
+                  child: Text(
+                    _showDownload
+                        ? "Watch and complete a rewarded ad to start playback or download."
+                        : "Watch and complete a rewarded ad to start playback.",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 14,
+                    ),
+                  ),
+                ),
               ],
 
               const Spacer(),
 
               /// INFO TEXT
-              Center(
-                child: Text(
-                  _showDownload
-                      ? "Watch and complete a rewarded ad to start playback or download."
-                      : "Watch and complete a rewarded ad to start playback.",
-                  style: const TextStyle(
-                    color: Colors.white54,
-                    fontSize: 12,
-                  ),
+
+
+              if (banner != null)
+                Center(
+                  child: banner!,
                 ),
-              ),
 
               const SizedBox(height: 20),
 
