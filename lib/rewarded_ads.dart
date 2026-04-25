@@ -51,6 +51,7 @@ class AdManager {
         required String url,
         bool download = false,
         bool isLocal = false,
+        bool allowNetworkDownloadInPlayer = true,
       }) {
 
     bool useAdmob = Random().nextBool();
@@ -62,7 +63,13 @@ class AdManager {
 
         onUserEarnedReward: (ad, reward) {
 
-          startVideo(context, url, download, isLocal);
+          startVideo(
+            context,
+            url,
+            download,
+            isLocal,
+            allowNetworkDownloadInPlayer,
+          );
 
         },
 
@@ -72,7 +79,13 @@ class AdManager {
       loadAdmobRewarded();
 
     } else {
-      startVideo(context, url, download, isLocal);
+      startVideo(
+        context,
+        url,
+        download,
+        isLocal,
+        allowNetworkDownloadInPlayer,
+      );
 
       /// AppLovin MAX
 
@@ -97,7 +110,7 @@ class AdManager {
       //   },
       //   onAdReceivedRewardCallback: (ad, reward) {  // ✅ This is the correct name from the source code
       //     print('Reward received!');
-      //     startVideo(context, url, download, isLocal);
+      //     startVideo(context, url, download, isLocal, true);
       //   },
       // );
       //
@@ -115,6 +128,7 @@ class AdManager {
       String url,
       bool download,
       bool isLocal,
+      bool allowNetworkDownloadInPlayer,
       ) {
 
     if (download) {
@@ -129,6 +143,7 @@ class AdManager {
           builder: (_) => VideoPlayerScreen(
             videoSource: url,
             isLocal: isLocal,
+            allowNetworkDownload: allowNetworkDownloadInPlayer,
           ),
         ),
       );

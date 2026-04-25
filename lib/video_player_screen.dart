@@ -9,10 +9,14 @@ class VideoPlayerScreen extends StatefulWidget {
   final String videoSource;
   final bool isLocal;
 
+  /// App bar download for network URLs; ignored when [isLocal] is true.
+  final bool allowNetworkDownload;
+
   const VideoPlayerScreen({
     super.key,
     required this.videoSource,
     this.isLocal = false,
+    this.allowNetworkDownload = true,
   });
 
   @override
@@ -76,7 +80,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
         title: const Text("Video Player"),
         actions: [
 
-          if (!widget.isLocal)
+          if (!widget.isLocal && widget.allowNetworkDownload)
             IconButton(
               icon: const Icon(Icons.download),
               onPressed: _downloadVideo,

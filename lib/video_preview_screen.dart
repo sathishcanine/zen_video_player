@@ -8,10 +8,15 @@ class VideoPreviewScreen extends StatefulWidget {
   final String videoSource;
   final bool isLocal;
 
+  /// When true, the video was opened from an app deep link (not pasted on home).
+  /// Remote download is offered only for deep links and local files.
+  final bool openedViaDeeplink;
+
   const VideoPreviewScreen({
     super.key,
     required this.videoSource,
     this.isLocal = false,
+    this.openedViaDeeplink = false,
   });
 
   @override
@@ -46,6 +51,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
       context,
       url: widget.videoSource,
       isLocal: widget.isLocal,
+      allowNetworkDownloadInPlayer: widget.openedViaDeeplink,
     );
 
   }
@@ -60,6 +66,9 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
   }
 
+
+  bool get _showDownload =>
+      widget.isLocal || widget.openedViaDeeplink;
 
   @override
   Widget build(BuildContext context) {
@@ -203,10 +212,9 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
               ),
 
-              const SizedBox(height: 15),
+              if (_showDownload) ...[
 
-              /// DOWNLOAD BUTTON
-              if (!widget.isLocal)
+                const SizedBox(height: 15),
 
                 SizedBox(
                   width: double.infinity,
@@ -233,13 +241,17 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                   ),
                 ),
 
+              ],
+
               const Spacer(),
 
               /// INFO TEXT
-              const Center(
+              Center(
                 child: Text(
-                  "Watch and complete a rewarded ad to start playback or download.",
-                  style: TextStyle(
+                  _showDownload
+                      ? "Watch and complete a rewarded ad to start playback or download."
+                      : "Watch and complete a rewarded ad to start playback.",
+                  style: const TextStyle(
                     color: Colors.white54,
                     fontSize: 12,
                   ),

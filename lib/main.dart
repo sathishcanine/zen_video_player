@@ -45,7 +45,10 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     if (video.isEmpty) return;
     _navigatorKey.currentState?.push(
       MaterialPageRoute(
-        builder: (_) => VideoPreviewScreen(videoSource: video),
+        builder: (_) => VideoPreviewScreen(
+          videoSource: video,
+          openedViaDeeplink: true,
+        ),
       ),
     );
   }
