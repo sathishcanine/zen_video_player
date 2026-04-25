@@ -123,17 +123,48 @@ class AdManager {
   }
 
   /// Start video or download
-  static void startVideo(
+  static Future<void> startVideo(
       BuildContext context,
       String url,
       bool download,
       bool isLocal,
       bool allowNetworkDownloadInPlayer,
-      ) {
+      ) async {
 
     if (download) {
-
-      DownloadService.downloadFile(url);
+      if (!context.mounted) return;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        const SnackBar(
+          content: Text("Started...Keep the App opened"),
+          duration: Duration(days: 1),
+          backgroundColor: Colors.blueGrey,
+        ),
+      );
+      try {
+        final savedPath = await DownloadService.downloadFile(
+          url,
+          isLocal: isLocal,
+        );
+        if (!context.mounted) return;
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text("Video saved to: $savedPath"),
+            backgroundColor: Colors.green,
+          ),
+        );
+      } catch (e) {
+        if (!context.mounted) return;
+        messenger.hideCurrentSnackBar();
+        messenger.showSnackBar(
+          SnackBar(
+            content: Text("Download failed: $e"),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
 
     } else {
 

@@ -57,10 +57,10 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   }
 
   void _downloadVideo() {
-
     AdManager.showRewarded(
       context,
       url: widget.videoSource,
+      isLocal: widget.isLocal,
       download: true,
     );
 

@@ -60,8 +60,36 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
   }
 
-  void _downloadVideo() {
-    DownloadService.downloadFile(widget.videoSource);
+  Future<void> _downloadVideo() async {
+    final messenger = ScaffoldMessenger.of(context);
+    messenger.hideCurrentSnackBar();
+    messenger.showSnackBar(
+      const SnackBar(
+        content: Text("Started...Keep the App opened"),
+        duration: Duration(days: 1),
+        backgroundColor: Colors.blueGrey,
+      ),
+    );
+    try {
+      final savedPath = await DownloadService.downloadFile(widget.videoSource);
+      if (!mounted) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text("Video saved to: $savedPath"),
+          backgroundColor: Colors.green,
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text("Download failed: $e"),
+          backgroundColor: Colors.red,
+        ),
+      );
+    }
   }
 
   @override
