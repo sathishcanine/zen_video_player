@@ -35,6 +35,8 @@ class AdsManager {
 }
 
 class BannerAdWidget extends StatefulWidget {
+  const BannerAdWidget({super.key});
+
   @override
   State<BannerAdWidget> createState() => _BannerAdWidgetState();
 }
@@ -56,6 +58,12 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       ),
       request: const AdRequest(),
     )..load();
+  }
+
+  @override
+  void dispose() {
+    banner?.dispose();
+    super.dispose();
   }
 
   @override

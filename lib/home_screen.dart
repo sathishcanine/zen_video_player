@@ -3,7 +3,6 @@ import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 
 import 'video_preview_screen.dart';
-import 'ads_manager.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -17,17 +16,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final TextEditingController controller = TextEditingController();
   final FocusNode urlFocus = FocusNode();
 
-  /// banner ad
-  BannerAdWidget? banner;
-
   /// recently opened local videos
   List<String> recentVideos = [];
-
-  @override
-  void initState() {
-    super.initState();
-    banner = BannerAdWidget();
-  }
 
   /// PICK LOCAL VIDEO
   Future<void> pickVideo() async {
@@ -383,12 +373,6 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
 
                 const SizedBox(height: 10),
-
-                /// BANNER AD
-                if (banner != null)
-                  Center(
-                    child: banner!,
-                  ),
               ],
             ),
           ),

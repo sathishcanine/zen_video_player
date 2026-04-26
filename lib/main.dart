@@ -3,8 +3,8 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
+import 'package:zen_video_player/main_shell.dart';
 import 'package:zen_video_player/video_preview_screen.dart';
-import 'home_screen.dart';
 import 'video_player_screen.dart';
 
 void main() async {
@@ -74,7 +74,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
       navigatorKey: _navigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const HomeScreen(),
+      home: const MainShell(),
     );
   }
 }
