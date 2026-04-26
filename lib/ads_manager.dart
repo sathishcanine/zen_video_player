@@ -1,7 +1,6 @@
 
 import 'dart:async';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:applovin_max/applovin_max.dart';
 import 'package:flutter/material.dart';
 
 class AdsManager {
@@ -50,10 +49,10 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     banner = BannerAd(
       size: AdSize.banner,
       adUnitId: "ca-app-pub-8723888126390754/7532332319",
-      listener: BannerAdListener(
-        onAdFailedToLoad: (ad, error) {
-          AppLovinMAX.showMediationDebugger();
-        },
+      listener: const BannerAdListener(
+        // onAdFailedToLoad: (ad, error) {
+        //   AppLovinMAX.showMediationDebugger();
+        // },
       ),
       request: const AdRequest(),
     )..load();

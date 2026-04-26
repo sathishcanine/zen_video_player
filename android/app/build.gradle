@@ -11,8 +11,8 @@ keystoreProperties.load(new FileInputStream(keystorePropertiesFile))
 
 android {
     namespace = "com.player.zen_video_player"
-    compileSdk = 35
-    ndkVersion = "25.1.8937393"
+    compileSdk = 36
+    ndkVersion = "26.1.10909125"
 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_1_8
