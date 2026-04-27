@@ -1,5 +1,18 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.player.zen_video_player">
+
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <!-- Required by the Unity Ads SDK to determine connection class
+         (WiFi vs cellular) when sending auction requests. Without
+         these the SDK logs "Unity Ads was not able to get current
+         network type due to missing permission" and every load fails
+         with PUBLIC_ERROR_CODE_INIT_UNKNOWN. tools:node="replace"
+         hardens us against any plugin that tries to remove them. -->
+    <uses-permission
+        android:name="android.permission.ACCESS_NETWORK_STATE"
+        tools:node="replace"/>
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE"/>
 
     <application
         android:label="Zen VideoPlayer"

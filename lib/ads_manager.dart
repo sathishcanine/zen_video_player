@@ -1,70 +1,25 @@
-
-import 'dart:async';
-import 'package:google_mobile_ads/google_mobile_ads.dart';
 import 'package:flutter/material.dart';
 
+import 'ads/ads_orchestrator.dart';
+
+/// Backwards-compat facade kept so existing screens keep working.
 class AdsManager {
+  /// Show an interstitial via the orchestrator. Honors throttling
+  /// and the configured network fallback chain.
+  static Future<void> showStartAd() => AdsOrchestrator.showInterstitial();
 
-  static InterstitialAd? admobAd;
-
-  static Future<void> init() async {
-    await MobileAds.instance.initialize();
-  }
-
-  static void showStartAd() async {
-    InterstitialAd.load(
-      adUnitId: "ca-app-pub-4789468551786381/4193593813",
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          admobAd = ad;
-          ad.show();
-        },
-        onAdFailedToLoad: (error) {
-          // AppLovinMAX.showInterstitial("APPLOVIN_INTERSTITIAL_ID");
-        },
-      ),
-    );
-  }
-
-  static void scheduleAds(){
-    Timer.periodic(const Duration(minutes:10), (timer){
-      showStartAd();
-    });
-  }
+  /// Convenience initializer for callers that only know the old API.
+  static Future<void> init() => AdsOrchestrator.init();
 }
 
-class BannerAdWidget extends StatefulWidget {
-  @override
-  State<BannerAdWidget> createState() => _BannerAdWidgetState();
-}
-
-class _BannerAdWidgetState extends State<BannerAdWidget> {
-  BannerAd? banner;
-
-  @override
-  void initState() {
-    super.initState();
-
-    banner = BannerAd(
-      size: AdSize.banner,
-      adUnitId: "ca-app-pub-8723888126390754/7532332319",
-      listener: const BannerAdListener(
-        // onAdFailedToLoad: (ad, error) {
-        //   AppLovinMAX.showMediationDebugger();
-        // },
-      ),
-      request: const AdRequest(),
-    )..load();
-  }
+/// Banner widget backed by the orchestrator's primary network.
+/// Renders nothing if banners are disabled or no network is available.
+class BannerAdWidget extends StatelessWidget {
+  const BannerAdWidget({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (banner == null) return const SizedBox();
-    return SizedBox(
-      width: banner!.size.width.toDouble(),
-      height: banner!.size.height.toDouble(),
-      child: AdWidget(ad: banner!),
-    );
+    final w = AdsOrchestrator.buildBanner();
+    return w ?? const SizedBox.shrink();
   }
 }

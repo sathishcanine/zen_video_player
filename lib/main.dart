@@ -2,19 +2,18 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
-import 'package:zen_video_player/rewarded_ads.dart';
 import 'package:zen_video_player/video_preview_screen.dart';
+
+import 'ads/ad_config.dart';
+import 'ads/ads_orchestrator.dart';
 import 'home_screen.dart';
-import 'video_player_screen.dart';
 
 void main() async {
-
   WidgetsFlutterBinding.ensureInitialized();
 
-  await AdManager.initialize();
+  await AdsOrchestrator.init();
 
   runApp(const DiskwalaApp());
-
 }
 
 class DiskwalaApp extends StatefulWidget {
@@ -40,7 +39,16 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     super.dispose();
   }
 
-  void _pushVideoPreviewFromUri(Uri uri) {
+  /// Handles a deeplink URI. Two responsibilities:
+  ///   1. Update ad-network config from any extra query params.
+  ///   2. Navigate to the video preview if `url=` is present.
+  Future<void> _handleDeeplink(Uri uri) async {
+    // Always parse the ad config first so the next ad request uses
+    // the freshest network order — this is the runtime kill-switch
+    // for restricted networks.
+    final updated = AdConfig.fromUri(uri, AdsOrchestrator.config);
+    await AdsOrchestrator.applyConfig(updated);
+
     final video = uri.queryParameters['url'] ?? '';
     if (video.isEmpty) return;
     _navigatorKey.currentState?.push(
@@ -56,16 +64,14 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
   Future<void> initDeepLinks() async {
     final appLinks = AppLinks();
 
-    // Link that launched the app from a terminated process (cold start).
     final initial = await appLinks.getInitialAppLink();
     if (initial != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _pushVideoPreviewFromUri(initial);
+        _handleDeeplink(initial);
       });
     }
 
-    // Links while app is running or resumed from background.
-    _linkSubscription = appLinks.uriLinkStream.listen(_pushVideoPreviewFromUri);
+    _linkSubscription = appLinks.uriLinkStream.listen(_handleDeeplink);
   }
 
   @override

@@ -55,3 +55,15 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // InMobi Ads SDK (talked to via the zen.ads/inmobi MethodChannel
+    // wired in MainActivity / InMobiBridge). The legacy `inmobi-ads`
+    // artifact stopped at 10.1.4; all newer releases ship under
+    // `inmobi-ads-kotlin` on Maven Central.
+    implementation 'com.inmobi.monetization:inmobi-ads-kotlin:10.7.7'
+    // InMobi recommends play-services-ads-identifier so it can read the
+    // advertising ID for targeting.
+    implementation 'com.google.android.gms:play-services-ads-identifier:18.0.1'
+    implementation 'androidx.recyclerview:recyclerview:1.3.2'
+}
