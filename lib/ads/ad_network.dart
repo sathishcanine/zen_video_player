@@ -14,14 +14,8 @@ abstract class AdNetwork {
   /// One-time SDK initialization. Safe to call multiple times.
   Future<void> init();
 
-  /// Preload an interstitial in the background. Should be idempotent.
-  void preloadInterstitial();
-
   /// Preload a rewarded ad in the background. Should be idempotent.
   void preloadRewarded();
-
-  /// Show an interstitial if one is ready. Returns true if shown.
-  Future<bool> showInterstitial();
 
   /// Show a rewarded ad. [onReward] fires only if the user actually
   /// earned the reward. Returns true if an ad was displayed.

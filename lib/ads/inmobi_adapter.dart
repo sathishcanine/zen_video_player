@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import 'ad_ids.dart';
 import 'ad_network.dart';
 import 'ad_throttle.dart';
 
@@ -33,21 +34,18 @@ class InMobiAdapter implements AdNetwork {
 
   final String accountId;
 
-  /// Interstitial placement ID. `null` means InMobi does not handle
-  /// interstitials — `preloadInterstitial` and `showInterstitial`
-  /// become no-ops and the orchestrator will fall through to the
-  /// next network in the chain. We don't want InMobi to serve
-  /// interstitials in this build.
-  final String? interstitialPlacementId;
   final String rewardedPlacementId;
   final String bannerPlacementId;
 
+  /// Account / placement IDs default from [ad_ids] (see [kUseTestAdIds]).
   InMobiAdapter({
-    this.accountId = '10000195071',
-    this.interstitialPlacementId,
-    this.rewardedPlacementId = '10000672165',
-    this.bannerPlacementId = '10000672163',
-  }) : _channel = const MethodChannel(_channelName);
+    String? accountId,
+    String? rewardedPlacementId,
+    String? bannerPlacementId,
+  })  : accountId = accountId ?? inMobiAccountId,
+        rewardedPlacementId = rewardedPlacementId ?? inMobiRewardedPlacementId,
+        bannerPlacementId = bannerPlacementId ?? inMobiBannerPlacementId,
+        _channel = const MethodChannel(_channelName);
 
   @override
   String get name => 'inmobi';
@@ -59,9 +57,7 @@ class InMobiAdapter implements AdNetwork {
   @override
   bool get isInitialized => _initialized;
 
-  bool _interstitialReady = false;
   bool _rewardedReady = false;
-  bool _interstitialLoadInFlight = false;
   bool _rewardedLoadInFlight = false;
 
   int _consecutiveFailures = 0;
@@ -126,34 +122,6 @@ class InMobiAdapter implements AdNetwork {
   }
 
   @override
-  void preloadInterstitial() {
-    final placementId = interstitialPlacementId;
-    if (placementId == null) return;
-    if (_circuitOpen) return;
-    if (!_initialized || _interstitialReady) return;
-    if (_interstitialLoadInFlight) return;
-    _interstitialLoadInFlight = true;
-    AdThrottle.recordRequest();
-    _channel.invokeMethod('loadInterstitial', {
-      'placementId': placementId,
-    }).then((value) {
-      final ok = value == true;
-      _interstitialReady = ok;
-      if (ok) {
-        _recordSuccess();
-      } else {
-        _recordFailure();
-      }
-    }).catchError((e) {
-      _interstitialReady = false;
-      debugPrint('[inmobi] interstitial load failed: $e');
-      _recordFailure();
-    }).whenComplete(() {
-      _interstitialLoadInFlight = false;
-    });
-  }
-
-  @override
   void preloadRewarded() {
     if (_circuitOpen) return;
     if (!_initialized || _rewardedReady) return;
@@ -177,27 +145,6 @@ class InMobiAdapter implements AdNetwork {
     }).whenComplete(() {
       _rewardedLoadInFlight = false;
     });
-  }
-
-  @override
-  Future<bool> showInterstitial() async {
-    if (interstitialPlacementId == null) return false;
-    if (_circuitOpen) return false;
-    if (!_interstitialReady) {
-      preloadInterstitial();
-      return false;
-    }
-    try {
-      final ok = await _channel.invokeMethod<bool>('showInterstitial');
-      _interstitialReady = false;
-      preloadInterstitial();
-      return ok ?? false;
-    } catch (e) {
-      _interstitialReady = false;
-      debugPrint('[inmobi] interstitial show failed: $e');
-      _recordFailure();
-      return false;
-    }
   }
 
   @override

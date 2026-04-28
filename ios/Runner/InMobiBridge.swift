@@ -6,17 +6,16 @@ import UIKit
 /// native InMobi iOS SDK. Mirrors `InMobiBridge.kt` on Android.
 ///
 /// Channel name: `zen.ads/inmobi`
+///
+/// Note: InMobi exposes rewarded ads through `IMInterstitial` on iOS
+/// — the type name is historical, the actual ad format is set in the
+/// InMobi dashboard. This bridge only loads/shows rewarded.
 final class InMobiBridge: NSObject {
     private static let channelName = "zen.ads/inmobi"
 
     private let channel: FlutterMethodChannel
 
     private var initialized = false
-
-    private var interstitial: IMInterstitial?
-    private var interstitialReady = false
-    private var pendingShowInterstitial: FlutterResult?
-    private var interstitialDelegate: InterstitialEventForwarder?
 
     private var rewarded: IMInterstitial?
     private var rewardedReady = false
@@ -37,11 +36,8 @@ final class InMobiBridge: NSObject {
 
     func dispose() {
         channel.setMethodCallHandler(nil)
-        interstitial = nil
         rewarded = nil
-        interstitialDelegate = nil
         rewardedDelegate = nil
-        pendingShowInterstitial = nil
         pendingShowRewarded = nil
     }
 
@@ -52,22 +48,13 @@ final class InMobiBridge: NSObject {
         switch call.method {
         case "init":
             handleInit(accountId: args?["accountId"] as? String ?? "", result: result)
-        case "loadInterstitial":
-            handleLoad(
-                placementId: args?["placementId"] as? String ?? "",
-                isRewarded: false,
-                result: result
-            )
         case "loadRewarded":
             handleLoad(
                 placementId: args?["placementId"] as? String ?? "",
-                isRewarded: true,
                 result: result
             )
-        case "showInterstitial":
-            handleShow(isRewarded: false, result: result)
         case "showRewarded":
-            handleShow(isRewarded: true, result: result)
+            handleShow(result: result)
         default:
             result(FlutterMethodNotImplemented)
         }
@@ -106,7 +93,6 @@ final class InMobiBridge: NSObject {
 
     private func handleLoad(
         placementId: String,
-        isRewarded: Bool,
         result: @escaping FlutterResult
     ) {
         if !initialized {
@@ -121,11 +107,7 @@ final class InMobiBridge: NSObject {
         let resolved = ResultOnce(result)
         let forwarder = InterstitialEventForwarder(
             onLoaded: { [weak self] in
-                if isRewarded {
-                    self?.rewardedReady = true
-                } else {
-                    self?.interstitialReady = true
-                }
+                self?.rewardedReady = true
                 resolved.success(true)
             },
             onLoadFailed: { error in
@@ -134,35 +116,23 @@ final class InMobiBridge: NSObject {
             },
             onDismissed: { [weak self] in
                 guard let self = self else { return }
-                if isRewarded {
-                    self.pendingShowRewarded?([
-                        "shown": true,
-                        "rewarded": self.lastRewardEarned
-                    ])
-                    self.pendingShowRewarded = nil
-                    self.lastRewardEarned = false
-                    self.rewardedReady = false
-                } else {
-                    self.pendingShowInterstitial?(true)
-                    self.pendingShowInterstitial = nil
-                    self.interstitialReady = false
-                }
+                self.pendingShowRewarded?([
+                    "shown": true,
+                    "rewarded": self.lastRewardEarned
+                ])
+                self.pendingShowRewarded = nil
+                self.lastRewardEarned = false
+                self.rewardedReady = false
             },
             onDisplayFailed: { [weak self] in
                 guard let self = self else { return }
-                if isRewarded {
-                    self.pendingShowRewarded?([
-                        "shown": false,
-                        "rewarded": false
-                    ])
-                    self.pendingShowRewarded = nil
-                    self.lastRewardEarned = false
-                    self.rewardedReady = false
-                } else {
-                    self.pendingShowInterstitial?(false)
-                    self.pendingShowInterstitial = nil
-                    self.interstitialReady = false
-                }
+                self.pendingShowRewarded?([
+                    "shown": false,
+                    "rewarded": false
+                ])
+                self.pendingShowRewarded = nil
+                self.lastRewardEarned = false
+                self.rewardedReady = false
             },
             onRewardsUnlocked: { [weak self] in
                 self?.lastRewardEarned = true
@@ -171,44 +141,23 @@ final class InMobiBridge: NSObject {
 
         let ad = IMInterstitial(placementId: placementInt)
         ad.delegate = forwarder
-
-        if isRewarded {
-            rewarded = ad
-            rewardedDelegate = forwarder
-        } else {
-            interstitial = ad
-            interstitialDelegate = forwarder
-        }
+        rewarded = ad
+        rewardedDelegate = forwarder
 
         ad.load()
     }
 
     // MARK: - Show
 
-    private func handleShow(isRewarded: Bool, result: @escaping FlutterResult) {
-        let ad = isRewarded ? rewarded : interstitial
-        let ready = isRewarded ? rewardedReady : interstitialReady
-        guard let ad = ad, ready else {
-            if isRewarded {
-                result(["shown": false, "rewarded": false])
-            } else {
-                result(false)
-            }
+    private func handleShow(result: @escaping FlutterResult) {
+        guard let ad = rewarded, rewardedReady else {
+            result(["shown": false, "rewarded": false])
             return
         }
-        if isRewarded {
-            pendingShowRewarded = result
-        } else {
-            pendingShowInterstitial = result
-        }
+        pendingShowRewarded = result
         guard let root = topViewController() else {
-            if isRewarded {
-                pendingShowRewarded = nil
-                result(["shown": false, "rewarded": false])
-            } else {
-                pendingShowInterstitial = nil
-                result(false)
-            }
+            pendingShowRewarded = nil
+            result(["shown": false, "rewarded": false])
             return
         }
         ad.show(from: root)
@@ -232,9 +181,8 @@ final class InMobiBridge: NSObject {
 
 // MARK: - Helpers
 
-/// Forwards InMobi interstitial events to closures so a single bridge
-/// instance can host both interstitial and rewarded delegates without
-/// subclassing.
+/// Forwards InMobi rewarded events (delivered through the
+/// `IMInterstitialDelegate` API) to closures so the bridge stays small.
 private final class InterstitialEventForwarder: NSObject, IMInterstitialDelegate {
     private let onLoaded: () -> Void
     private let onLoadFailed: (Error?) -> Void

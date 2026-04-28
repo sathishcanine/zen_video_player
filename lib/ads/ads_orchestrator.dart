@@ -26,7 +26,7 @@ class AdsOrchestrator {
 
   static final List<AdNetwork> _registry = [
     AdmobAdapter(),
-    UnityAdapter(testMode: true),
+    UnityAdapter(),
     InMobiAdapter(),
   ];
 
@@ -70,7 +70,6 @@ class AdsOrchestrator {
     final list = _orderedNetworks();
     if (list.isEmpty) return;
     final primary = list.first;
-    if (_config.interstitialEnabled) primary.preloadInterstitial();
     if (_config.rewardedEnabled) primary.preloadRewarded();
   }
 
@@ -86,40 +85,6 @@ class AdsOrchestrator {
       }
     }
     return result;
-  }
-
-  /// Try to show an interstitial. Walks the configured fallback chain.
-  /// Honors [AdConfig.interstitialMinGapSec] and the global hourly cap.
-  static Future<bool> showInterstitial() async {
-    if (!_config.interstitialEnabled) return false;
-    if (!AdThrottle.canShowInterstitial(_config.interstitialMinGapSec)) {
-      debugPrint('[ads] interstitial skipped: gap not elapsed');
-      return false;
-    }
-    if (!AdThrottle.canRequest(_config.maxRequestsPerHour)) {
-      debugPrint('[ads] interstitial skipped: hourly cap reached');
-      return false;
-    }
-    final tried = <String>[];
-    for (final n in _orderedNetworks()) {
-      tried.add(n.name);
-      try {
-        final shown = await n.showInterstitial();
-        if (shown) {
-          AdThrottle.recordInterstitialShown();
-          return true;
-        }
-      } catch (e) {
-        debugPrint('[ads] ${n.name} interstitial threw: $e');
-      }
-    }
-    debugPrint(
-      '[ads] interstitial chain exhausted: tried=$tried — no network '
-      'could serve. Verify dashboard config for each (AdMob: ad serving '
-      'restrictions; Unity: gameId + test device; InMobi: placement '
-      'type + test device).',
-    );
-    return false;
   }
 
   /// Try to show a rewarded ad. If no network can serve one, [onReward]

@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:unity_ads_plugin/unity_ads_plugin.dart';
 
+import 'ad_ids.dart';
 import 'ad_network.dart';
 import 'ad_throttle.dart';
 
@@ -21,9 +22,11 @@ import 'ad_throttle.dart';
 ///     trigger a backed-off retry up to [_maxLoadAttempts] times,
 ///     scoped to a single load chain. Each external preload starts a
 ///     fresh chain.
-///   - Receiving INIT_UNKNOWN at load time forces a full re-init,
-///     because Unity can land in that state after a connectivity
-///     blip even though `onComplete` had previously fired.
+///   - Receiving [UnityAdsLoadError.initializeFailed] (or a message that
+///     clearly requires re-init) clears [_initialized] so the next preload
+///     runs [init] again. Generic **network** load failures do not re-init —
+///     we only retry [load] so the retry path does not hit `!_initialized`
+///     and return without loading.
 ///   - A circuit breaker trips after [_maxConsecutiveFailures]
 ///     consecutive failures and skips Unity entirely for
 ///     [_circuitCooldown]. This prevents wasting the global request
@@ -38,25 +41,20 @@ class UnityAdapter implements AdNetwork {
   final String bannerPlacementAndroid;
   final String bannerPlacementIos;
 
-  /// Unity dashboard supports a separate interstitial placement; we
-  /// keep platform-specific defaults so the adapter stays symmetric
-  /// even though the current app flow primarily uses rewarded.
-  final String interstitialPlacementAndroid;
-  final String interstitialPlacementIos;
-
   final bool testMode;
 
+  /// Game IDs and [testMode] default from [ad_ids] (see [kUseTestAdIds]).
   UnityAdapter({
-    this.androidGameId = '6100151',
-    this.iosGameId = '6100150',
+    String? androidGameId,
+    String? iosGameId,
     this.rewardedPlacementAndroid = 'Rewarded_Android',
     this.rewardedPlacementIos = 'Rewarded_iOS',
     this.bannerPlacementAndroid = 'Banner_Android',
     this.bannerPlacementIos = 'Banner_iOS',
-    this.interstitialPlacementAndroid = 'Interstitial_Android',
-    this.interstitialPlacementIos = 'Interstitial_iOS',
-    this.testMode = true,
-  });
+    bool? testMode,
+  })  : androidGameId = androidGameId ?? unityAndroidGameId,
+        iosGameId = iosGameId ?? unityIosGameId,
+        testMode = testMode ?? unityAdsTestMode;
 
   @override
   String get name => 'unity';
@@ -67,6 +65,11 @@ class UnityAdapter implements AdNetwork {
   static const int _maxConsecutiveFailures = 6;
   static const Duration _circuitCooldown = Duration(minutes: 5);
 
+  /// Unity sometimes returns `INIT_UNKNOWN` on the *first* load if it races
+  /// the native `onComplete` callback. A short pause before the first
+  /// `load` and before building [UnityBannerAd] reduces that.
+  static const Duration _postInitLoadDelay = Duration(milliseconds: 1200);
+
   bool _initialized = false;
   bool _initInFlight = false;
   int _initAttempts = 0;
@@ -74,12 +77,10 @@ class UnityAdapter implements AdNetwork {
   @override
   bool get isInitialized => _initialized;
 
-  bool _interstitialReady = false;
   bool _rewardedReady = false;
 
   // Tracks an in-flight retry chain so external preload triggers
   // don't double-fire. Reset on every terminal outcome.
-  bool _interstitialChainActive = false;
   bool _rewardedChainActive = false;
 
   // Circuit breaker state.
@@ -91,9 +92,6 @@ class UnityAdapter implements AdNetwork {
       Platform.isIOS ? rewardedPlacementIos : rewardedPlacementAndroid;
   String get _bannerPlacement =>
       Platform.isIOS ? bannerPlacementIos : bannerPlacementAndroid;
-  String get _interstitialPlacement => Platform.isIOS
-      ? interstitialPlacementIos
-      : interstitialPlacementAndroid;
 
   bool get _circuitOpen {
     final openedAt = _circuitOpenedAt;
@@ -146,10 +144,10 @@ class UnityAdapter implements AdNetwork {
         gameId: _gameId,
         testMode: testMode,
         onComplete: () {
-          _initialized = true;
-          _initAttempts = 0;
-          _recordSuccess();
-          if (!completer.isCompleted) completer.complete();
+          // Native may report init callback slightly before
+          // `isInitialized` flips; wait so the first load is less likely to
+          // get PUBLIC_ERROR_CODE_INIT_UNKNOWN.
+          unawaited(_afterInitCallback(completer));
         },
         onFailed: (error, message) {
           _initAttempts += 1;
@@ -186,12 +184,37 @@ class UnityAdapter implements AdNetwork {
     return completer.future;
   }
 
-  @override
-  void preloadInterstitial() {
-    if (_circuitOpen) return;
-    if (_interstitialReady || _interstitialChainActive) return;
-    _interstitialChainActive = true;
-    _loadAttempt(isRewarded: false, attempt: 1);
+  /// Wait for the native layer to report initialized before completing
+  /// [init] so [preloadRewarded] / banner do not race the gateway.
+  Future<void> _afterInitCallback(Completer<void> completer) async {
+    for (var i = 0; i < 30; i++) {
+      try {
+        if (await UnityAds.isInitialized()) {
+          _initialized = true;
+          _initAttempts = 0;
+          _recordSuccess();
+          debugPrint(
+            '[unity] init complete (isInitialized=true, poll #${i + 1}) '
+            'gameId=$_gameId testMode=$testMode',
+          );
+          if (!completer.isCompleted) completer.complete();
+          return;
+        }
+      } catch (e) {
+        debugPrint('[unity] isInitialized poll: $e');
+      }
+      await Future<void>.delayed(const Duration(milliseconds: 200));
+    }
+    debugPrint(
+      '[unity] isInitialized() still false after 6s; completing init anyway '
+      '(if loads fail with "Network error", check VPN/DNS or Unity service)',
+    );
+    if (!_initialized) {
+      _initialized = true;
+      _initAttempts = 0;
+      _recordSuccess();
+    }
+    if (!completer.isCompleted) completer.complete();
   }
 
   @override
@@ -199,114 +222,77 @@ class UnityAdapter implements AdNetwork {
     if (_circuitOpen) return;
     if (_rewardedReady || _rewardedChainActive) return;
     _rewardedChainActive = true;
-    _loadAttempt(isRewarded: true, attempt: 1);
+    _loadAttempt(attempt: 1);
   }
 
-  void _loadAttempt({required bool isRewarded, required int attempt}) {
+  void _loadAttempt({required int attempt}) {
     if (_circuitOpen) {
-      _endChain(isRewarded: isRewarded);
+      _rewardedChainActive = false;
       return;
     }
     if (!_initialized) {
       // Kick off init in the background; once it lands, the next
       // preload tick will start a fresh chain. We end this chain now
       // so it isn't left hanging.
-      _endChain(isRewarded: isRewarded);
+      _rewardedChainActive = false;
       init();
       return;
     }
 
-    final placementId =
-        isRewarded ? _rewardedPlacement : _interstitialPlacement;
-    AdThrottle.recordRequest();
-    UnityAds.load(
-      placementId: placementId,
-      onComplete: (_) {
-        if (isRewarded) {
+    void runLoad() {
+      if (_circuitOpen) {
+        _rewardedChainActive = false;
+        return;
+      }
+      AdThrottle.recordRequest();
+      UnityAds.load(
+        placementId: _rewardedPlacement,
+        onComplete: (_) {
           _rewardedReady = true;
-        } else {
-          _interstitialReady = true;
-        }
-        _recordSuccess();
-        _endChain(isRewarded: isRewarded);
-      },
-      onFailed: (placement, error, message) {
-        if (isRewarded) {
+          _recordSuccess();
+          _rewardedChainActive = false;
+        },
+        onFailed: (placement, error, message) {
           _rewardedReady = false;
-        } else {
-          _interstitialReady = false;
-        }
-        _recordFailure();
-        debugPrint(
-          '[unity] ${isRewarded ? "rewarded" : "interstitial"} load '
-          'failed (attempt $attempt/$_maxLoadAttempts) '
-          '$placement: $error $message',
-        );
+          _recordFailure();
+          debugPrint(
+            '[unity] rewarded load failed (attempt $attempt/$_maxLoadAttempts) '
+            '$placement: $error $message',
+          );
 
-        // INIT_UNKNOWN at load time means the SDK is in a degraded
-        // state (often a post-init network blip). Force a full
-        // re-init before the next attempt.
-        if (_isInitUnknown(error, message)) {
-          _initialized = false;
-          _initAttempts = 0;
-        }
-
-        if (attempt < _maxLoadAttempts && !_circuitOpen) {
-          Future.delayed(_backoff(attempt), () {
-            _loadAttempt(isRewarded: isRewarded, attempt: attempt + 1);
-          });
-        } else {
-          if (!_circuitOpen) {
-            debugPrint(
-              '[unity] giving up on '
-              '${isRewarded ? "rewarded" : "interstitial"} preload '
-              'until the next show attempt.',
-            );
+          // Only force a new `UnityAds.init` when the *load* error says the
+          // SDK is not initialized. A plain "Network error" / timeout often
+          // still has isInitialized==true; re-init then spams a second init
+          // and breaks the load retry path (we'd hit `!_initialized` and
+          // return before `load()`).
+          if (_loadFailureRequiresSdkReinit(error, message)) {
+            _initialized = false;
+            _initAttempts = 0;
+            debugPrint('[unity] load failure requires SDK reinit; will re-init on next attempt');
           }
-          _endChain(isRewarded: isRewarded);
-        }
-      },
-    );
-  }
 
-  void _endChain({required bool isRewarded}) {
-    if (isRewarded) {
-      _rewardedChainActive = false;
+          if (attempt < _maxLoadAttempts && !_circuitOpen) {
+            Future.delayed(_backoff(attempt), () {
+              _loadAttempt(attempt: attempt + 1);
+            });
+          } else {
+            if (!_circuitOpen) {
+              debugPrint(
+                '[unity] giving up on rewarded preload until the next '
+                'show attempt.',
+              );
+            }
+            _rewardedChainActive = false;
+          }
+        },
+      );
+    }
+
+    if (attempt == 1) {
+      Future.delayed(_postInitLoadDelay, runLoad);
     } else {
-      _interstitialChainActive = false;
+      runLoad();
     }
-  }
-
-  @override
-  Future<bool> showInterstitial() async {
-    if (_circuitOpen) return false;
-    if (!_initialized || !_interstitialReady) {
-      preloadInterstitial();
-      return false;
-    }
-    final completer = Completer<bool>();
-    UnityAds.showVideoAd(
-      placementId: _interstitialPlacement,
-      onComplete: (_) {
-        _interstitialReady = false;
-        if (!completer.isCompleted) completer.complete(true);
-        preloadInterstitial();
-      },
-      onFailed: (_, error, message) {
-        _interstitialReady = false;
-        debugPrint('[unity] interstitial show failed: $error $message');
-        if (!completer.isCompleted) completer.complete(false);
-        preloadInterstitial();
-      },
-      onSkipped: (_) {
-        _interstitialReady = false;
-        if (!completer.isCompleted) completer.complete(true);
-        preloadInterstitial();
-      },
-      onStart: (_) {},
-      onClick: (_) {},
-    );
-    return completer.future;
   }
 
   @override
@@ -345,18 +331,14 @@ class UnityAdapter implements AdNetwork {
   @override
   Widget? buildBanner() {
     if (!_initialized || _circuitOpen) return null;
-    return SizedBox(
-      width: 320,
-      height: 50,
-      child: UnityBannerAd(
-        placementId: _bannerPlacement,
-        onLoad: (_) => _recordSuccess(),
-        onClick: (_) {},
-        onFailed: (placement, error, message) {
-          _recordFailure();
-          debugPrint('[unity] banner failed: $error $message');
-        },
-      ),
+    return _UnityBannerDeferred(
+      postInitDelay: _postInitLoadDelay,
+      placementId: _bannerPlacement,
+      onLoad: (_) => _recordSuccess(),
+      onFailed: (placement, error, message) {
+        _recordFailure();
+        debugPrint('[unity] banner failed: $error $message');
+      },
     );
   }
 
@@ -367,11 +349,71 @@ class UnityAdapter implements AdNetwork {
     return _baseBackoff * factor;
   }
 
-  bool _isInitUnknown(UnityAdsLoadError error, String message) {
+  /// When true, the next [preloadRewarded] should run [init] again. Do **not**
+  /// use this for generic connectivity failures: those should retry [load] only
+  /// while [isInitialized] stays true, or the retry path hits `!_initialized`
+  /// and bails without loading.
+  bool _loadFailureRequiresSdkReinit(UnityAdsLoadError error, String message) {
     if (error == UnityAdsLoadError.initializeFailed) return true;
     final m = message.toLowerCase();
-    return m.contains('init_unknown') ||
-        m.contains('initialize') ||
-        m.contains('network error');
+    if (m.contains('init_unknown')) return true;
+    if (m.contains('not initialized') || m.contains('notinitialized')) {
+      return true;
+    }
+    // Do not match generic "network error" — native often maps real network
+    // issues to `INIT_UNKNOWN` in logs while the Flutter [message] is only
+    // "Network error occurred", which is not fixed by calling init() again.
+    return false;
+  }
+}
+
+/// Short delay before mounting [UnityBannerAd] so the first request does not
+/// race Unity init (`PUBLIC_ERROR_CODE_INIT_UNKNOWN`).
+class _UnityBannerDeferred extends StatefulWidget {
+  const _UnityBannerDeferred({
+    required this.postInitDelay,
+    required this.placementId,
+    this.onLoad,
+    this.onFailed,
+  });
+
+  final Duration postInitDelay;
+  final String placementId;
+  final void Function(String placementId)? onLoad;
+  final void Function(
+    String placementId,
+    UnityAdsBannerError error,
+    String message,
+  )? onFailed;
+
+  @override
+  State<_UnityBannerDeferred> createState() => _UnityBannerDeferredState();
+}
+
+class _UnityBannerDeferredState extends State<_UnityBannerDeferred> {
+  bool _ready = false;
+
+  @override
+  void initState() {
+    super.initState();
+    Future<void>.delayed(widget.postInitDelay, () {
+      if (mounted) setState(() => _ready = true);
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SizedBox(
+      width: 320,
+      height: 50,
+      child: _ready
+          ? UnityBannerAd(
+              placementId: widget.placementId,
+              onLoad: widget.onLoad,
+              onClick: (_) {},
+              onFailed: widget.onFailed,
+            )
+          : const SizedBox.shrink(),
+    );
   }
 }

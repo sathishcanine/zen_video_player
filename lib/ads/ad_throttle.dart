@@ -9,22 +9,9 @@ import 'dart:collection';
 class AdThrottle {
   AdThrottle._();
 
-  static DateTime? _lastInterstitialShownAt;
-
   /// Sliding window of recent ad LOAD timestamps (across all networks).
   /// Used to enforce [maxRequestsPerHour].
   static final Queue<DateTime> _recentRequests = Queue<DateTime>();
-
-  /// Returns true if enough time has passed since the last interstitial.
-  static bool canShowInterstitial(int minGapSec) {
-    final last = _lastInterstitialShownAt;
-    if (last == null) return true;
-    return DateTime.now().difference(last).inSeconds >= minGapSec;
-  }
-
-  static void recordInterstitialShown() {
-    _lastInterstitialShownAt = DateTime.now();
-  }
 
   /// Returns true if we're under the hourly cap. Prefer calling this
   /// before kicking off any network's load() to avoid wasted requests.

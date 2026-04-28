@@ -13,9 +13,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///   zenvideoplayer://play?url=<videoUrl>
 ///       &ads=unity,admob,inmobi         // priority order (left = primary)
 ///       &banner=1                       // 0/1 enable banner
-///       &inter=1                        // 0/1 enable interstitial
 ///       &rew=1                          // 0/1 enable rewarded
-///       &gap=60                         // min seconds between interstitials
 ///       &cap=30                         // max ad requests per hour per device
 class AdConfig {
   /// Networks in fallback order. First entry = primary.
@@ -34,11 +32,7 @@ class AdConfig {
   final bool randomOrder;
 
   final bool bannerEnabled;
-  final bool interstitialEnabled;
   final bool rewardedEnabled;
-
-  /// Minimum seconds between two interstitials on the same device.
-  final int interstitialMinGapSec;
 
   /// Hard cap on total ad load requests per hour per device.
   /// Helps avoid sudden bursts that trigger AdMob "ad serving limit".
@@ -48,9 +42,7 @@ class AdConfig {
     required this.adOrder,
     this.randomOrder = false,
     this.bannerEnabled = true,
-    this.interstitialEnabled = true,
     this.rewardedEnabled = true,
-    this.interstitialMinGapSec = 60,
     this.maxRequestsPerHour = 30,
   });
 
@@ -112,14 +104,7 @@ class AdConfig {
       adOrder: order,
       randomOrder: random,
       bannerEnabled: _parseBool(params['banner'], previous.bannerEnabled),
-      interstitialEnabled: _parseBool(params['inter'], previous.interstitialEnabled),
       rewardedEnabled: _parseBool(params['rew'], previous.rewardedEnabled),
-      interstitialMinGapSec: _parseIntInRange(
-        params['gap'],
-        previous.interstitialMinGapSec,
-        min: 5,
-        max: 3600,
-      ),
       maxRequestsPerHour: _parseIntInRange(
         params['cap'],
         previous.maxRequestsPerHour,
@@ -133,18 +118,14 @@ class AdConfig {
     List<String>? adOrder,
     bool? randomOrder,
     bool? bannerEnabled,
-    bool? interstitialEnabled,
     bool? rewardedEnabled,
-    int? interstitialMinGapSec,
     int? maxRequestsPerHour,
   }) {
     return AdConfig(
       adOrder: adOrder ?? this.adOrder,
       randomOrder: randomOrder ?? this.randomOrder,
       bannerEnabled: bannerEnabled ?? this.bannerEnabled,
-      interstitialEnabled: interstitialEnabled ?? this.interstitialEnabled,
       rewardedEnabled: rewardedEnabled ?? this.rewardedEnabled,
-      interstitialMinGapSec: interstitialMinGapSec ?? this.interstitialMinGapSec,
       maxRequestsPerHour: maxRequestsPerHour ?? this.maxRequestsPerHour,
     );
   }
@@ -153,9 +134,7 @@ class AdConfig {
         'adOrder': adOrder,
         'random': randomOrder,
         'banner': bannerEnabled,
-        'inter': interstitialEnabled,
         'rew': rewardedEnabled,
-        'gap': interstitialMinGapSec,
         'cap': maxRequestsPerHour,
       };
 
@@ -167,9 +146,7 @@ class AdConfig {
             AdConfig.defaults().adOrder,
         randomOrder: j['random'] as bool? ?? false,
         bannerEnabled: j['banner'] as bool? ?? true,
-        interstitialEnabled: j['inter'] as bool? ?? true,
         rewardedEnabled: j['rew'] as bool? ?? true,
-        interstitialMinGapSec: j['gap'] as int? ?? 60,
         maxRequestsPerHour: j['cap'] as int? ?? 30,
       );
 
@@ -206,8 +183,7 @@ class AdConfig {
   @override
   String toString() =>
       'AdConfig(order=$adOrder${randomOrder ? " (random)" : ""} '
-      'banner=$bannerEnabled inter=$interstitialEnabled '
-      'rew=$rewardedEnabled gap=${interstitialMinGapSec}s '
+      'banner=$bannerEnabled rew=$rewardedEnabled '
       'cap=$maxRequestsPerHour/h)';
 }
 

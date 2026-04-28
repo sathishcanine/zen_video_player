@@ -22,10 +22,12 @@ import org.json.JSONObject
  *
  * Methods:
  *   init             { accountId } -> Bool
- *   loadInterstitial { placementId } -> Bool   (true once load succeeded)
- *   loadRewarded     { placementId } -> Bool
- *   showInterstitial () -> Bool                 (true once dismissed)
+ *   loadRewarded     { placementId } -> Bool   (true once load succeeded)
  *   showRewarded     () -> Map { shown, rewarded }
+ *
+ * Note: InMobi exposes rewarded ads through [InMobiInterstitial] on
+ * Android — the type name is historical, the actual ad format is set
+ * in the InMobi dashboard. This bridge only loads/shows rewarded.
  */
 class InMobiBridge(
     private val activity: Activity,
@@ -40,10 +42,6 @@ class InMobiBridge(
 
     private var initialized = false
 
-    private var interstitial: InMobiInterstitial? = null
-    private var interstitialReady = false
-    private var pendingShowInterstitial: MethodChannel.Result? = null
-
     private var rewarded: InMobiInterstitial? = null
     private var rewardedReady = false
     private var pendingShowRewarded: MethodChannel.Result? = null
@@ -56,18 +54,11 @@ class InMobiBridge(
     private fun handle(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "init" -> handleInit(call.argument<String>("accountId").orEmpty(), result)
-            "loadInterstitial" -> handleLoad(
-                call.argument<String>("placementId").orEmpty(),
-                isRewarded = false,
-                result = result,
-            )
             "loadRewarded" -> handleLoad(
                 call.argument<String>("placementId").orEmpty(),
-                isRewarded = true,
                 result = result,
             )
-            "showInterstitial" -> handleShow(isRewarded = false, result = result)
-            "showRewarded" -> handleShow(isRewarded = true, result = result)
+            "showRewarded" -> handleShow(result)
             else -> result.notImplemented()
         }
     }
@@ -152,18 +143,16 @@ class InMobiBridge(
 
     private fun handleLoad(
         placementId: String,
-        isRewarded: Boolean,
         result: MethodChannel.Result,
     ) {
-        val kind = if (isRewarded) "rewarded" else "interstitial"
         if (!initialized) {
-            Log.w(TAG, "load($kind) skipped: SDK not initialized")
+            Log.w(TAG, "load(rewarded) skipped: SDK not initialized")
             result.success(false)
             return
         }
         val placement = placementId.toLongOrNull()
         if (placement == null || !isValidId(placementId)) {
-            Log.w(TAG, "load($kind) skipped: invalid placementId=\"$placementId\"")
+            Log.w(TAG, "load(rewarded) skipped: invalid placementId=\"$placementId\"")
             result.success(false)
             return
         }
@@ -172,7 +161,7 @@ class InMobiBridge(
 
         val listener = object : InterstitialAdEventListener() {
             override fun onAdLoadSucceeded(ad: InMobiInterstitial, info: AdMetaInfo) {
-                if (isRewarded) rewardedReady = true else interstitialReady = true
+                rewardedReady = true
                 resolved.success(true)
             }
 
@@ -180,45 +169,33 @@ class InMobiBridge(
                 // INTERNAL_ERROR from InMobi is a catch-all. The most common
                 // causes are: placement not provisioned for this account,
                 // placement type mismatch (e.g. dashboard says Banner but we
-                // requested it as a rewarded interstitial), or device GAID
-                // not registered as a Test Device while the account is in
+                // requested it as a rewarded ad), or device GAID not
+                // registered as a Test Device while the account is in
                 // test-only mode.
                 Log.w(
                     TAG,
-                    "load($kind) failed: code=${status.statusCode} " +
+                    "load(rewarded) failed: code=${status.statusCode} " +
                         "msg=\"${status.message}\" placementId=$placement",
                 )
                 resolved.success(false)
             }
 
             override fun onAdDismissed(ad: InMobiInterstitial) {
-                if (isRewarded) {
-                    pendingShowRewarded?.success(
-                        mapOf("shown" to true, "rewarded" to lastRewardEarned),
-                    )
-                    pendingShowRewarded = null
-                    lastRewardEarned = false
-                    rewardedReady = false
-                } else {
-                    pendingShowInterstitial?.success(true)
-                    pendingShowInterstitial = null
-                    interstitialReady = false
-                }
+                pendingShowRewarded?.success(
+                    mapOf("shown" to true, "rewarded" to lastRewardEarned),
+                )
+                pendingShowRewarded = null
+                lastRewardEarned = false
+                rewardedReady = false
             }
 
             override fun onAdDisplayFailed(ad: InMobiInterstitial) {
-                if (isRewarded) {
-                    pendingShowRewarded?.success(
-                        mapOf("shown" to false, "rewarded" to false),
-                    )
-                    pendingShowRewarded = null
-                    lastRewardEarned = false
-                    rewardedReady = false
-                } else {
-                    pendingShowInterstitial?.success(false)
-                    pendingShowInterstitial = null
-                    interstitialReady = false
-                }
+                pendingShowRewarded?.success(
+                    mapOf("shown" to false, "rewarded" to false),
+                )
+                pendingShowRewarded = null
+                lastRewardEarned = false
+                rewardedReady = false
             }
 
             override fun onRewardsUnlocked(
@@ -231,7 +208,7 @@ class InMobiBridge(
 
         try {
             val ad = InMobiInterstitial(activity, placement, listener)
-            if (isRewarded) rewarded = ad else interstitial = ad
+            rewarded = ad
             ad.load()
         } catch (e: Throwable) {
             Log.e(TAG, "load threw", e)
@@ -239,43 +216,27 @@ class InMobiBridge(
         }
     }
 
-    private fun handleShow(isRewarded: Boolean, result: MethodChannel.Result) {
-        val ad = if (isRewarded) rewarded else interstitial
-        val ready = if (isRewarded) rewardedReady else interstitialReady
-        if (ad == null || !ready) {
-            if (isRewarded) {
-                result.success(mapOf("shown" to false, "rewarded" to false))
-            } else {
-                result.success(false)
-            }
+    private fun handleShow(result: MethodChannel.Result) {
+        val ad = rewarded
+        if (ad == null || !rewardedReady) {
+            result.success(mapOf("shown" to false, "rewarded" to false))
             return
         }
         // Stash the pending result; the listener resolves it from
         // onAdDismissed / onAdDisplayFailed.
-        if (isRewarded) {
-            pendingShowRewarded = result
-        } else {
-            pendingShowInterstitial = result
-        }
+        pendingShowRewarded = result
         try {
             ad.show()
         } catch (e: Throwable) {
             Log.e(TAG, "show threw", e)
-            if (isRewarded) {
-                pendingShowRewarded?.success(mapOf("shown" to false, "rewarded" to false))
-                pendingShowRewarded = null
-            } else {
-                pendingShowInterstitial?.success(false)
-                pendingShowInterstitial = null
-            }
+            pendingShowRewarded?.success(mapOf("shown" to false, "rewarded" to false))
+            pendingShowRewarded = null
         }
     }
 
     fun dispose() {
         channel.setMethodCallHandler(null)
-        interstitial = null
         rewarded = null
-        pendingShowInterstitial = null
         pendingShowRewarded = null
     }
 

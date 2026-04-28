@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
 
+import 'ad_ids.dart';
 import 'ad_network.dart';
 import 'ad_throttle.dart';
 
@@ -11,22 +12,21 @@ import 'ad_throttle.dart';
 /// Soft circuit breaker:
 ///   When an AdMob account is under "ad serving limit", every load
 ///   returns ERROR_CODE_NO_FILL (3). Hammering the network unit on
-///   every video play wastes the global hourly request budget that
-///   the orchestrator shares across all adapters and slows the
-///   fallback to Unity/InMobi. After [_maxConsecutiveNoFills]
-///   consecutive failures (no-fill or otherwise) for the same ad
-///   type, AdMob is skipped for [_circuitCooldown] for that ad type
-///   only — banner does not punish interstitial and vice versa.
+///   every request wastes the global hourly budget that the orchestrator
+///   shares across all adapters and slows the fallback to Unity/InMobi.
+///   After [_maxConsecutiveNoFills] consecutive failures (no-fill or
+///   otherwise) for the rewarded slot, AdMob rewarded is skipped for
+///   [_circuitCooldown].
 class AdmobAdapter implements AdNetwork {
-  final String interstitialUnitId;
   final String rewardedUnitId;
   final String bannerUnitId;
 
+  /// Defaults come from [ad_ids] (`kUseTestAdIds` / Google sample units).
   AdmobAdapter({
-    this.interstitialUnitId = 'ca-app-pub-4789468551786381/4193593813',
-    this.rewardedUnitId = 'ca-app-pub-8723888126390754/7234751166',
-    this.bannerUnitId = 'ca-app-pub-8723888126390754/7532332319',
-  });
+    String? rewardedUnitId,
+    String? bannerUnitId,
+  })  : rewardedUnitId = rewardedUnitId ?? adMobRewardedUnitId,
+        bannerUnitId = bannerUnitId ?? adMobBannerUnitId;
 
   @override
   String get name => 'admob';
@@ -38,11 +38,6 @@ class AdmobAdapter implements AdNetwork {
   bool _initialized = false;
   @override
   bool get isInitialized => _initialized;
-
-  InterstitialAd? _interstitial;
-  bool _interstitialLoading = false;
-  int _interstitialFailures = 0;
-  DateTime? _interstitialBreakerOpenedAt;
 
   RewardedAd? _rewarded;
   bool _rewardedLoading = false;
@@ -67,51 +62,6 @@ class AdmobAdapter implements AdNetwork {
     } catch (e) {
       debugPrint('[admob] init failed: $e');
     }
-  }
-
-  @override
-  void preloadInterstitial() {
-    if (!_initialized || _interstitial != null || _interstitialLoading) return;
-    if (_circuitOpen(_interstitialBreakerOpenedAt, () {
-      _interstitialBreakerOpenedAt = null;
-      _interstitialFailures = 0;
-      debugPrint('[admob] interstitial circuit reset');
-    })) {
-      return;
-    }
-    _interstitialLoading = true;
-    AdThrottle.recordRequest();
-    InterstitialAd.load(
-      adUnitId: interstitialUnitId,
-      request: const AdRequest(),
-      adLoadCallback: InterstitialAdLoadCallback(
-        onAdLoaded: (ad) {
-          _interstitial = ad;
-          _interstitialLoading = false;
-          _interstitialFailures = 0;
-          _interstitialBreakerOpenedAt = null;
-        },
-        onAdFailedToLoad: (err) {
-          _interstitial = null;
-          _interstitialLoading = false;
-          _interstitialFailures += 1;
-          debugPrint(
-            '[admob] interstitial failed (#$_interstitialFailures): '
-            '${err.code} ${err.message}',
-          );
-          if (_interstitialFailures >= _maxConsecutiveNoFills &&
-              _interstitialBreakerOpenedAt == null) {
-            _interstitialBreakerOpenedAt = DateTime.now();
-            debugPrint(
-              '[admob] interstitial circuit tripped after '
-              '$_interstitialFailures consecutive failures. Skipping for '
-              '${_circuitCooldown.inMinutes} min. '
-              '${err.code == _adMobErrorNoFill ? "(ERROR_CODE_NO_FILL — typically AdMob ad serving limit on this account)" : ""}',
-            );
-          }
-        },
-      ),
-    );
   }
 
   @override
@@ -157,32 +107,6 @@ class AdmobAdapter implements AdNetwork {
         },
       ),
     );
-  }
-
-  @override
-  Future<bool> showInterstitial() async {
-    final ad = _interstitial;
-    if (ad == null) {
-      preloadInterstitial();
-      return false;
-    }
-    final completer = Completer<bool>();
-    ad.fullScreenContentCallback = FullScreenContentCallback(
-      onAdDismissedFullScreenContent: (a) {
-        a.dispose();
-        _interstitial = null;
-        if (!completer.isCompleted) completer.complete(true);
-        preloadInterstitial();
-      },
-      onAdFailedToShowFullScreenContent: (a, _) {
-        a.dispose();
-        _interstitial = null;
-        if (!completer.isCompleted) completer.complete(false);
-        preloadInterstitial();
-      },
-    );
-    ad.show();
-    return completer.future;
   }
 
   @override

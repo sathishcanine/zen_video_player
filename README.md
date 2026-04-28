@@ -26,13 +26,21 @@ one network suddenly imposes an ad-serving restriction.
 
 ### Networks now wired
 
-- `admob` — fully working (`AdmobAdapter`)
-- `unity` — fully working (`UnityAdapter`) with platform-aware placements
-  (Game IDs `6100151` Android / `6100150` iOS, placements `Rewarded_Android` /
-  `Rewarded_iOS` / `Banner_Android` / `Banner_iOS`)
+- `admob` — fully working (`AdmobAdapter`). Unit IDs and the sample vs
+  production switch live in `lib/ads/ad_ids.dart` (`kUseTestAdIds`, default
+  **production** / `false`). With `kUseTestAdIds == true`, AdMob uses
+  [Google’s sample app id and ad units](https://developers.google.com/admob/android/test-ads#sample_ad_units); native `APPLICATION_ID` / `GADApplicationIdentifier` must always match `adMobAppId` in that file.
+- `unity` — fully working (`UnityAdapter`). With `kUseTestAdIds == false`
+  (production), `UnityAds.init` uses **testMode: false** and your
+  **production** Game IDs from [ad_ids]. With `kUseTestAdIds == true`, the
+  SDK uses **test mode** for local debugging. Placements default to
+  `Rewarded_Android` / `Rewarded_iOS` / `Banner_Android` / `Banner_iOS` (adjust in `UnityAdapter`
+  if your ad unit names differ).
 - `inmobi` — fully working through a native method-channel bridge.
-  Plug in your real account / placement IDs in
-  `lib/ads/inmobi_adapter.dart`. Native code lives at:
+  Account and placement IDs are read from `ad_ids.dart` (separate
+  test/prod slots; InMobi does not publish universal sample placements —
+  use your console IDs and [register the device as a test device](https://support.inmobi.com/monetize/)).
+  Native code lives at:
   - `android/app/src/main/kotlin/com/player/zen_video_player/InMobiBridge.kt`
   - `ios/Runner/InMobiBridge.swift`
 
@@ -40,6 +48,7 @@ one network suddenly imposes an ad-serving restriction.
 
 ```
 lib/ads/
+├── ad_ids.dart            # Test vs production IDs (single switch: kUseTestAdIds)
 ├── ad_network.dart        # Common interface
 ├── ad_config.dart         # Config model + deeplink parser + persistence
 ├── ad_throttle.dart       # Frequency / hourly cap
@@ -53,6 +62,10 @@ lib/ads/
 (`AdsManager`, `BannerAdWidget`) are kept as thin facades over
 `AdsOrchestrator` for backwards compatibility with existing screens.
 
+This build only serves **rewarded** and **banner** ads. Interstitial
+support has been removed across the orchestrator, every adapter, the
+deeplink config, and the InMobi native bridges.
+
 ## How to use the deeplink config
 
 Append any of these query params to the existing video deeplink. All
@@ -63,9 +76,7 @@ or default) value. Param order does not matter.
 zenvideoplayer://play?url=<videoUrl>
     &ads=unity,admob,inmobi   # priority order (left = primary)
     &banner=1                 # 0/1
-    &inter=1                  # 0/1
     &rew=1                    # 0/1
-    &gap=60                   # min seconds between interstitials
     &cap=30                   # hourly cap on ad requests per device
 ```
 
@@ -76,9 +87,7 @@ zenvideoplayer://play?url=<videoUrl>
 | `url` | Video URL to play (existing behavior) | any URL | — | Must be URL-encoded if it contains `&`, `?`, or `=` |
 | `ads` | Network priority / mode | `random`, or comma-separated subset of `admob`, `unity`, `inmobi` | `admob,unity,inmobi` | Unknown names are silently dropped. Case-insensitive. |
 | `banner` | Enable banner ads | `0` / `1`, `true` / `false`, `on` / `off`, `yes` / `no` | `1` | |
-| `inter` | Enable interstitial ads | same as `banner` | `1` | |
 | `rew` | Enable rewarded ads | same as `banner` | `1` | When disabled, the rewarded callback fires immediately so playback isn't blocked |
-| `gap` | Minimum seconds between interstitials | integer, `5`–`3600` | `60` | Out-of-range values are ignored |
 | `cap` | Max ad load requests per hour per device | integer, `1`–`1000` | `30` | Counts across all networks combined |
 
 ### How to send / invoke the deeplink
@@ -130,8 +139,7 @@ Android intents will be resolved by the `intent-filter` declared in
 3. `AdsOrchestrator.applyConfig(...)` saves the merged result to
    `SharedPreferences` and (re-)initializes any newly-enabled
    networks.
-4. The next `showInterstitial` / `showRewarded` / banner build uses
-   the new chain.
+4. The next `showRewarded` / banner build uses the new chain.
 
 So a single deeplink can both **play a video** and **change the ad
 behavior** for that user from then on — no app update needed.
@@ -145,7 +153,7 @@ behavior** for that user from then on — no app update needed.
 - Old app versions (built before the orchestrator) **silently ignore**
   every param except `url`. They keep working as they always did. See
   the section below.
-- To **reset** to defaults, send `ads=admob,unity,inmobi&banner=1&inter=1&rew=1&gap=60&cap=30`.
+- To **reset** to defaults, send `ads=admob,unity,inmobi&banner=1&rew=1&cap=30`.
 
 ### Three modes for `ads=`
 
@@ -172,7 +180,7 @@ zenvideoplayer://play?url=https://cld.way2tamil.com/1lpex5e/hghgf.mp4&ads=unity
 Unity primary, AdMob fallback, no banner, gentler pacing:
 
 ```
-zenvideoplayer://play?url=https://...mp4&ads=unity,admob&banner=0&gap=120&cap=15
+zenvideoplayer://play?url=https://...mp4&ads=unity,admob&banner=0&cap=15
 ```
 
 Reset to AdMob-first:
@@ -215,12 +223,11 @@ version.
 
 The previous code had two burst sources:
 
-1. `Timer.periodic(Duration(minutes: 10))` blindly loaded interstitials.
+1. `Timer.periodic(Duration(minutes: 10))` blindly loaded ads.
 2. Every `showRewarded()` immediately preloaded a new one.
 
 The new orchestrator + `AdThrottle`:
 
-- `gap` enforces a minimum interval between interstitials.
 - `cap` enforces a hard hourly cap on **all** ad load requests across networks.
 - The 10-minute periodic loader is gone.
 - Preloads only happen for the primary network at boot, not for every fallback.
@@ -228,32 +235,32 @@ The new orchestrator + `AdThrottle`:
 ## Setup steps
 
 1. Run `flutter pub get`.
-2. Unity values are already filled in (`UnityAdapter` defaults). Override
-   the constructor only if you change placements.
-3. **InMobi** — open `lib/ads/inmobi_adapter.dart` and replace the
-   defaults (`accountId`, `rewardedPlacementId`, `bannerPlacementId`)
-   with values from your InMobi dashboard. `interstitialPlacementId`
-   is intentionally `null` (InMobi only handles rewarded + banner in
-   this build); pass it explicitly if you ever provision an
-   interstitial placement.
-   Then:
-   - Android: nothing extra to do — the InMobi SDK is already declared
-     in `android/app/build.gradle` and registered from `MainActivity`.
-   - iOS: run `cd ios && pod install` to fetch the InMobi pod, then
-     rebuild. The bridge is already registered from `AppDelegate`.
-4. If AdMob restriction is currently active, send users a deeplink with
-   `&ads=unity,inmobi` so the app stops calling AdMob entirely until
-   the restriction lifts.
+2. **Production (default):** `kUseTestAdIds` is `false` in `lib/ads/ad_ids.dart`.
+   AdMob uses your live unit ids; Unity uses **testMode: false**; native
+   AdMob **application** id in `android/app/src/main/AndroidManifest.xml` and
+   `ios/Runner/Info.plist` (`GADApplicationIdentifier`) matches `adMobAppId` in
+   `ad_ids` (the `~` id). For **local tests only**, set `kUseTestAdIds` to
+   `true` and set native AdMob to Google’s sample app id while testing.
+3. **InMobi** — edit the `_inMobiProd*` constants in `ad_ids.dart` (and
+   `_inMobiTest*` if you use the test switch) with your account and
+   placement IDs; register test devices in the InMobi dashboard when
+   `kUseTestAdIds` is true.
+4. **Unity** — set `_unityProdAndroidGameId` / `_unityProdIosGameId` in
+   `ad_ids.dart` to the Game IDs from the Unity dashboard; align placement
+   names in `UnityAdapter` if needed.
+5. **Native** — Android: InMobi SDK is in `android/app/build.gradle` and
+   registered from `MainActivity`. iOS: run `cd ios && pod install`, then
+   rebuild; the bridge is registered from `AppDelegate`.
+6. If AdMob is under serving restriction, send users a deeplink with
+   `&ads=unity,inmobi` so the app stops calling AdMob until it clears.
 
 ## InMobi method channel (`zen.ads/inmobi`)
 
 The Dart adapter and the native bridges share this contract. Useful if
 you ever want to extend the bridge (e.g. add a banner PlatformView).
 
-| Method            | Args                  | Returns                                 |
-|-------------------|-----------------------|-----------------------------------------|
-| `init`            | `accountId`           | `bool` — true once SDK init completes   |
-| `loadInterstitial`| `placementId`         | `bool` — true once load callback fires  |
-| `loadRewarded`    | `placementId`         | `bool`                                  |
-| `showInterstitial`| —                     | `bool` — true on dismiss, false on fail |
-| `showRewarded`    | —                     | `Map { shown: bool, rewarded: bool }`   |
+| Method         | Args          | Returns                               |
+|----------------|---------------|---------------------------------------|
+| `init`         | `accountId`   | `bool` — true once SDK init completes |
+| `loadRewarded` | `placementId` | `bool` — true once load callback fires|
+| `showRewarded` | —             | `Map { shown: bool, rewarded: bool }` |
