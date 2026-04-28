@@ -65,18 +65,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     messenger.hideCurrentSnackBar();
     messenger.showSnackBar(
       const SnackBar(
-        content: Text("Started...Keep the App opened"),
-        duration: Duration(days: 1),
+        content: Text("Opening system download manager..."),
+        duration: Duration(seconds: 2),
         backgroundColor: Colors.blueGrey,
       ),
     );
     try {
-      final savedPath = await DownloadService.downloadFile(widget.videoSource);
+      final outcome = await DownloadService.downloadFile(widget.videoSource);
       if (!mounted) return;
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
         SnackBar(
-          content: Text("Video saved to: $savedPath"),
+          content: Text(
+            outcome.handedOffToSystem
+                ? " Started. Check your notifications or the folder."
+                : " Saved to: ${outcome.localPath}",
+          ),
           backgroundColor: Colors.green,
         ),
       );

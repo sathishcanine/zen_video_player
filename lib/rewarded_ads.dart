@@ -48,14 +48,18 @@ class AdManager {
       final messenger = ScaffoldMessenger.of(context);
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
-        const SnackBar(
-          content: Text("Started...Keep the App opened"),
-          duration: Duration(days: 1),
+        SnackBar(
+          content: Text(
+            isLocal
+                ? "Saving to Downloads..."
+                : "Opening system download manager...",
+          ),
+          duration: const Duration(seconds: 2),
           backgroundColor: Colors.blueGrey,
         ),
       );
       try {
-        final savedPath = await DownloadService.downloadFile(
+        final outcome = await DownloadService.downloadFile(
           url,
           isLocal: isLocal,
         );
@@ -63,7 +67,11 @@ class AdManager {
         messenger.hideCurrentSnackBar();
         messenger.showSnackBar(
           SnackBar(
-            content: Text("Video saved to: $savedPath"),
+            content: Text(
+              outcome.handedOffToSystem
+                  ? "Started. Check your notifications or folder."
+                  : " Saved to: ${outcome.localPath}",
+            ),
             backgroundColor: Colors.green,
           ),
         );

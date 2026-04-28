@@ -1,98 +1,98 @@
-
-import 'package:dio/dio.dart';
-import 'package:path_provider/path_provider.dart';
 import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
+import 'package:url_launcher/url_launcher.dart';
+
+/// Result of a [DownloadService.downloadFile] call.
+class DownloadOutcome {
+  /// `true` when the download was delegated to the OS browser / system
+  /// download manager. The final file location is then decided by the OS
+  /// (typically `/storage/emulated/0/Download/...` on Android) and is not
+  /// knowable to the app.
+  final bool handedOffToSystem;
+
+  /// File path on disk if we copied the file ourselves (local-source case).
+  final String? localPath;
+
+  const DownloadOutcome.handedOff()
+      : handedOffToSystem = true,
+        localPath = null;
+
+  const DownloadOutcome.savedAt(String path)
+      : handedOffToSystem = false,
+        localPath = path;
+}
 
 class DownloadService {
-
-  static Future<String> downloadFile(
+  /// Saves [source] for the user.
+  ///
+  /// - Remote (`http`/`https`) URLs are delegated to the system browser via
+  ///   `url_launcher`, which in turn invokes Android's built-in
+  ///   `DownloadManager`. The app does not write the file itself, so no
+  ///   storage permissions or scoped-storage workarounds are required, and
+  ///   the user gets a real progress notification + tap-to-open in the
+  ///   system Downloads folder.
+  /// - Local files (`isLocal: true`) are copied into the user's Downloads
+  ///   folder so they persist independently of the original location.
+  static Future<DownloadOutcome> downloadFile(
     String source, {
     bool isLocal = false,
   }) async {
-    print("[DownloadService] downloadFile called");
-    print("[DownloadService] source: $source");
-    print("[DownloadService] isLocal: $isLocal");
-
-    final dir = await _resolveTargetDirectory();
-    print("[DownloadService] external dir: ${dir.path}");
-
-    final fileName = isLocal
-        ? p.basename(source)
-        : _fileNameFromUrl(source);
-    final targetPath = _nextAvailablePath(dir.path, fileName);
-    print("[DownloadService] resolved fileName: $fileName");
-    print("[DownloadService] targetPath: $targetPath");
+    print("[DownloadService] downloadFile called source=$source isLocal=$isLocal");
 
     if (isLocal) {
-      print("[DownloadService] Mode: local copy");
-      final sourceFile = File(source);
-      if (!await sourceFile.exists()) {
-        print("[DownloadService] ERROR: Source file does not exist");
-        throw Exception("Source file does not exist");
-      }
-      await sourceFile.copy(targetPath);
-      print("[DownloadService] Local copy completed");
-    } else {
-      print("[DownloadService] Mode: remote download");
-      final uri = Uri.tryParse(source);
-      final isHttp = uri != null &&
-          (uri.scheme.toLowerCase() == 'http' ||
-              uri.scheme.toLowerCase() == 'https');
-      if (!isHttp) {
-        print("[DownloadService] ERROR: Non-HTTP URL: $source");
-        throw Exception("Only HTTP/HTTPS links can be downloaded");
-      }
-
-      final dio = Dio(
-        BaseOptions(
-          connectTimeout: const Duration(seconds: 20),
-          receiveTimeout: const Duration(minutes: 2),
-          sendTimeout: const Duration(seconds: 20),
-          followRedirects: true,
-          maxRedirects: 5,
-          headers: const {
-            'User-Agent': 'Mozilla/5.0 (Android) ZenVideoPlayer/2.0',
-          },
-        ),
-      );
-
-      try {
-        await dio.download(source, targetPath);
-        print("[DownloadService] Remote download completed");
-      } on DioException catch (e) {
-        print("[DownloadService] DioException: ${e.type} ${e.message} error=${e.error}");
-        throw Exception(_humanizeDioError(e));
-      } on SocketException catch (_) {
-        print("[DownloadService] SocketException during download");
-        throw Exception("Network error. Please check your internet connection.");
-      } on HandshakeException catch (_) {
-        print("[DownloadService] HandshakeException during download");
-        throw Exception("Secure connection failed (TLS/SSL handshake).");
-      }
+      return _copyLocalToDownloads(source);
     }
 
-    print("[DownloadService] SUCCESS path: $targetPath");
-    return targetPath;
+    final uri = Uri.tryParse(source);
+    final isHttp = uri != null &&
+        (uri.scheme.toLowerCase() == 'http' ||
+            uri.scheme.toLowerCase() == 'https');
+    if (uri == null || !isHttp) {
+      print("[DownloadService] ERROR: Non-HTTP URL: $source");
+      throw Exception("Only HTTP/HTTPS links can be downloaded.");
+    }
 
+    bool launched;
+    try {
+      launched = await launchUrl(uri, mode: LaunchMode.externalApplication);
+    } catch (e) {
+      print("[DownloadService] launchUrl threw: $e");
+      throw Exception("Could not open the system browser: $e");
+    }
+
+    if (!launched) {
+      print("[DownloadService] launchUrl returned false");
+      throw Exception(
+        "No app available to handle this link. "
+        "Please install a browser and try again.",
+      );
+    }
+
+    print("[DownloadService] Handed off to system browser");
+    return const DownloadOutcome.handedOff();
   }
 
-  static String _fileNameFromUrl(String url) {
-    final uri = Uri.tryParse(url);
-    final lastPart = uri?.pathSegments.isNotEmpty == true
-        ? uri!.pathSegments.last
-        : '';
-    if (lastPart.isEmpty) {
-      return "video_${DateTime.now().millisecondsSinceEpoch}.mp4";
+  static Future<DownloadOutcome> _copyLocalToDownloads(String source) async {
+    final sourceFile = File(source);
+    if (!await sourceFile.exists()) {
+      print("[DownloadService] ERROR: Source file does not exist: $source");
+      throw Exception("Source file does not exist");
     }
-    return lastPart;
+
+    final dir = await _resolveTargetDirectory();
+    final targetPath = _nextAvailablePath(dir.path, p.basename(source));
+    print("[DownloadService] Copying local file -> $targetPath");
+    await sourceFile.copy(targetPath);
+    print("[DownloadService] Local copy complete");
+    return DownloadOutcome.savedAt(targetPath);
   }
 
   static String _nextAvailablePath(String dirPath, String fileName) {
     final sanitized = _sanitizeFileName(
       fileName.isEmpty
-        ? "video_${DateTime.now().millisecondsSinceEpoch}.mp4"
-        : fileName,
+          ? "video_${DateTime.now().millisecondsSinceEpoch}.mp4"
+          : fileName,
     );
     final extension = p.extension(sanitized);
     final nameWithoutExt = p.basenameWithoutExtension(sanitized);
@@ -111,44 +111,33 @@ class DownloadService {
 
   static String _sanitizeFileName(String name) {
     final safe = name.replaceAll(RegExp(r'[<>:"/\\|?*]'), '_');
-    return safe.trim().isEmpty ? "video_${DateTime.now().millisecondsSinceEpoch}.mp4" : safe;
+    return safe.trim().isEmpty
+        ? "video_${DateTime.now().millisecondsSinceEpoch}.mp4"
+        : safe;
   }
 
-  static String _humanizeDioError(DioException e) {
-    final status = e.response?.statusCode;
-    final statusText = e.response?.statusMessage;
-    switch (e.type) {
-      case DioExceptionType.connectionTimeout:
-        return "Connection timeout while starting download.";
-      case DioExceptionType.sendTimeout:
-        return "Request timeout while starting download.";
-      case DioExceptionType.receiveTimeout:
-        return "Download timed out while receiving data.";
-      case DioExceptionType.badCertificate:
-        return "Certificate error. HTTPS connection is not trusted.";
-      case DioExceptionType.badResponse:
-        return "Server rejected download (HTTP $status${statusText != null ? ' - $statusText' : ''}).";
-      case DioExceptionType.cancel:
-        return "Download cancelled.";
-      case DioExceptionType.connectionError:
-        return "Network connection error while downloading.";
-      case DioExceptionType.unknown:
-        final base = e.error?.toString() ?? e.message ?? "Unknown Dio error";
-        return "Download failed: $base";
-    }
-  }
-
+  /// Picks the best place to write a copied local file.
+  ///
+  /// On Android we prefer the public `/storage/emulated/0/Download` folder
+  /// (so the user can find the file in any file manager), but only after a
+  /// real write probe — `existsSync()` alone is not enough under scoped
+  /// storage. If that probe fails we fall back to app-specific external
+  /// storage, which is always writable without runtime permissions.
   static Future<Directory> _resolveTargetDirectory() async {
     if (Platform.isAndroid) {
-      try {
-        final downloads = Directory('/storage/emulated/0/Download');
-        if (!downloads.existsSync()) {
-          downloads.createSync(recursive: true);
+      final publicDownloads = Directory('/storage/emulated/0/Download');
+      if (await _ensureWritable(publicDownloads)) {
+        return publicDownloads;
+      }
+      print("[DownloadService] Public Downloads not writable, using app-specific storage");
+
+      final external = await getExternalStorageDirectory();
+      if (external != null) {
+        final appDownloads = Directory(p.join(external.path, 'Downloads'));
+        if (!appDownloads.existsSync()) {
+          appDownloads.createSync(recursive: true);
         }
-        print("[DownloadService] Using public Downloads directory");
-        return downloads;
-      } catch (e) {
-        print("[DownloadService] WARN: public Downloads unavailable: $e");
+        return appDownloads;
       }
     }
 
@@ -158,18 +147,30 @@ class DownloadService {
       if (!appDir.existsSync()) {
         appDir.createSync(recursive: true);
       }
-      print("[DownloadService] Using platform downloads directory");
       return appDir;
     }
 
     final external = await getExternalStorageDirectory();
-    if (external != null) {
-      print("[DownloadService] Falling back to app external directory");
-      return external;
-    }
+    if (external != null) return external;
 
-    final docs = await getApplicationDocumentsDirectory();
-    print("[DownloadService] Falling back to app documents directory");
-    return docs;
+    return getApplicationDocumentsDirectory();
+  }
+
+  static Future<bool> _ensureWritable(Directory dir) async {
+    try {
+      if (!dir.existsSync()) {
+        dir.createSync(recursive: true);
+      }
+      final probe = File(p.join(
+        dir.path,
+        '.zvp_write_probe_${DateTime.now().millisecondsSinceEpoch}',
+      ));
+      await probe.writeAsString('ok', flush: true);
+      await probe.delete();
+      return true;
+    } catch (e) {
+      print("[DownloadService] Write probe failed for ${dir.path}: $e");
+      return false;
+    }
   }
 }
