@@ -8,6 +8,10 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// networks remotely without a Play Store update — useful when one
 /// network suddenly restricts ads.
 ///
+/// Only networks listed in [adOrder] are used by [AdsOrchestrator]
+/// for init, preload, rewarded waterfall, and banner fallback — others
+/// are not requested (see also cold-start merge in `AdsOrchestrator.init`).
+///
 /// Deeplink format (query params appended to the existing video deeplink):
 ///
 ///   zenvideoplayer://play?url=<videoUrl>
@@ -68,6 +72,16 @@ class AdConfig {
     'inmobi',
   };
 
+  /// Keeps first occurrence only (e.g. `ads=inmobi,admob,inmobi` → inmobi, admob).
+  static List<String> _dedupeKnownOrder(List<String> names) {
+    final seen = <String>{};
+    final out = <String>[];
+    for (final n in names) {
+      if (_knownNetworks.contains(n) && seen.add(n)) out.add(n);
+    }
+    return out;
+  }
+
   /// Parse ad config from a deeplink URI. Falls back to [previous]
   /// for any value that's missing or invalid, so partial overrides
   /// from a deeplink are fine.
@@ -92,7 +106,7 @@ class AdConfig {
             .where((s) => _knownNetworks.contains(s))
             .toList();
         if (parsed.isNotEmpty) {
-          order = parsed;
+          order = _dedupeKnownOrder(parsed);
           // An explicit deeplink order should be respected verbatim,
           // not re-shuffled on the next boot.
           random = false;
@@ -138,17 +152,22 @@ class AdConfig {
         'cap': maxRequestsPerHour,
       };
 
-  factory AdConfig.fromJson(Map<String, dynamic> j) => AdConfig(
-        adOrder: (j['adOrder'] as List?)
-                ?.map((e) => e.toString())
-                .where(_knownNetworks.contains)
-                .toList() ??
-            AdConfig.defaults().adOrder,
-        randomOrder: j['random'] as bool? ?? false,
-        bannerEnabled: j['banner'] as bool? ?? true,
-        rewardedEnabled: j['rew'] as bool? ?? true,
-        maxRequestsPerHour: j['cap'] as int? ?? 30,
-      );
+  factory AdConfig.fromJson(Map<String, dynamic> j) {
+    final raw = (j['adOrder'] as List?)
+        ?.map((e) => e.toString())
+        .where(_knownNetworks.contains)
+        .toList();
+    final order = (raw == null || raw.isEmpty)
+        ? AdConfig.defaults().adOrder
+        : _dedupeKnownOrder(raw);
+    return AdConfig(
+      adOrder: order,
+      randomOrder: j['random'] as bool? ?? false,
+      bannerEnabled: j['banner'] as bool? ?? true,
+      rewardedEnabled: j['rew'] as bool? ?? true,
+      maxRequestsPerHour: j['cap'] as int? ?? 30,
+    );
+  }
 
   static const String _prefsKey = 'ads_config_v1';
 

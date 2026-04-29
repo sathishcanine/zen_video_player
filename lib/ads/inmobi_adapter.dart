@@ -148,13 +148,17 @@ class InMobiAdapter implements AdNetwork {
   }
 
   @override
-  Future<bool> showRewarded({required VoidCallback onReward}) async {
+  Future<bool> showRewarded({
+    required VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  }) async {
     if (_circuitOpen) return false;
     if (!_rewardedReady) {
       preloadRewarded();
       return false;
     }
     try {
+      onAdOpening?.call();
       final result = await _channel.invokeMethod<Map>('showRewarded');
       _rewardedReady = false;
       preloadRewarded();

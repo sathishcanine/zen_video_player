@@ -110,7 +110,10 @@ class AdmobAdapter implements AdNetwork {
   }
 
   @override
-  Future<bool> showRewarded({required VoidCallback onReward}) async {
+  Future<bool> showRewarded({
+    required VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  }) async {
     final ad = _rewarded;
     if (ad == null) {
       preloadRewarded();
@@ -119,6 +122,7 @@ class AdmobAdapter implements AdNetwork {
     bool earned = false;
     final completer = Completer<bool>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) => onAdOpening?.call(),
       onAdDismissedFullScreenContent: (a) {
         a.dispose();
         _rewarded = null;

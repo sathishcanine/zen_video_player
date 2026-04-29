@@ -21,6 +21,12 @@ import 'unity_adapter.dart';
 class AdsOrchestrator {
   AdsOrchestrator._();
 
+  /// How long we keep polling one network for a fill before trying the next.
+  static const Duration _rewardedNetworkPollBudget = Duration(seconds: 20);
+
+  /// Delay between attempts while waiting for a rewarded load.
+  static const Duration _rewardedPollInterval = Duration(milliseconds: 400);
+
   static AdConfig _config = AdConfig.defaults();
   static AdConfig get config => _config;
 
@@ -32,13 +38,22 @@ class AdsOrchestrator {
 
   static bool _booted = false;
 
-  /// Initialize the orchestrator. Loads persisted config and inits
-  /// every network listed in the config (in parallel).
-  static Future<void> init() async {
+  /// Initialize the orchestrator. Loads persisted config, optionally merges
+  /// [coldStartUri] before any SDK runs so e.g. `ads=admob` avoids initializing
+  /// Unity/InMobi on the same cold start.
+  static Future<void> init({Uri? coldStartUri}) async {
     if (_booted) return;
     _booted = true;
     _config = await AdConfig.load();
+    if (coldStartUri != null) {
+      _config = AdConfig.fromUri(coldStartUri, _config);
+      await _config.save();
+    }
     debugPrint('[ads] boot config: $_config');
+    debugPrint(
+      '[ads] active network chain (init/preload/rewarded/banner): '
+      '${_orderedNetworks().map((n) => n.name).join(",")}',
+    );
     await _initEnabledNetworks();
     _preloadPrimary();
   }
@@ -49,6 +64,10 @@ class AdsOrchestrator {
   static Future<void> applyConfig(AdConfig newConfig) async {
     _config = newConfig;
     debugPrint('[ads] config updated: $_config');
+    debugPrint(
+      '[ads] active network chain: '
+      '${_orderedNetworks().map((n) => n.name).join(",")}',
+    );
     await newConfig.save();
     await _initEnabledNetworks();
     _preloadPrimary();
@@ -73,7 +92,8 @@ class AdsOrchestrator {
     if (_config.rewardedEnabled) primary.preloadRewarded();
   }
 
-  /// Networks resolved from the config's order, skipping unknown names.
+  /// Networks resolved from [AdConfig.adOrder] only — registry entries not
+  /// listed here are never initialized, preloaded, or shown for rewarded/banner.
   static List<AdNetwork> _orderedNetworks() {
     final result = <AdNetwork>[];
     for (final name in _config.adOrder) {
@@ -89,7 +109,14 @@ class AdsOrchestrator {
 
   /// Try to show a rewarded ad. If no network can serve one, [onReward]
   /// is still called so the user isn't blocked by ad failures.
-  static Future<bool> showRewarded({required VoidCallback onReward}) async {
+  ///
+  /// [onAdOpening] runs when a full-screen ad is about to show (e.g. to
+  /// hide a loading overlay). It may be called at most once per successful
+  /// presentation.
+  static Future<bool> showRewarded({
+    required VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  }) async {
     if (!_config.rewardedEnabled) {
       onReward();
       return false;
@@ -99,14 +126,28 @@ class AdsOrchestrator {
       onReward();
       return false;
     }
+    final networks = _orderedNetworks();
+    if (networks.isEmpty) {
+      debugPrint('[ads] rewarded: no networks in config order');
+      onReward();
+      return false;
+    }
     final tried = <String>[];
-    for (final n in _orderedNetworks()) {
+    for (final n in networks) {
       tried.add(n.name);
-      try {
-        final shown = await n.showRewarded(onReward: onReward);
-        if (shown) return true;
-      } catch (e) {
-        debugPrint('[ads] ${n.name} rewarded threw: $e');
+      final networkStart = DateTime.now();
+      while (DateTime.now().difference(networkStart) < _rewardedNetworkPollBudget) {
+        try {
+          n.preloadRewarded();
+          final shown = await n.showRewarded(
+            onReward: onReward,
+            onAdOpening: onAdOpening,
+          );
+          if (shown) return true;
+        } catch (e) {
+          debugPrint('[ads] ${n.name} rewarded threw: $e');
+        }
+        await Future<void>.delayed(_rewardedPollInterval);
       }
     }
     debugPrint(

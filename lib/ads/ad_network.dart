@@ -19,7 +19,13 @@ abstract class AdNetwork {
 
   /// Show a rewarded ad. [onReward] fires only if the user actually
   /// earned the reward. Returns true if an ad was displayed.
-  Future<bool> showRewarded({required VoidCallback onReward});
+  ///
+  /// [onAdOpening] is invoked when the full-screen ad is about to
+  /// present (e.g. to hide a loading overlay).
+  Future<bool> showRewarded({
+    required VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  });
 
   /// Build a banner widget. Returns null if banner is not supported
   /// or the SDK is not ready.

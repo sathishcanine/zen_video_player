@@ -11,7 +11,8 @@ import 'home_screen.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await AdsOrchestrator.init();
+  final coldStartUri = await AppLinks().getInitialAppLink();
+  await AdsOrchestrator.init(coldStartUri: coldStartUri);
 
   runApp(const DiskwalaApp());
 }

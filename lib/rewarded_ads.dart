@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import 'ads/ads_orchestrator.dart';
+import 'ads/rewarded_loading_overlay.dart';
 import 'download_service.dart';
 import 'video_player_screen.dart';
 
@@ -8,30 +9,65 @@ import 'video_player_screen.dart';
 /// this class is kept only so existing screens don't need to change
 /// their imports/calls.
 class AdManager {
+  /// Prevents overlapping rewarded flows (e.g. double-tap Play before an
+  /// ad finishes loading), which would waste inventory or race overlays.
+  static bool _rewardedFlowActive = false;
+
   /// Initializes the ad orchestrator (all configured networks).
   static Future<void> initialize() => AdsOrchestrator.init();
 
   /// Shows a rewarded ad through the configured network chain.
   /// If no network can serve, the user still proceeds — we never
   /// block playback because of an ad failure.
-  static void showRewarded(
+  ///
+  /// Shows a dim full-screen circular loader until an ad opens or the
+  /// chain gives up. Ignores extra taps while a flow is already running.
+  static Future<void> showRewarded(
     BuildContext context, {
     required String url,
     bool download = false,
     bool isLocal = false,
     bool allowNetworkDownloadInPlayer = true,
-  }) {
-    AdsOrchestrator.showRewarded(
-      onReward: () {
-        startVideo(
-          context,
-          url,
-          download,
-          isLocal,
-          allowNetworkDownloadInPlayer,
+  }) async {
+    if (_rewardedFlowActive) return;
+    _rewardedFlowActive = true;
+
+    OverlayEntry? entry;
+    var loaderRemoved = false;
+
+    void removeLoader() {
+      if (loaderRemoved) return;
+      loaderRemoved = true;
+      entry?.remove();
+    }
+
+    try {
+      final overlay =
+          Navigator.maybeOf(context, rootNavigator: true)?.overlay;
+
+      if (overlay != null) {
+        entry = OverlayEntry(
+          builder: (_) => const RewardedLoadingOverlay(),
         );
-      },
-    );
+        overlay.insert(entry);
+      }
+
+      await AdsOrchestrator.showRewarded(
+        onReward: () {
+          startVideo(
+            context,
+            url,
+            download,
+            isLocal,
+            allowNetworkDownloadInPlayer,
+          );
+        },
+        onAdOpening: overlay != null ? removeLoader : null,
+      );
+    } finally {
+      removeLoader();
+      _rewardedFlowActive = false;
+    }
   }
 
   /// Start video or download. Pulled out of the old AdManager to

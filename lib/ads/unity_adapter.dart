@@ -296,7 +296,10 @@ class UnityAdapter implements AdNetwork {
   }
 
   @override
-  Future<bool> showRewarded({required VoidCallback onReward}) async {
+  Future<bool> showRewarded({
+    required VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  }) async {
     if (_circuitOpen) return false;
     if (!_initialized || !_rewardedReady) {
       preloadRewarded();
@@ -322,7 +325,7 @@ class UnityAdapter implements AdNetwork {
         if (!completer.isCompleted) completer.complete(true);
         preloadRewarded();
       },
-      onStart: (_) {},
+      onStart: (_) => onAdOpening?.call(),
       onClick: (_) {},
     );
     return completer.future;
