@@ -2,19 +2,25 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:zen_video_player/analytics/telemetry.dart';
 import 'package:zen_video_player/video_preview_screen.dart';
 
 import 'ads/ad_config.dart';
 import 'ads/ads_orchestrator.dart';
 import 'home_screen.dart';
 
-void main() async {
+Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  await Telemetry.init();
 
   final coldStartUri = await AppLinks().getInitialAppLink();
   await AdsOrchestrator.init(coldStartUri: coldStartUri);
 
-  runApp(const DiskwalaApp());
+  runZonedGuarded(
+    () => runApp(const DiskwalaApp()),
+    (error, stack) => Telemetry.recordZoneError(error, stack),
+  );
 }
 
 class DiskwalaApp extends StatefulWidget {

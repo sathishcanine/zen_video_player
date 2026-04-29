@@ -1,13 +1,15 @@
 import 'dart:async';
 import 'dart:io';
+
+import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
+import 'package:zen_video_player/analytics/video_player_telemetry.dart';
+
 import 'download_service.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
-
   final String videoSource;
   final bool isLocal;
 
@@ -26,7 +28,6 @@ class VideoPlayerScreen extends StatefulWidget {
 }
 
 class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
-
   /// Hard ceiling so a hung CDN, redirect chain, or unsupported codec
   /// can't strand the user on the spinner forever. ExoPlayer's
   /// `initialize()` future does not always settle on its own when the
@@ -41,13 +42,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
   /// in [build]; null while still loading or after a successful init.
   String? _initError;
 
+  /// Dedupes repeated [VideoPlayerValue.hasError] listener callbacks.
+  String? _lastEmittedPlaybackError;
+
   @override
   void initState() {
     super.initState();
-    _initializePlayer();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      unawaited(
+        VideoPlayerTelemetry.screenOpened(
+          isLocal: widget.isLocal,
+          allowNetworkDownload: widget.allowNetworkDownload,
+          videoSource: widget.videoSource,
+        ),
+      );
+    });
+    unawaited(_initializePlayer());
   }
 
   Future<void> _initializePlayer() async {
+    _lastEmittedPlaybackError = null;
+    final sw = Stopwatch()..start();
+
     if (mounted) {
       setState(() {
         _initError = null;
@@ -72,6 +89,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
       );
     });
 
+    unawaited(
+      VideoPlayerTelemetry.initStarted(
+        isLocal: widget.isLocal,
+        videoSource: widget.videoSource,
+      ),
+    );
+
     final controller = widget.isLocal
         ? VideoPlayerController.file(File(widget.videoSource))
         : VideoPlayerController.networkUrl(Uri.parse(widget.videoSource));
@@ -89,11 +113,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           );
         },
       );
-    } catch (e) {
-      // Surface the actual cause instead of leaving the user staring
-      // at a spinner. ExoPlayer-side errors arrive here as
-      // PlatformException with the real reason in `message`.
+    } catch (e, st) {
       dismissLoadingHint();
+      sw.stop();
+      unawaited(
+        VideoPlayerTelemetry.initFailed(
+          isLocal: widget.isLocal,
+          videoSource: widget.videoSource,
+          error: e,
+          stackTrace: st,
+          elapsed: sw.elapsed,
+        ),
+      );
       if (!mounted) return;
       setState(() {
         _initError = _humanizeError(e);
@@ -111,6 +142,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     }
 
     dismissLoadingHint();
+    sw.stop();
+    unawaited(
+      VideoPlayerTelemetry.initSucceeded(
+        isLocal: widget.isLocal,
+        videoSource: widget.videoSource,
+        elapsed: sw.elapsed,
+      ),
+    );
+
+    controller.addListener(_onVideoValueChanged);
 
     _chewieController = ChewieController(
       videoPlayerController: controller,
@@ -122,6 +163,22 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
     );
 
     setState(() {});
+  }
+
+  void _onVideoValueChanged() {
+    final c = _videoController;
+    if (c == null || !mounted) return;
+    if (!c.value.hasError) return;
+    final desc = c.value.errorDescription ?? 'unknown';
+    if (desc == _lastEmittedPlaybackError) return;
+    _lastEmittedPlaybackError = desc;
+    unawaited(
+      VideoPlayerTelemetry.playbackError(
+        isLocal: widget.isLocal,
+        videoSource: widget.videoSource,
+        errorDescription: desc,
+      ),
+    );
   }
 
   String _humanizeError(Object e) {
@@ -163,7 +220,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
           backgroundColor: Colors.green,
         ),
       );
-    } catch (e) {
+    } catch (e, st) {
+      unawaited(
+        VideoPlayerTelemetry.downloadFailed(
+          videoSource: widget.videoSource,
+          error: e,
+          stackTrace: st,
+        ),
+      );
       if (!mounted) return;
       messenger.hideCurrentSnackBar();
       messenger.showSnackBar(
@@ -177,6 +241,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   void dispose() {
+    _videoController?.removeListener(_onVideoValueChanged);
     _videoController?.dispose();
     _chewieController?.dispose();
     super.dispose();
@@ -216,7 +281,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
               alignment: WrapAlignment.center,
               children: [
                 ElevatedButton.icon(
-                  onPressed: _initializePlayer,
+                  onPressed: () => unawaited(_initializePlayer()),
                   icon: const Icon(Icons.refresh),
                   label: const Text("Retry"),
                 ),
@@ -241,26 +306,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen> {
 
   @override
   Widget build(BuildContext context) {
-
     return Scaffold(
-
       appBar: AppBar(
         title: const Text("Video Player"),
         actions: [
-
           if (!widget.isLocal && widget.allowNetworkDownload)
             IconButton(
               icon: const Icon(Icons.download),
               onPressed: _downloadVideo,
             )
-
         ],
       ),
-
       body: Center(
         child: _buildBody(),
       ),
-
     );
   }
 }

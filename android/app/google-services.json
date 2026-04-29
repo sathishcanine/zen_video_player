@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "730292757522",
+    "project_id": "zen-video-player",
+    "storage_bucket": "zen-video-player.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:730292757522:android:df207a5ea01bd13fd3e4cb",
+        "android_client_info": {
+          "package_name": "com.player.zen_video_player"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBh0RUwCxJZvf42_0CHlZIYIvvZS9BeE3Y"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
