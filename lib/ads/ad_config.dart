@@ -15,6 +15,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 /// Deeplink format (query params appended to the existing video deeplink):
 ///
 ///   zenvideoplayer://play?url=<videoUrl>
+///       &latest_version=11              // optional: if app build < 11, force Play update
 ///       &ads=unity,admob,inmobi         // priority order (left = primary)
 ///       &banner=1                       // 0/1 enable banner
 ///       &rew=1                          // 0/1 enable rewarded
