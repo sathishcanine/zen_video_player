@@ -104,7 +104,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-              const SizedBox(height: 20),
+              const SizedBox(height: 2),
 
               /// THUMBNAIL
               Center(
@@ -132,7 +132,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                         borderRadius: BorderRadius.circular(20),
                         child: Image.file(
                           File(thumbnail!),
-                          height: 220,
+                          height: 200,
                           width: double.infinity,
                           fit: BoxFit.cover,
                         ),
@@ -142,8 +142,8 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                     GestureDetector(
                       onTap: _playVideo,
                       child: Container(
-                        height: 70,
-                        width: 70,
+                        height: 65,
+                        width: 65,
                         decoration: BoxDecoration(
                           color: Colors.black45,
                           borderRadius: BorderRadius.circular(50),
@@ -160,7 +160,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
               ),
 
-              const SizedBox(height: 30),
+              const SizedBox(height: 12),
 
               /// VIDEO SOURCE INFO
               Text(
@@ -183,12 +183,12 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
               ),
 
-              const SizedBox(height: 40),
+              const SizedBox(height: 20),
 
               /// PLAY BUTTON
               SizedBox(
                 width: double.infinity,
-                height: 55,
+                height: 45,
 
                 child: ElevatedButton.icon(
 
@@ -217,7 +217,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
                 SizedBox(
                   width: double.infinity,
-                  height: 55,
+                  height: 45,
 
                   child: ElevatedButton.icon(
 
@@ -255,7 +255,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
               ],
 
-              const SizedBox(height: 28),
+              const SizedBox(height: 20),
 
               const Center(
                 child: VideoPreviewNativeAd(),
