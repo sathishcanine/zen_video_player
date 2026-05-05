@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
-import 'package:zen_video_player/thumbnail_service.dart';
 
 import 'ads/video_preview_native_ad.dart';
 
@@ -27,24 +27,45 @@ class VideoPreviewScreen extends StatefulWidget {
 
 class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
-  String? thumbnail;
+  VideoPlayerController? _previewController;
+  bool _previewFailed = false;
 
   @override
   void initState() {
     super.initState();
-    _loadThumbnail();
+    _initPreview();
   }
 
-  Future<void> _loadThumbnail() async {
+  @override
+  void dispose() {
+    _previewController?.dispose();
+    super.dispose();
+  }
 
-    final thumb =
-    await ThumbnailService.generateThumbnail(widget.videoSource);
-
-    if (!mounted) return;
-
-    setState(() {
-      thumbnail = thumb;
-    });
+  Future<void> _initPreview() async {
+    VideoPlayerController? c;
+    try {
+      if (widget.isLocal) {
+        c = VideoPlayerController.file(File(widget.videoSource));
+      } else {
+        c = VideoPlayerController.networkUrl(Uri.parse(widget.videoSource));
+      }
+      await c.initialize();
+      await c.setVolume(0);
+      await c.pause();
+      if (!mounted) {
+        await c.dispose();
+        return;
+      }
+      setState(() {
+        _previewController = c;
+      });
+    } catch (_) {
+      await c?.dispose();
+      if (mounted) {
+        setState(() => _previewFailed = true);
+      }
+    }
   }
 
   void _playVideo() {
@@ -106,13 +127,31 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
               children: [
               const SizedBox(height: 2),
 
-              /// THUMBNAIL
+              /// PREVIEW
               Center(
                 child: Stack(
                   alignment: Alignment.center,
                   children: [
 
-                    if (thumbnail == null)
+                    if (_previewFailed)
+
+                      Container(
+                        height: 220,
+                        width: double.infinity,
+                        decoration: BoxDecoration(
+                          color: Colors.black26,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: const Center(
+                          child: Icon(
+                            Icons.videocam_off_outlined,
+                            color: Colors.white54,
+                            size: 56,
+                          ),
+                        ),
+                      )
+
+                    else if (_previewController?.value.isInitialized != true)
 
                       Container(
                         height: 220,
@@ -130,11 +169,17 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
                       ClipRRect(
                         borderRadius: BorderRadius.circular(20),
-                        child: Image.file(
-                          File(thumbnail!),
-                          height: 200,
+                        child: SizedBox(
+                          height: 220,
                           width: double.infinity,
-                          fit: BoxFit.cover,
+                          child: FittedBox(
+                            fit: BoxFit.cover,
+                            child: SizedBox(
+                              width: _previewController!.value.size.width,
+                              height: _previewController!.value.size.height,
+                              child: VideoPlayer(_previewController!),
+                            ),
+                          ),
                         ),
                       ),
 
