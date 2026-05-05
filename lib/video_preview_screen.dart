@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 import 'package:zen_video_player/thumbnail_service.dart';
 
-import 'ads_manager.dart';
+import 'ads/video_preview_native_ad.dart';
 
 class VideoPreviewScreen extends StatefulWidget {
 
@@ -28,12 +28,10 @@ class VideoPreviewScreen extends StatefulWidget {
 class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
   String? thumbnail;
-  BannerAdWidget? banner;
 
   @override
   void initState() {
     super.initState();
-    banner = BannerAdWidget();
     _loadThumbnail();
   }
 
@@ -100,15 +98,12 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
           ),
         ),
 
-        child: Padding(
-          padding: const EdgeInsets.all(20),
-
-          child: Column(
-
-            crossAxisAlignment: CrossAxisAlignment.start,
-
-            children: [
-
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(20),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
               const SizedBox(height: 20),
 
               /// THUMBNAIL
@@ -260,19 +255,16 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
               ],
 
-              const Spacer(),
+              const SizedBox(height: 28),
 
-              /// INFO TEXT
-
-
-              if (banner != null)
-                Center(
-                  child: banner!,
-                ),
+              const Center(
+                child: VideoPreviewNativeAd(),
+              ),
 
               const SizedBox(height: 20),
 
-            ],
+              ],
+            ),
           ),
         ),
       ),

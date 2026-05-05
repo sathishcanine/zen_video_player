@@ -13,6 +13,9 @@ const bool kUseTestAdIds = false;
 const String _adMobTestAppId = 'ca-app-pub-3940256099942544~3347511713';
 const String _adMobTestRewardedUnit = 'ca-app-pub-3940256099942544/5224354917';
 const String _adMobTestBannerUnit = 'ca-app-pub-3940256099942544/6300978111';
+/// Native Advanced — Google sample unit (see AdMob test ads doc).
+const String _adMobTestNativeAdvancedUnit =
+    'ca-app-pub-3940256099942544/2247696110';
 
 // Your AdMob app id (iOS "App ID" / Android Application ID) — must match
 // `com.google.android.gms.ads.APPLICATION_ID` in AndroidManifest and
@@ -20,6 +23,8 @@ const String _adMobTestBannerUnit = 'ca-app-pub-3940256099942544/6300978111';
 const String _adMobProdAppId = 'ca-app-pub-8723888126390754~6064872820';
 const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/7234751166';
 const String _adMobProdBannerUnit = 'ca-app-pub-8723888126390754/7532332319';
+const String _adMobProdNativeAdvancedUnit =
+    'ca-app-pub-8723888126390754/5486908814';
 
 // --- Unity Ads: each **platform has its own Game ID** in the Monetization
 // dashboard. Using a legacy "sample" pair (e.g. 14850 / 14851) can trigger
@@ -57,6 +62,9 @@ String get adMobRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdRewardedUnit;
 String get adMobBannerUnitId =>
     kUseTestAdIds ? _adMobTestBannerUnit : _adMobProdBannerUnit;
+
+String get adMobNativeAdvancedUnitId =>
+    kUseTestAdIds ? _adMobTestNativeAdvancedUnit : _adMobProdNativeAdvancedUnit;
 
 /// Unity: `UnityAds.init(..., testMode: true)` only when [kUseTestAdIds] is
 /// true. Production must use `false` in the Unity dashboard for live traffic.
