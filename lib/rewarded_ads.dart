@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'ads/ads_orchestrator.dart';
 import 'ads/rewarded_loading_overlay.dart';
+import 'app_navigator.dart';
 import 'download_service.dart';
 import 'video_player_screen.dart';
 
@@ -54,13 +55,18 @@ class AdManager {
 
       await AdsOrchestrator.showRewarded(
         onReward: () {
-          startVideo(
-            context,
-            url,
-            download,
-            isLocal,
-            allowNetworkDownloadInPlayer,
-          );
+          // Reward fires from ad SDK callbacks mid teardown; defer until the
+          // next frame so Navigator/context lookups see a consistent tree.
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!context.mounted) return;
+            startVideo(
+              context,
+              url,
+              download,
+              isLocal,
+              allowNetworkDownloadInPlayer,
+            );
+          });
         },
         onAdOpening: overlay != null ? removeLoader : null,
       );
@@ -122,16 +128,22 @@ class AdManager {
         );
       }
     } else {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => VideoPlayerScreen(
-            videoSource: url,
-            isLocal: isLocal,
-            allowNetworkDownload: allowNetworkDownloadInPlayer,
+      // Do not use [context] to resolve Navigator — after a fullscreen ad,
+      // the overlay subtree can be torn down while callbacks still hold the old
+      // BuildContext (StatefulElement.state null crashes).
+      if (!context.mounted) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!context.mounted) return;
+        rootNavigatorKey.currentState?.push(
+          MaterialPageRoute<void>(
+            builder: (_) => VideoPlayerScreen(
+              videoSource: url,
+              isLocal: isLocal,
+              allowNetworkDownload: allowNetworkDownloadInPlayer,
+            ),
           ),
-        ),
-      );
+        );
+      });
     }
   }
 }

@@ -9,6 +9,7 @@ import 'ads/ad_config.dart';
 import 'ads/ads_orchestrator.dart';
 import 'app_update/force_update_from_deeplink.dart';
 import 'app_update/force_update_screen.dart';
+import 'app_navigator.dart';
 import 'home_screen.dart';
 
 Future<void> main() async {
@@ -33,7 +34,6 @@ class DiskwalaApp extends StatefulWidget {
 }
 
 class _DiskwalaAppState extends State<DiskwalaApp> {
-  final _navigatorKey = GlobalKey<NavigatorState>();
   StreamSubscription<Uri>? _linkSubscription;
 
   @override
@@ -59,7 +59,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
       if (!mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!mounted) return;
-        final nav = _navigatorKey.currentState;
+        final nav = rootNavigatorKey.currentState;
         if (nav == null) return;
         nav.popUntil((r) => r.isFirst);
         nav.push(
@@ -84,7 +84,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
 
     final video = uri.queryParameters['url'] ?? '';
     if (video.isEmpty) return;
-    _navigatorKey.currentState?.push(
+    rootNavigatorKey.currentState?.push(
       MaterialPageRoute(
         builder: (_) => VideoPreviewScreen(
           videoSource: video,
@@ -110,7 +110,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: _navigatorKey,
+      navigatorKey: rootNavigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
       home: const HomeScreen(),
