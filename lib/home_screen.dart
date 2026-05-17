@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:path/path.dart' as p;
 
+import 'video_player_screen.dart';
 import 'video_preview_screen.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -57,15 +58,27 @@ class _HomeScreenState extends State<HomeScreen> {
     openVideo(controller.text, false);
   }
 
-  /// OPEN VIDEO PLAYER
+  /// OPEN VIDEO: local files go straight to the player; URLs use preview first.
   void openVideo(String source, bool isLocal) {
+    if (isLocal) {
+      Navigator.push(
+        context,
+        MaterialPageRoute<void>(
+          builder: (_) => VideoPlayerScreen(
+            videoSource: source,
+            isLocal: true,
+          ),
+        ),
+      );
+      return;
+    }
 
     Navigator.push(
       context,
-      MaterialPageRoute(
+      MaterialPageRoute<void>(
         builder: (_) => VideoPreviewScreen(
           videoSource: source,
-          isLocal: isLocal,
+          isLocal: false,
         ),
       ),
     );
