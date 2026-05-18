@@ -11,6 +11,13 @@ import 'app_update/force_update_from_deeplink.dart';
 import 'app_update/force_update_screen.dart';
 import 'app_navigator.dart';
 import 'home_screen.dart';
+import 'video_player_screen.dart';
+
+bool _isOpenWithVideoUri(Uri? uri) {
+  if (uri == null) return false;
+  final s = uri.scheme.toLowerCase();
+  return s == 'content' || s == 'file';
+}
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -20,14 +27,20 @@ Future<void> main() async {
   final coldStartUri = await AppLinks().getInitialAppLink();
   await AdsOrchestrator.init(coldStartUri: coldStartUri);
 
+  final coldStartOpenVideo =
+      _isOpenWithVideoUri(coldStartUri) ? coldStartUri : null;
+
   runZonedGuarded(
-    () => runApp(const DiskwalaApp()),
+    () => runApp(DiskwalaApp(coldStartOpenVideo: coldStartOpenVideo)),
     (error, stack) => Telemetry.recordZoneError(error, stack),
   );
 }
 
 class DiskwalaApp extends StatefulWidget {
-  const DiskwalaApp({super.key});
+  const DiskwalaApp({super.key, this.coldStartOpenVideo});
+
+  /// Non-null when the app was cold-started from "Open with" on a video.
+  final Uri? coldStartOpenVideo;
 
   @override
   State<DiskwalaApp> createState() => _DiskwalaAppState();
@@ -54,6 +67,35 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
   ///   1. Update ad-network config from any extra query params.
   ///   2. Navigate to the video preview if `url=` is present.
   Future<void> _handleDeeplink(Uri uri) async {
+    final scheme = uri.scheme.toLowerCase();
+    if (scheme == 'content' || scheme == 'file') {
+      if (!mounted) return;
+      void pushOpenWith() {
+        if (!mounted) return;
+        final nav = rootNavigatorKey.currentState;
+        if (nav == null) return;
+        final isContent = scheme == 'content';
+        nav.push(
+          MaterialPageRoute<void>(
+            settings: const RouteSettings(name: '/open-with'),
+            builder: (_) => VideoPlayerScreen(
+              videoSource: uri.toString(),
+              isLocal: !isContent,
+              useContentUri: isContent,
+              allowNetworkDownload: false,
+            ),
+          ),
+        );
+      }
+
+      if (rootNavigatorKey.currentState != null) {
+        pushOpenWith();
+      } else {
+        WidgetsBinding.instance.addPostFrameCallback((_) => pushOpenWith());
+      }
+      return;
+    }
+
     final gate = await forceUpdateGateFromDeeplink(uri);
     if (gate != null) {
       if (!mounted) return;
@@ -98,7 +140,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     final appLinks = AppLinks();
 
     final initial = await appLinks.getInitialAppLink();
-    if (initial != null) {
+    if (initial != null && !_isOpenWithVideoUri(initial)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         _handleDeeplink(initial);
       });
@@ -107,13 +149,63 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     _linkSubscription = appLinks.uriLinkStream.listen(_handleDeeplink);
   }
 
+  List<Route<dynamic>> _onGenerateInitialRoutes(String initialRoute) {
+    final open = widget.coldStartOpenVideo;
+    if (open != null) {
+      final isContent = open.scheme.toLowerCase() == 'content';
+      return <Route<dynamic>>[
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: '/'),
+          builder: (_) => const HomeScreen(),
+        ),
+        MaterialPageRoute<void>(
+          settings: const RouteSettings(name: '/openWith'),
+          builder: (_) => VideoPlayerScreen(
+            videoSource: open.toString(),
+            isLocal: !isContent,
+            useContentUri: isContent,
+            allowNetworkDownload: false,
+          ),
+        ),
+      ];
+    }
+    return <Route<dynamic>>[
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: '/'),
+        builder: (_) => const HomeScreen(),
+      ),
+    ];
+  }
+
+  /// Required alongside [onGenerateInitialRoutes]: Flutter's [MaterialApp]
+  /// assertion only treats `home`, `routes`, [onGenerateRoute], or
+  /// [onUnknownRoute] as a valid routing setup — [onGenerateInitialRoutes]
+  /// alone is not enough. Initial paint still comes from
+  /// [_onGenerateInitialRoutes]; this handles any later named-route requests.
+  Route<dynamic>? _onGenerateRoute(RouteSettings settings) {
+    switch (settings.name) {
+      case '/':
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const HomeScreen(),
+        );
+      default:
+        return MaterialPageRoute<void>(
+          settings: settings,
+          builder: (_) => const HomeScreen(),
+        );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
       navigatorKey: rootNavigatorKey,
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(),
-      home: const HomeScreen(),
+      initialRoute: '/',
+      onGenerateInitialRoutes: _onGenerateInitialRoutes,
+      onGenerateRoute: _onGenerateRoute,
     );
   }
 }

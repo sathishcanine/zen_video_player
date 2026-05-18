@@ -15,6 +15,10 @@ class VideoPlayerScreen extends StatefulWidget {
   final String videoSource;
   final bool isLocal;
 
+  /// Android `content://…` from another app ("Open with"); uses
+  /// [VideoPlayerController.contentUri].
+  final bool useContentUri;
+
   /// App bar download for network URLs; ignored when [isLocal] is true.
   final bool allowNetworkDownload;
 
@@ -22,6 +26,7 @@ class VideoPlayerScreen extends StatefulWidget {
     super.key,
     required this.videoSource,
     this.isLocal = false,
+    this.useContentUri = false,
     this.allowNetworkDownload = true,
   });
 
@@ -74,7 +79,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       if (!mounted) return;
       unawaited(
         VideoPlayerTelemetry.screenOpened(
-          isLocal: widget.isLocal,
+          isLocal: widget.isLocal || widget.useContentUri,
           allowNetworkDownload: widget.allowNetworkDownload,
           videoSource: widget.videoSource,
         ),
@@ -223,14 +228,27 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     unawaited(
       VideoPlayerTelemetry.initStarted(
-        isLocal: widget.isLocal,
+        isLocal: widget.isLocal || widget.useContentUri,
         videoSource: widget.videoSource,
       ),
     );
 
-    final controller = widget.isLocal
-        ? VideoPlayerController.file(File(widget.videoSource))
-        : VideoPlayerController.networkUrl(Uri.parse(widget.videoSource));
+    late final VideoPlayerController controller;
+    if (widget.useContentUri) {
+      if (!Platform.isAndroid) {
+        throw UnsupportedError('content:// playback is only supported on Android.');
+      }
+      controller = VideoPlayerController.contentUri(Uri.parse(widget.videoSource));
+    } else if (widget.isLocal) {
+      final parsed = Uri.tryParse(widget.videoSource);
+      if (parsed != null && parsed.isScheme('file')) {
+        controller = VideoPlayerController.file(File.fromUri(parsed));
+      } else {
+        controller = VideoPlayerController.file(File(widget.videoSource));
+      }
+    } else {
+      controller = VideoPlayerController.networkUrl(Uri.parse(widget.videoSource));
+    }
 
     _videoController = controller;
 
@@ -250,7 +268,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       sw.stop();
       unawaited(
         VideoPlayerTelemetry.initFailed(
-          isLocal: widget.isLocal,
+          isLocal: widget.isLocal || widget.useContentUri,
           videoSource: widget.videoSource,
           error: e,
           stackTrace: st,
@@ -281,7 +299,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     sw.stop();
     unawaited(
       VideoPlayerTelemetry.initSucceeded(
-        isLocal: widget.isLocal,
+        isLocal: widget.isLocal || widget.useContentUri,
         videoSource: widget.videoSource,
         elapsed: sw.elapsed,
       ),
@@ -371,7 +389,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         _lastEmittedPlaybackError = desc;
         unawaited(
           VideoPlayerTelemetry.playbackError(
-            isLocal: widget.isLocal,
+            isLocal: widget.isLocal || widget.useContentUri,
             videoSource: widget.videoSource,
             errorDescription: desc,
           ),
@@ -544,6 +562,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         ),
       if (chewieReady &&
           !widget.isLocal &&
+          !widget.useContentUri &&
           widget.allowNetworkDownload)
         Positioned(
           top: 0,
