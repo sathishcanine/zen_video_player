@@ -13,6 +13,7 @@
   "featureBrowseFiles": "Browse files easily",
   "featureLockPrivate": "Lock private folders",
   "allowAccess": "Allow Access",
+  "allFilesAccessRequired": "Please turn on Allow permission for All files access in Settings to continue.",
   "notNow": "Not now",
   "permissionRequired": "Media access is required to browse your library. You can allow access in Settings.",
   "openSettings": "Open Settings",

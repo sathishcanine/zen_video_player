@@ -35,6 +35,10 @@ class AppLocalizationsTe extends AppLocalizations {
   String get allowAccess => 'యాక్సెస్ అనుమతించు';
 
   @override
+  String get allFilesAccessRequired =>
+      'Please turn on Allow permission for All files access in Settings to continue.';
+
+  @override
   String get notNow => 'ఇప్పుడు కాదు';
 
   @override

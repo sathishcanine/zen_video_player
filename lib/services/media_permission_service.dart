@@ -49,11 +49,13 @@ class MediaPermissionService {
     await prefs.setBool(_skippedKey, value);
   }
 
-  /// True when the user can browse device media (all-files and/or gallery).
+  /// True when the user can browse device media.
+  ///
+  /// Android: **All files access** only (no photos/videos-only fallback).
+  /// iOS: photo library via [PhotoManager].
   static Future<bool> hasMediaAccess() async {
-    if (Platform.isAndroid &&
-        await Permission.manageExternalStorage.isGranted) {
-      return true;
+    if (Platform.isAndroid) {
+      return Permission.manageExternalStorage.isGranted;
     }
     final state = await PhotoManager.getPermissionState(
       requestOption: _videoRequestOption,
@@ -61,11 +63,13 @@ class MediaPermissionService {
     return state.isAuth || state.hasAccess;
   }
 
-  /// Ensures gallery access for the given duplicate scan type (video or audio).
+  /// Ensures access for duplicate scan (same policy as [hasMediaAccess]).
   static Future<bool> ensureMediaAccessFor(DuplicateMediaKind kind) async {
-    if (Platform.isAndroid &&
-        await Permission.manageExternalStorage.isGranted) {
-      return true;
+    if (Platform.isAndroid) {
+      if (!await Permission.manageExternalStorage.isGranted) {
+        await openAllFilesAccessSettings();
+      }
+      return Permission.manageExternalStorage.isGranted;
     }
     final type = kind == DuplicateMediaKind.video
         ? RequestType.video
@@ -82,15 +86,17 @@ class MediaPermissionService {
     return !await hasMediaAccess();
   }
 
-  /// Opens Android **All files access** (Allow flow) or requests gallery access.
+  /// Opens the system screen to grant access (no extra runtime dialogs on Android).
+  ///
+  /// Android: **All files access** settings only — never shows the photos/videos
+  /// picker here; users stay on onboarding until that toggle is ON.
+  /// iOS: standard photo-library permission dialog.
   static Future<void> openAllFilesAccessSettings() async {
     if (Platform.isAndroid) {
       if (!await Permission.manageExternalStorage.isGranted) {
         await Permission.manageExternalStorage.request();
       }
-      if (!await Permission.manageExternalStorage.isGranted) {
-        await Permission.storage.request();
-      }
+      return;
     }
     await PhotoManager.requestPermissionExtend(
       requestOption: _videoRequestOption,

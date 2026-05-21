@@ -41,16 +41,30 @@ class _MediaAccessScreenState extends State<MediaAccessScreen>
     }
   }
 
-  Future<void> _onReturnedFromSettings() async {
+  void _finishAllowFlow({required bool granted}) {
     _awaitingSettingsReturn = false;
     if (!mounted) return;
     setState(() => _busy = false);
-    if (await MediaPermissionService.hasMediaAccess()) {
+    if (granted) {
       widget.onComplete();
+      return;
     }
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(l10n.allFilesAccessRequired),
+        behavior: SnackBarBehavior.floating,
+      ),
+    );
   }
 
-  /// Allow → system All files access screen (Android) / photo permission (iOS).
+  Future<void> _onReturnedFromSettings() async {
+    if (!_awaitingSettingsReturn) return;
+    final granted = await MediaPermissionService.hasMediaAccess();
+    _finishAllowFlow(granted: granted);
+  }
+
+  /// Allow → system All files access (Android) / photo library (iOS).
   Future<void> _allow() async {
     if (_busy) return;
     setState(() {
@@ -59,12 +73,10 @@ class _MediaAccessScreenState extends State<MediaAccessScreen>
     });
     await MediaPermissionService.openAllFilesAccessSettings();
     if (!mounted) return;
-    // If the OS shows an in-app dialog (e.g. iOS), handle immediately.
-    if (await MediaPermissionService.hasMediaAccess()) {
-      _awaitingSettingsReturn = false;
-      setState(() => _busy = false);
-      widget.onComplete();
-    }
+    // Android: [request] completes when user leaves settings — check then.
+    if (!_awaitingSettingsReturn) return;
+    final granted = await MediaPermissionService.hasMediaAccess();
+    _finishAllowFlow(granted: granted);
   }
 
   /// Not now → "Why the app needs permission" dialog; OK returns to this screen.

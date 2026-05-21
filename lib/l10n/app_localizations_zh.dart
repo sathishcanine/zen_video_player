@@ -35,6 +35,10 @@ class AppLocalizationsZh extends AppLocalizations {
   String get allowAccess => '允许访问';
 
   @override
+  String get allFilesAccessRequired =>
+      'Please turn on Allow permission for All files access in Settings to continue.';
+
+  @override
   String get notNow => '暂不';
 
   @override

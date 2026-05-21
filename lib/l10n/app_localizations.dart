@@ -158,6 +158,12 @@ abstract class AppLocalizations {
   /// **'Allow Access'**
   String get allowAccess;
 
+  /// No description provided for @allFilesAccessRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Please turn on Allow permission for All files access in Settings to continue.'**
+  String get allFilesAccessRequired;
+
   /// No description provided for @notNow.
   ///
   /// In en, this message translates to:
