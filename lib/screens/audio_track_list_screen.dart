@@ -36,7 +36,7 @@ class AudioTrackListScreen extends StatelessWidget {
                       ? l10n.unknownArtist
                       : track.artist;
                   return ListTile(
-                    leading: const AudioArtwork(),
+                    leading: AudioArtwork(asset: track.asset),
                     title: Text(
                       track.title,
                       maxLines: 1,

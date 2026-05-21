@@ -5,7 +5,7 @@ import 'package:photo_manager/photo_manager.dart';
 import '../models/media_folder.dart';
 import '../services/local_media_service.dart';
 import '../theme/zen_theme.dart';
-import '../video_player_screen.dart';
+import '../utils/video_navigation.dart';
 class FolderDetailScreen extends StatefulWidget {
   const FolderDetailScreen({super.key, required this.folder});
 
@@ -51,14 +51,10 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
       return;
     }
 
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => VideoPlayerScreen(
-          videoSource: file.path,
-          isLocal: true,
-        ),
-      ),
+    VideoNavigation.openPlayer(
+      context: context,
+      videoSource: file.path,
+      isLocal: true,
     );
   }
 

@@ -80,7 +80,7 @@ class AudioNowPlayingScreen extends StatelessWidget {
                             children: [
                               ClipRRect(
                                 borderRadius: BorderRadius.circular(12),
-                                child: const AudioArtwork(large: true),
+                                child: AudioArtwork(large: true, asset: track.asset),
                               ),
                               Padding(
                                 padding: const EdgeInsets.all(12),

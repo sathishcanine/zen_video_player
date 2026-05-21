@@ -44,7 +44,7 @@ class AudioMiniPlayer extends StatelessWidget {
                     icon: const Icon(Icons.close, size: 22),
                     onPressed: () => service.stopAndClear(),
                   ),
-                  const AudioArtwork(),
+                  AudioArtwork(asset: track.asset),
                   const SizedBox(width: 10),
                   Expanded(
                     child: Column(

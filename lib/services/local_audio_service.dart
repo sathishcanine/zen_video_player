@@ -1,4 +1,6 @@
 import 'package:flutter/foundation.dart';
+
+import 'audio_metadata_channel.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import '../models/audio_track.dart';
@@ -97,6 +99,49 @@ class LocalAudioService {
 
     albums.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
     return albums;
+  }
+
+  /// Resolves embedded tags + cover art per album (like system music apps).
+  static Future<List<AudioAlbum>> groupAlbumsEnriched(List<AudioTrack> tracks) async {
+    final basic = groupAlbums(tracks);
+    final enriched = <AudioAlbum>[];
+    for (final album in basic) {
+      enriched.add(await _enrichAlbum(album));
+    }
+    return enriched;
+  }
+
+  static Future<AudioAlbum> _enrichAlbum(AudioAlbum album) async {
+    var title = album.title;
+    var artist = album.artist;
+    AssetEntity? cover = album.coverAsset;
+
+    for (final track in album.tracks.take(12)) {
+      final file = await track.asset.file;
+      if (file == null) continue;
+      try {
+        final info = await AudioMetadataChannel.getMetadata(file.path);
+        if (info != null) {
+          if (info.album.isNotEmpty) title = info.album;
+          if (info.artist.isNotEmpty) artist = info.artist;
+          if (info.hasArtwork) {
+            cover = track.asset;
+            break;
+          }
+        }
+      } catch (e) {
+        debugPrint('[audio] metadata read failed: $e');
+      }
+    }
+
+    return AudioAlbum(
+      id: album.id,
+      title: title,
+      artist: artist,
+      trackCount: album.trackCount,
+      tracks: album.tracks,
+      coverAsset: cover,
+    );
   }
 
   static List<AudioArtist> groupArtists(List<AudioTrack> tracks) {

@@ -72,12 +72,12 @@ class _QueueSheetBody extends StatelessWidget {
                       ? l10n.unknownArtist
                       : track.artist;
                   return ListTile(
-                    leading: const Row(
+                    leading: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.drag_handle, color: ZenTheme.textSecondary),
-                        SizedBox(width: 8),
-                        AudioArtwork(),
+                        const Icon(Icons.drag_handle, color: ZenTheme.textSecondary),
+                        const SizedBox(width: 8),
+                        AudioArtwork(asset: track.asset),
                       ],
                     ),
                     title: Text(

@@ -13,8 +13,7 @@ import '../widgets/language_tutorial_overlay.dart';
 import '../widgets/network_stream_sheet.dart';
 import '../widgets/zen_brand_title.dart';
 import 'folder_detail_screen.dart';
-import '../video_player_screen.dart';
-import '../video_preview_screen.dart';
+import '../utils/video_navigation.dart';
 
 class VideoLibraryTab extends StatefulWidget {
   const VideoLibraryTab({super.key});
@@ -135,11 +134,9 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
   }
 
   void _openUrl(String url) {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => VideoPreviewScreen(videoSource: url, isLocal: false),
-      ),
+    VideoNavigation.openPreview(
+      context: context,
+      videoSource: url,
     );
   }
 
@@ -148,11 +145,10 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     if (result == null || !mounted) return;
     final path = result.files.single.path;
     if (path == null) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => VideoPlayerScreen(videoSource: path, isLocal: true),
-      ),
+    VideoNavigation.openPlayer(
+      context: context,
+      videoSource: path,
+      isLocal: true,
     );
   }
 

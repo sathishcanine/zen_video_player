@@ -12,6 +12,7 @@ import io.flutter.plugin.common.MethodChannel
 class MainActivity : FlutterActivity() {
 
     private var inMobiBridge: InMobiBridge? = null
+    private var audioMetadataBridge: AudioMetadataBridge? = null
 
     /** When true, pre-Android-12 devices may enter PiP from [onUserLeaveHint]. */
     private var pipPreparedForLeave: Boolean = false
@@ -61,10 +62,12 @@ class MainActivity : FlutterActivity() {
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        val messenger = flutterEngine.dartExecutor.binaryMessenger
         inMobiBridge = InMobiBridge(
             activity = this,
-            messenger = flutterEngine.dartExecutor.binaryMessenger,
+            messenger = messenger,
         )
+        audioMetadataBridge = AudioMetadataBridge(messenger).also { it.register() }
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

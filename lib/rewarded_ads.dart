@@ -2,9 +2,8 @@ import 'package:flutter/material.dart';
 
 import 'ads/ads_orchestrator.dart';
 import 'ads/rewarded_loading_overlay.dart';
-import 'app_navigator.dart';
 import 'download_service.dart';
-import 'video_player_screen.dart';
+import 'utils/video_navigation.dart';
 
 /// Backwards-compat facade. The real logic lives in [AdsOrchestrator];
 /// this class is kept only so existing screens don't need to change
@@ -134,14 +133,10 @@ class AdManager {
       if (!context.mounted) return;
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (!context.mounted) return;
-        rootNavigatorKey.currentState?.push(
-          MaterialPageRoute<void>(
-            builder: (_) => VideoPlayerScreen(
-              videoSource: url,
-              isLocal: isLocal,
-              allowNetworkDownload: allowNetworkDownloadInPlayer,
-            ),
-          ),
+        VideoNavigation.openPlayer(
+          videoSource: url,
+          isLocal: isLocal,
+          allowNetworkDownload: allowNetworkDownloadInPlayer,
         );
       });
     }

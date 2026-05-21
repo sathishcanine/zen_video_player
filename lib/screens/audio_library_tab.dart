@@ -3,6 +3,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../models/audio_track.dart';
 import '../models/media_folder.dart';
+import '../services/audio_artwork_cache.dart';
 import '../services/audio_playback_permissions.dart';
 import '../services/audio_player_service.dart';
 import '../services/local_audio_service.dart';
@@ -73,6 +74,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
 
   Future<void> _refresh() async {
     setState(() => _loading = true);
+    AudioArtworkCache.instance.clear();
     _hasAccess = await MediaPermissionService.hasMediaAccess();
     if (!_hasAccess) {
       if (!mounted) return;
@@ -87,18 +89,21 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
     }
 
     final tracks = await LocalAudioService.loadTracks();
-    final albums = LocalAudioService.groupAlbums(tracks);
     final artists = LocalAudioService.groupArtists(tracks);
     final folders = await LocalAudioService.loadAudioFolders();
 
     if (!mounted) return;
     setState(() {
       _tracks = tracks;
-      _albums = albums;
+      _albums = LocalAudioService.groupAlbums(tracks);
       _artists = artists;
       _folders = folders;
       _loading = false;
     });
+
+    final albums = await LocalAudioService.groupAlbumsEnriched(tracks);
+    if (!mounted) return;
+    setState(() => _albums = albums);
   }
 
   List<AudioAlbum> get _filteredAlbums {
@@ -270,7 +275,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
             itemBuilder: (_, i) {
               final t = tracks[i];
               return ListTile(
-                leading: const AudioArtwork(),
+                leading: AudioArtwork(asset: t.asset),
                 title: Text(
                   t.title,
                   maxLines: 1,
@@ -516,7 +521,7 @@ class _AlbumCard extends StatelessWidget {
             Expanded(
               child: ClipRRect(
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(12)),
-                child: const AudioArtwork(large: true),
+                child: AudioArtwork(large: true, asset: album.coverAsset),
               ),
             ),
             Padding(
