@@ -228,9 +228,22 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 10),
 
-              /// PLAY BUTTON
+                Center(
+                  child: Text(
+                    _showDownload
+                        ? "Watch and complete a rewarded ad to start playback or download."
+                        : "Watch and complete a rewarded ad to start playback.",
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 12,
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 10),
+                /// PLAY BUTTON
               SizedBox(
                 width: double.infinity,
                 height: 45,
@@ -284,20 +297,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
                   ),
                 ),
-                const SizedBox(height: 10),
 
-                Center(
-                  child: Text(
-                    _showDownload
-                        ? "Watch and complete a rewarded ad to start playback or download."
-                        : "Watch and complete a rewarded ad to start playback.",
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                    ),
-                  ),
-                ),
               ],
 
               const SizedBox(height: 20),
