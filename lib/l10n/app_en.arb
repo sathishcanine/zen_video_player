@@ -110,6 +110,8 @@
   "languageTutorialTitle": "Choose your language",
   "languageTutorialBody": "Tap the language button here to switch the app between Tamil, English, Hindi, and Telugu.",
   "gotIt": "Got it",
+  "colorTutorialTitle": "Color filters",
+  "colorTutorialBody": "Choose a look for your video — tap a preset or open Custom to adjust contrast, brightness, and more.",
   "audioSubAlbum": "ALBUM",
   "audioSubSongs": "SONGS",
   "audioSubArtist": "ARTIST",

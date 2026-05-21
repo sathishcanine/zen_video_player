@@ -258,6 +258,13 @@ class AppLocalizationsAr extends AppLocalizations {
   String get gotIt => 'حسناً';
 
   @override
+  String get colorTutorialTitle => 'Color filters';
+
+  @override
+  String get colorTutorialBody =>
+      'Choose a look for your video — tap a preset or open Custom to adjust contrast, brightness, and more.';
+
+  @override
   String get audioSubAlbum => 'الألبوم';
 
   @override

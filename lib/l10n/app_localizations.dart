@@ -554,6 +554,18 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get gotIt;
 
+  /// No description provided for @colorTutorialTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Color filters'**
+  String get colorTutorialTitle;
+
+  /// No description provided for @colorTutorialBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose a look for your video — tap a preset or open Custom to adjust contrast, brightness, and more.'**
+  String get colorTutorialBody;
+
   /// No description provided for @audioSubAlbum.
   ///
   /// In en, this message translates to:

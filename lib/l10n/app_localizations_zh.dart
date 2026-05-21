@@ -252,6 +252,13 @@ class AppLocalizationsZh extends AppLocalizations {
   String get gotIt => '知道了';
 
   @override
+  String get colorTutorialTitle => 'Color filters';
+
+  @override
+  String get colorTutorialBody =>
+      'Choose a look for your video — tap a preset or open Custom to adjust contrast, brightness, and more.';
+
+  @override
   String get audioSubAlbum => '专辑';
 
   @override

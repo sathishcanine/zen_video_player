@@ -261,6 +261,13 @@ class AppLocalizationsHi extends AppLocalizations {
   String get gotIt => 'समझ गया';
 
   @override
+  String get colorTutorialTitle => 'Color filters';
+
+  @override
+  String get colorTutorialBody =>
+      'Choose a look for your video — tap a preset or open Custom to adjust contrast, brightness, and more.';
+
+  @override
   String get audioSubAlbum => 'एल्बम';
 
   @override

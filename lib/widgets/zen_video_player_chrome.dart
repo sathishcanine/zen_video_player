@@ -9,7 +9,9 @@ import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/services/cast_service.dart';
 import 'package:zen_video_player/video/video_color_filter.dart';
 import 'package:zen_video_player/ads/video_pause_native_ad.dart';
+import 'package:zen_video_player/services/video_player_color_tutorial_service.dart';
 import 'package:zen_video_player/video_player_gestures.dart';
+import 'package:zen_video_player/widgets/video_color_tutorial_coach.dart';
 import 'package:zen_video_player/widgets/zen_color_filter_menu.dart';
 
 /// UPlayer-style video chrome: top bar, tool row, seek bar, transport controls.
@@ -28,6 +30,7 @@ class ZenVideoPlayerChrome extends StatefulWidget {
     this.showDownload = false,
     required this.colorFilter,
     required this.onColorFilterChanged,
+    this.colorTutorialTrigger = 0,
   });
 
   final VideoPlayerController videoController;
@@ -42,6 +45,9 @@ class ZenVideoPlayerChrome extends StatefulWidget {
   final bool showDownload;
   final VideoColorFilterSettings colorFilter;
   final ValueChanged<VideoColorFilterSettings> onColorFilterChanged;
+
+  /// Increment to request the post-gesture color tutorial.
+  final int colorTutorialTrigger;
 
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 2.0;
@@ -74,6 +80,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   String? _modeBannerText;
   bool? _doubleTapHintForward;
   bool _userPausedForAd = false;
+  bool _colorTutorialActive = false;
 
   VideoPlayerController get _video => widget.videoController;
   ChewieController get _chewie => widget.chewieController;
@@ -94,6 +101,9 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     if (oldWidget.videoController != widget.videoController) {
       oldWidget.videoController.removeListener(_onVideoTick);
       widget.videoController.addListener(_onVideoTick);
+    }
+    if (widget.colorTutorialTrigger != oldWidget.colorTutorialTrigger) {
+      unawaited(_beginColorTutorialIfNeeded());
     }
   }
 
@@ -402,7 +412,30 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   }
 
   void _closeColorMenu() {
-    setState(() => _colorMenuOpen = false);
+    setState(() {
+      _colorMenuOpen = false;
+      _colorTutorialActive = false;
+    });
+    _scheduleHide();
+  }
+
+  Future<void> _beginColorTutorialIfNeeded() async {
+    if (_colorTutorialActive) return;
+    if (await VideoPlayerColorTutorialService.wasSeen()) return;
+    if (!mounted) return;
+    setState(() {
+      _colorTutorialActive = true;
+      _colorMenuOpen = true;
+      _speedPanelOpen = false;
+      _visible = true;
+    });
+    _hideTimer?.cancel();
+  }
+
+  Future<void> _dismissColorTutorial() async {
+    await VideoPlayerColorTutorialService.markSeen();
+    if (!mounted) return;
+    setState(() => _colorTutorialActive = false);
     _scheduleHide();
   }
 
@@ -715,31 +748,58 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   }
 
   Widget _colorMenuOverlay() {
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onTap: _closeColorMenu,
-            child: ColoredBox(
-              color: Colors.black.withValues(alpha: 0.35),
-            ),
-          ),
-        ),
-        Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: GestureDetector(
-              onTap: () {},
-              child: ZenColorFilterMenu(
-                initial: widget.colorFilter,
-                onApply: _applyColorFilter,
-                onClose: _closeColorMenu,
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final landscape = constraints.maxWidth > constraints.maxHeight;
+        final topInset = MediaQuery.paddingOf(context).top;
+
+        return Stack(
+          children: [
+            Positioned.fill(
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: _colorTutorialActive ? null : _closeColorMenu,
+                child: ColoredBox(
+                  color: Colors.black.withValues(alpha: 0.35),
+                ),
               ),
             ),
-          ),
-        ),
-      ],
+            if (_colorTutorialActive)
+              Positioned(
+                left: 16,
+                right: 16,
+                top: landscape ? topInset + 72 : topInset + 96,
+                child: VideoColorTutorialCoach(
+                  landscape: landscape,
+                  onDismiss: () => unawaited(_dismissColorTutorial()),
+                ),
+              ),
+            Center(
+              child: Padding(
+                padding: EdgeInsets.fromLTRB(
+                  12,
+                  _colorTutorialActive ? (landscape ? 120 : 200) : 16,
+                  12,
+                  16,
+                ),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  child: GestureDetector(
+                    onTap: () {},
+                    child: ZenColorFilterMenu(
+                      initial: widget.colorFilter,
+                      onApply: _applyColorFilter,
+                      onClose: _colorTutorialActive
+                          ? () => unawaited(_dismissColorTutorial())
+                          : _closeColorMenu,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 

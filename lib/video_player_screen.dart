@@ -5,12 +5,14 @@ import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:path/path.dart' as p;
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/analytics/video_player_telemetry.dart';
 
 import 'download_service.dart';
 import 'services/video_orientation_channel.dart';
 import 'video_pip_helper.dart';
+import 'services/video_player_color_tutorial_service.dart';
 import 'video_player_gestures.dart';
 import 'video/video_color_filter.dart';
 import 'services/cast_service.dart';
@@ -73,6 +75,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   VideoColorFilterSettings _colorFilter = VideoColorFilterSettings.standard;
 
   bool _gestureTutorialVisible = false;
+  int _colorTutorialTrigger = 0;
+  bool _colorTutorialScheduleAttempted = false;
 
   static const List<DeviceOrientation> _playerOrientations = <DeviceOrientation>[
     DeviceOrientation.portraitUp,
@@ -621,8 +625,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   void _onGestureTutorialVisibility(bool visible) {
+    final wasVisible = _gestureTutorialVisible;
     if (!mounted || _gestureTutorialVisible == visible) return;
     setState(() => _gestureTutorialVisible = visible);
+    if (wasVisible && !visible) {
+      _requestColorTutorial();
+    }
+  }
+
+  void _requestColorTutorial() {
+    if (!mounted) return;
+    setState(() => _colorTutorialTrigger++);
+  }
+
+  Future<void> _scheduleColorTutorialIfGestureAlreadyDone() async {
+    if (_colorTutorialScheduleAttempted) return;
+    _colorTutorialScheduleAttempted = true;
+    if (await VideoPlayerColorTutorialService.wasSeen()) return;
+    final p = await SharedPreferences.getInstance();
+    if (p.getBool(kVideoPlayerGestureTutorialPrefsKey) != true) return;
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _requestColorTutorial();
+    });
   }
 
   /// UPlayer-style controls (embedded + Chewie fullscreen route).
@@ -633,6 +659,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       return const [];
     }
     if (!video.value.isInitialized) return const [];
+
+    unawaited(_scheduleColorTutorialIfGestureAlreadyDone());
 
     return [
       Positioned.fill(
@@ -655,6 +683,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           onColorFilterChanged: (settings) {
             if (mounted) setState(() => _colorFilter = settings);
           },
+          colorTutorialTrigger: _colorTutorialTrigger,
           ),
         ),
       ),

@@ -10,7 +10,7 @@ import 'package:video_player/video_player.dart';
 import 'package:volume_controller/volume_controller.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
-const _kGestureTutorialPrefsKey = 'video_player_gesture_tutorial_v1';
+const kVideoPlayerGestureTutorialPrefsKey = 'video_player_gesture_tutorial_v1';
 
 /// Width of left (brightness) / right (volume) swipe bands.
 double videoPlayerSideGestureWidth(double width, double height) {
@@ -87,7 +87,7 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
     try {
       final p = await SharedPreferences.getInstance();
       if (!mounted) return;
-      if (p.getBool(_kGestureTutorialPrefsKey) != true) {
+      if (p.getBool(kVideoPlayerGestureTutorialPrefsKey) != true) {
         _setTutorialVisible(true);
       }
     } catch (_) {}
@@ -103,7 +103,7 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
     _setTutorialVisible(false);
     try {
       final p = await SharedPreferences.getInstance();
-      await p.setBool(_kGestureTutorialPrefsKey, true);
+      await p.setBool(kVideoPlayerGestureTutorialPrefsKey, true);
     } catch (_) {}
   }
 
