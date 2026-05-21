@@ -257,5 +257,27 @@
   "cancel": "Cancel",
   "save": "Save",
   "delete": "Delete",
-  "hide": "Hide"
+  "hide": "Hide",
+  "proBadge": "PRO",
+  "proUnlockTitleFeature": "Unlock {feature}",
+  "@proUnlockTitleFeature": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "proUnlockBodyFeature": "Watch one short ad to unlock {feature} on this device.",
+  "@proUnlockBodyFeature": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "proUnlockWatchAd": "Watch ad & unlock",
+  "proUnlockNotNow": "Not now",
+  "proUnlockSuccess": "{feature} unlocked!",
+  "@proUnlockSuccess": {
+    "placeholders": {
+      "feature": {"type": "String"}
+    }
+  },
+  "proUnlockAdFailed": "Ad not available. Please try again in a moment."
 }

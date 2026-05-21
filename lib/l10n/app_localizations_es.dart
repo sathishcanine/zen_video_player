@@ -565,4 +565,32 @@ class AppLocalizationsEs extends AppLocalizations {
 
   @override
   String get hide => 'Hide';
+
+  @override
+  String get proBadge => 'PRO';
+
+  @override
+  String proUnlockTitleFeature(String feature) {
+    return 'Unlock $feature';
+  }
+
+  @override
+  String proUnlockBodyFeature(String feature) {
+    return 'Watch one short ad to unlock $feature on this device.';
+  }
+
+  @override
+  String get proUnlockWatchAd => 'Watch ad & unlock';
+
+  @override
+  String get proUnlockNotNow => 'Not now';
+
+  @override
+  String proUnlockSuccess(String feature) {
+    return '$feature unlocked!';
+  }
+
+  @override
+  String get proUnlockAdFailed =>
+      'Ad not available. Please try again in a moment.';
 }

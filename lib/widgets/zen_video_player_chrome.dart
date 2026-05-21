@@ -8,6 +8,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/services/cast_service.dart';
 import 'package:zen_video_player/video/video_color_filter.dart';
+import 'package:zen_video_player/ads/video_pause_native_ad.dart';
 import 'package:zen_video_player/widgets/zen_color_filter_menu.dart';
 
 /// UPlayer-style video chrome: top bar, tool row, seek bar, transport controls.
@@ -851,6 +852,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
         if (_speedPanelOpen) _speedPanelOverlay(context),
         if (_colorMenuOpen) _colorMenuOverlay(),
         _modeBannerOverlay(),
+        VideoPauseNativeAdOverlay(controller: _video),
       ],
     );
   }

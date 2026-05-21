@@ -25,9 +25,17 @@ const String _adMobTestNativeAdvancedUnit =
 // `GADApplicationIdentifier` in iOS `Info.plist` when not using test app id.
 const String _adMobProdAppId = 'ca-app-pub-8723888126390754~6064872820';
 const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/7234751166';
-const String _adMobProdBannerUnit = 'ca-app-pub-8723888126390754/7532332319';
+/// Pro unlock (dark theme, accent color, find duplicate).
+const String _adMobProdUnlockRewardedUnit =
+    'ca-app-pub-8723888126390754/8579446752';
+/// Home screen bottom banner (library shell).
+const String _adMobProdBannerUnit = 'ca-app-pub-8723888126390754/4197348615';
+/// Video preview screen (pre-play).
 const String _adMobProdNativeAdvancedUnit =
     'ca-app-pub-8723888126390754/5486908814';
+/// Video player — shown when user pauses playback.
+const String _adMobProdPauseNativeUnit =
+    'ca-app-pub-8723888126390754/7649508461';
 
 // --- Unity Ads: each **platform has its own Game ID** in the Monetization
 // dashboard. Using a legacy "sample" pair (e.g. 14850 / 14851) can trigger
@@ -63,11 +71,17 @@ String get adMobAppId => kUseTestAdIds ? _adMobTestAppId : _adMobProdAppId;
 
 String get adMobRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdRewardedUnit;
+
+String get adMobProUnlockRewardedUnitId =>
+    kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdUnlockRewardedUnit;
 String get adMobBannerUnitId =>
     kUseTestAdIds ? _adMobTestBannerUnit : _adMobProdBannerUnit;
 
 String get adMobNativeAdvancedUnitId =>
     kUseTestAdIds ? _adMobTestNativeAdvancedUnit : _adMobProdNativeAdvancedUnit;
+
+String get adMobPauseNativeUnitId =>
+    kUseTestAdIds ? _adMobTestNativeAdvancedUnit : _adMobProdPauseNativeUnit;
 
 /// Unity: `UnityAds.init(..., testMode: true)` only when [kUseTestAdIds] is
 /// true. Production must use `false` in the Unity dashboard for live traffic.

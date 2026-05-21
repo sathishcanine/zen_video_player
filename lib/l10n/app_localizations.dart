@@ -1069,6 +1069,48 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Hide'**
   String get hide;
+
+  /// No description provided for @proBadge.
+  ///
+  /// In en, this message translates to:
+  /// **'PRO'**
+  String get proBadge;
+
+  /// No description provided for @proUnlockTitleFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'Unlock {feature}'**
+  String proUnlockTitleFeature(String feature);
+
+  /// No description provided for @proUnlockBodyFeature.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch one short ad to unlock {feature} on this device.'**
+  String proUnlockBodyFeature(String feature);
+
+  /// No description provided for @proUnlockWatchAd.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch ad & unlock'**
+  String get proUnlockWatchAd;
+
+  /// No description provided for @proUnlockNotNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Not now'**
+  String get proUnlockNotNow;
+
+  /// No description provided for @proUnlockSuccess.
+  ///
+  /// In en, this message translates to:
+  /// **'{feature} unlocked!'**
+  String proUnlockSuccess(String feature);
+
+  /// No description provided for @proUnlockAdFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Ad not available. Please try again in a moment.'**
+  String get proUnlockAdFailed;
 }
 
 class _AppLocalizationsDelegate

@@ -8,6 +8,7 @@ import 'package:screen_brightness/screen_brightness.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import 'package:volume_controller/volume_controller.dart';
+import 'package:zen_video_player/l10n/app_localizations.dart';
 
 const _kGestureTutorialPrefsKey = 'video_player_gesture_tutorial_v1';
 
@@ -24,10 +25,14 @@ class VideoPlayerGestureShell extends StatefulWidget {
     super.key,
     required this.chewieController,
     required this.videoChild,
+    this.onTutorialVisibilityChanged,
   });
 
   final ChewieController chewieController;
   final Widget videoChild;
+
+  /// Fired when the first-launch gesture tutorial is shown or dismissed.
+  final ValueChanged<bool>? onTutorialVisibilityChanged;
 
   @override
   State<VideoPlayerGestureShell> createState() =>
@@ -76,13 +81,19 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
       final p = await SharedPreferences.getInstance();
       if (!mounted) return;
       if (p.getBool(_kGestureTutorialPrefsKey) != true) {
-        setState(() => _showTutorial = true);
+        _setTutorialVisible(true);
       }
     } catch (_) {}
   }
 
+  void _setTutorialVisible(bool visible) {
+    if (_showTutorial == visible) return;
+    setState(() => _showTutorial = visible);
+    widget.onTutorialVisibilityChanged?.call(visible);
+  }
+
   Future<void> _dismissTutorial() async {
-    setState(() => _showTutorial = false);
+    _setTutorialVisible(false);
     try {
       final p = await SharedPreferences.getInstance();
       await p.setBool(_kGestureTutorialPrefsKey, true);
@@ -359,7 +370,10 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
     );
   }
 
-  Widget _gestureTutorialOverlay(Size size) {
+  Widget _gestureTutorialOverlay(BuildContext context, Size size) {
+    final primary = Theme.of(context).colorScheme.primary;
+    final onPrimary = Theme.of(context).colorScheme.onPrimary;
+    final l10n = AppLocalizations.of(context)!;
     const white = Colors.white;
     const titleStyle = TextStyle(
       color: white,
@@ -394,16 +408,20 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
       fit: StackFit.expand,
       children: [
         Positioned.fill(
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topCenter,
-                end: Alignment.bottomCenter,
-                colors: [
-                  Colors.black.withValues(alpha: 0.55),
-                  Colors.black.withValues(alpha: 0.38),
-                  Colors.black.withValues(alpha: 0.48),
-                ],
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTap: () {},
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    Colors.black.withValues(alpha: 0.55),
+                    Colors.black.withValues(alpha: 0.38),
+                    Colors.black.withValues(alpha: 0.48),
+                  ],
+                ),
               ),
             ),
           ),
@@ -485,30 +503,28 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
             ),
           ),
         ),
-        Positioned(
-          left: 0,
-          right: 0,
-          bottom: 0,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.only(bottom: 8),
-              child: Center(
-                child: FilledButton.tonal(
-                  onPressed: _dismissTutorial,
-                  style: FilledButton.styleFrom(
-                    foregroundColor: Colors.white,
-                    backgroundColor: Colors.white.withValues(alpha: 0.22),
-                    side: const BorderSide(color: Colors.white54),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 28,
-                      vertical: 12,
-                    ),
-                  ),
-                  child: const Text(
-                    'Got it',
-                    style: TextStyle(fontWeight: FontWeight.w600),
-                  ),
-                ),
+        Center(
+          child: FilledButton(
+            onPressed: _dismissTutorial,
+            style: FilledButton.styleFrom(
+              backgroundColor: primary,
+              foregroundColor: onPrimary,
+              elevation: 6,
+              shadowColor: primary.withValues(alpha: 0.45),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 36,
+                vertical: 14,
+              ),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(28),
+              ),
+            ),
+            child: Text(
+              l10n.gotIt,
+              style: const TextStyle(
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.3,
               ),
             ),
           ),
@@ -530,7 +546,10 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
             Positioned.fill(
               child: LayoutBuilder(
                 builder: (context, c) =>
-                    _gestureTutorialOverlay(Size(c.maxWidth, c.maxHeight)),
+                    _gestureTutorialOverlay(
+                      context,
+                      Size(c.maxWidth, c.maxHeight),
+                    ),
               ),
             ),
         ],
@@ -653,7 +672,7 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
             _hintBubble(),
             if (_showTutorial)
               Positioned.fill(
-                child: _gestureTutorialOverlay(Size(w, h)),
+                child: _gestureTutorialOverlay(context, Size(w, h)),
               ),
           ],
         );

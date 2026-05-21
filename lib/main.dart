@@ -15,6 +15,7 @@ import 'app_update/force_update_screen.dart';
 import 'app_navigator.dart';
 import 'home_screen.dart';
 import 'services/app_settings_service.dart';
+import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
 import 'services/locale_service.dart';
 import 'theme/zen_theme.dart';
@@ -31,6 +32,7 @@ Future<void> main() async {
 
   await LocaleService.instance.load();
   await AppSettingsService.instance.load();
+  await ProFeaturesService.instance.load();
   await Telemetry.init();
   if (!kIsWeb) {
     unawaited(CastService.instance.init());

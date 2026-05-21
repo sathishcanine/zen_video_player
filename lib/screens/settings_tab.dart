@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../services/app_settings_service.dart';
+import '../services/pro_features_service.dart';
 import '../utils/video_navigation.dart';
 import '../widgets/duplicate_choose_dialog.dart';
 import '../widgets/network_stream_sheet.dart';
 import '../widgets/primary_color_picker_sheet.dart';
+import '../widgets/pro_unlock_dialog.dart';
 import '../widgets/zen_brand_title.dart';
 
 /// Settings tab (network stream, appearance, utilities).
@@ -22,10 +24,17 @@ class SettingsTab extends StatelessWidget {
     );
 
     return ListenableBuilder(
-      listenable: AppSettingsService.instance,
+      listenable: Listenable.merge([
+        AppSettingsService.instance,
+        ProFeaturesService.instance,
+      ]),
       builder: (context, _) {
         final settings = AppSettingsService.instance;
         final primary = settings.primaryColor;
+        final pro = ProFeaturesService.instance;
+        final duplicateUnlocked = pro.isUnlocked(ProFeature.findDuplicate);
+        final darkUnlocked = pro.isUnlocked(ProFeature.darkTheme);
+        final colorUnlocked = pro.isUnlocked(ProFeature.primaryColor);
 
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -58,12 +67,33 @@ class SettingsTab extends StatelessWidget {
                     icon: Icons.copy_all_outlined,
                     title: l10n.settingsFindDuplicate,
                     subtitle: l10n.settingsFindDuplicateSubtitle,
-                    onTap: () => showDuplicateChooseDialog(context),
+                    trailing:
+                        duplicateUnlocked ? null : const _ProLockChip(),
+                    onTap: () => requestProFeatureAccess(
+                      context,
+                      feature: ProFeature.findDuplicate,
+                      onUnlocked: () => showDuplicateChooseDialog(context),
+                    ),
                   ),
                   const _SectionDivider(),
                   _SectionLabel(text: l10n.settingsAppearance),
                   SwitchListTile(
-                    secondary: const Icon(Icons.dark_mode_outlined),
+                    secondary: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.dark_mode_outlined),
+                        if (!darkUnlocked)
+                          const Positioned(
+                            right: -4,
+                            top: -4,
+                            child: Icon(
+                              Icons.workspace_premium,
+                              size: 12,
+                              color: Colors.amber,
+                            ),
+                          ),
+                      ],
+                    ),
                     title: Text(
                       l10n.settingsDarkTheme,
                       style: const TextStyle(fontWeight: FontWeight.w500),
@@ -73,11 +103,30 @@ class SettingsTab extends StatelessWidget {
                       style: subtitleStyle,
                     ),
                     value: settings.isDarkTheme,
-                    onChanged: (v) =>
-                        AppSettingsService.instance.setDarkTheme(v),
+                    onChanged: (v) => requestProFeatureAccess(
+                      context,
+                      feature: ProFeature.darkTheme,
+                      onUnlocked: () =>
+                          AppSettingsService.instance.setDarkTheme(v),
+                    ),
                   ),
                   ListTile(
-                    leading: const Icon(Icons.format_paint_outlined),
+                    leading: Stack(
+                      clipBehavior: Clip.none,
+                      children: [
+                        const Icon(Icons.format_paint_outlined),
+                        if (!colorUnlocked)
+                          const Positioned(
+                            right: -4,
+                            top: -4,
+                            child: Icon(
+                              Icons.workspace_premium,
+                              size: 12,
+                              color: Colors.amber,
+                            ),
+                          ),
+                      ],
+                    ),
                     title: Text(
                       l10n.settingsPrimaryColor,
                       style: const TextStyle(fontWeight: FontWeight.w500),
@@ -86,20 +135,31 @@ class SettingsTab extends StatelessWidget {
                       l10n.settingsPrimaryColorSubtitle,
                       style: subtitleStyle,
                     ),
-                    trailing: Container(
-                      width: 28,
-                      height: 28,
-                      decoration: BoxDecoration(
-                        color: primary,
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: theme.colorScheme.onSurface.withValues(
-                            alpha: 0.2,
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        if (!colorUnlocked) const _ProLockChip(),
+                        Container(
+                          width: 28,
+                          height: 28,
+                          margin: const EdgeInsets.only(left: 8),
+                          decoration: BoxDecoration(
+                            color: primary,
+                            shape: BoxShape.circle,
+                            border: Border.all(
+                              color: theme.colorScheme.onSurface.withValues(
+                                alpha: 0.2,
+                              ),
+                            ),
                           ),
                         ),
-                      ),
+                      ],
                     ),
-                    onTap: () => showPrimaryColorPickerSheet(context),
+                    onTap: () => requestProFeatureAccess(
+                      context,
+                      feature: ProFeature.primaryColor,
+                      onUnlocked: () => showPrimaryColorPickerSheet(context),
+                    ),
                   ),
                 ],
               ),
@@ -107,6 +167,32 @@ class SettingsTab extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _ProLockChip extends StatelessWidget {
+  const _ProLockChip();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      decoration: BoxDecoration(
+        color: Colors.amber.withValues(alpha: 0.2),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.5)),
+      ),
+      child: Text(
+        l10n.proBadge,
+        style: const TextStyle(
+          fontSize: 10,
+          fontWeight: FontWeight.w800,
+          color: Colors.amber,
+          letterSpacing: 0.8,
+        ),
+      ),
     );
   }
 }
@@ -154,12 +240,14 @@ class _SettingsTile extends StatelessWidget {
     required this.title,
     required this.subtitle,
     required this.onTap,
+    this.trailing,
   });
 
   final IconData icon;
   final String title;
   final String subtitle;
   final VoidCallback onTap;
+  final Widget? trailing;
 
   @override
   Widget build(BuildContext context) {
@@ -172,6 +260,7 @@ class _SettingsTile extends StatelessWidget {
       leading: Icon(icon),
       title: Text(title, style: const TextStyle(fontWeight: FontWeight.w500)),
       subtitle: Text(subtitle, style: subtitleStyle),
+      trailing: trailing,
       onTap: onTap,
     );
   }

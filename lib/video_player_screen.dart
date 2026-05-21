@@ -72,6 +72,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   VideoColorFilterSettings _colorFilter = VideoColorFilterSettings.standard;
 
+  bool _gestureTutorialVisible = false;
+
   static const List<DeviceOrientation> _playerOrientations = <DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -146,6 +148,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                       alignment: Alignment.center,
                       child: VideoPlayerGestureShell(
                         chewieController: _chewieController!,
+                        onTutorialVisibilityChanged: _onGestureTutorialVisibility,
                         videoChild: ZenChewiePlayer(
                           controller: _chewieController!,
                           colorFilter: _colorFilter,
@@ -593,6 +596,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       key: _pipStageKeyEmbedded,
       child: VideoPlayerGestureShell(
         chewieController: chewie,
+        onTutorialVisibilityChanged: _onGestureTutorialVisibility,
         videoChild: ZenChewiePlayer(
           controller: chewie,
           colorFilter: _colorFilter,
@@ -616,6 +620,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
+  void _onGestureTutorialVisibility(bool visible) {
+    if (!mounted || _gestureTutorialVisible == visible) return;
+    setState(() => _gestureTutorialVisible = visible);
+  }
+
   /// UPlayer-style controls (embedded + Chewie fullscreen route).
   List<Widget> _playerChromeOverlays(BuildContext context) {
     final video = _videoController;
@@ -627,9 +636,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     return [
       Positioned.fill(
-        child: ZenVideoPlayerChrome(
-          videoController: video,
-          chewieController: chewie,
+        child: IgnorePointer(
+          ignoring: _gestureTutorialVisible,
+          child: ZenVideoPlayerChrome(
+            videoController: video,
+            chewieController: chewie,
           title: _videoTitle,
           onBack: () => Navigator.of(context).maybePop(),
           onRotate: () => unawaited(_onRotatePressed()),
@@ -644,6 +655,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           onColorFilterChanged: (settings) {
             if (mounted) setState(() => _colorFilter = settings);
           },
+          ),
         ),
       ),
     ];
