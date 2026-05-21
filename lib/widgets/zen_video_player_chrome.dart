@@ -649,11 +649,6 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
             onTap: _toggleColorMenu,
           ),
           _toolIcon(
-            icon: Icons.subtitles,
-            tooltip: 'Subtitles',
-            onTap: () => _showSnack('No subtitles for this video.'),
-          ),
-          _toolIcon(
             icon: _nightMode ? Icons.dark_mode : Icons.brightness_6,
             tooltip: _nightMode ? 'Normal mode' : 'Night mode',
             onTap: () => unawaited(_toggleNightMode()),
