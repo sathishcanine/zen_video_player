@@ -18,6 +18,9 @@ import '../widgets/search_filter_bar.dart';
 import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/zen_brand_title.dart';
 import 'folder_detail_screen.dart';
+import 'playlist_list_screen.dart';
+import '../services/video_media_actions.dart';
+import '../widgets/media_options_sheet.dart';
 import '../utils/video_navigation.dart';
 
 class VideoLibraryTab extends StatefulWidget {
@@ -157,10 +160,28 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     );
   }
 
-  void _showComingSoon() {
-    final l10n = AppLocalizations.of(context)!;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(l10n.comingSoon)),
+  void _openPlaylists() {
+    Navigator.push(
+      context,
+      MaterialPageRoute<void>(
+        builder: (_) => const PlaylistListScreen(),
+      ),
+    );
+  }
+
+  Future<void> _openFolderMenu(MediaFolder folder) async {
+    final action = await showMediaOptionsSheet(
+      context,
+      actions: VideoMediaActions.folderActions(
+        includeHide: !folder.isRecentlyAdded,
+      ),
+    );
+    if (action == null || !mounted) return;
+    await VideoMediaActions.handleFolder(
+      context,
+      folder: folder,
+      action: action,
+      onLibraryChanged: _refresh,
     );
   }
 
@@ -237,7 +258,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
               _CategoryPill(
                 icon: Icons.queue_music_outlined,
                 label: l10n.pillPlaylist,
-                onTap: _showComingSoon,
+                onTap: _openPlaylists,
               ),
               const SizedBox(width: 8),
               _CategoryPill(
@@ -280,6 +301,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
                                         FolderDetailScreen(folder: folder),
                                   ),
                                 ),
+                                onMenu: () => _openFolderMenu(folder),
                               );
                             },
                           ),
@@ -390,10 +412,15 @@ class _CategoryPill extends StatelessWidget {
 }
 
 class _FolderTile extends StatelessWidget {
-  const _FolderTile({required this.folder, required this.onTap});
+  const _FolderTile({
+    required this.folder,
+    required this.onTap,
+    required this.onMenu,
+  });
 
   final MediaFolder folder;
   final VoidCallback onTap;
+  final VoidCallback onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -444,7 +471,10 @@ class _FolderTile extends StatelessWidget {
         subtitle,
         style: TextStyle(color: zen.textSecondary, fontSize: 13),
       ),
-      trailing: Icon(Icons.more_vert, color: zen.textSecondary),
+      trailing: IconButton(
+        icon: Icon(Icons.more_vert, color: zen.textSecondary),
+        onPressed: onMenu,
+      ),
       onTap: onTap,
     );
   }

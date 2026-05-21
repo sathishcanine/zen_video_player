@@ -859,6 +859,216 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Could not delete. Check permissions and try again.'**
   String get duplicateDeleteFailed;
+
+  /// No description provided for @optionPlay.
+  ///
+  /// In en, this message translates to:
+  /// **'Play'**
+  String get optionPlay;
+
+  /// No description provided for @optionDelete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get optionDelete;
+
+  /// No description provided for @optionSend.
+  ///
+  /// In en, this message translates to:
+  /// **'Send'**
+  String get optionSend;
+
+  /// No description provided for @optionRename.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename'**
+  String get optionRename;
+
+  /// No description provided for @optionAddToPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Add to playlist'**
+  String get optionAddToPlaylist;
+
+  /// No description provided for @optionHideFromList.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide from list'**
+  String get optionHideFromList;
+
+  /// No description provided for @optionDetails.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get optionDetails;
+
+  /// No description provided for @optionRemoveFromPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove from playlist'**
+  String get optionRemoveFromPlaylist;
+
+  /// No description provided for @createPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Create Playlist'**
+  String get createPlaylist;
+
+  /// No description provided for @playlistNameHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Playlist name'**
+  String get playlistNameHint;
+
+  /// No description provided for @playlistEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No playlists yet. Tap + Create Playlist.'**
+  String get playlistEmpty;
+
+  /// No description provided for @playlistVideoCount.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 Video} other{{count} Videos}}'**
+  String playlistVideoCount(int count);
+
+  /// No description provided for @renamePlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Rename playlist'**
+  String get renamePlaylist;
+
+  /// No description provided for @deletePlaylistTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete playlist?'**
+  String get deletePlaylistTitle;
+
+  /// No description provided for @deletePlaylistBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\"? Videos on your device are not deleted.'**
+  String deletePlaylistBody(String name);
+
+  /// No description provided for @deleteFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all videos?'**
+  String get deleteFolderTitle;
+
+  /// No description provided for @deleteFolderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove all {count} videos in \"{name}\" from this device? This cannot be undone.'**
+  String deleteFolderBody(int count, String name);
+
+  /// No description provided for @hideFolderTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide folder?'**
+  String get hideFolderTitle;
+
+  /// No description provided for @hideFolderBody.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" will be hidden from the video list. You can restore it later in settings.'**
+  String hideFolderBody(String name);
+
+  /// No description provided for @renameNotSupported.
+  ///
+  /// In en, this message translates to:
+  /// **'Renaming device folders and videos is not supported.'**
+  String get renameNotSupported;
+
+  /// No description provided for @shareFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not share files.'**
+  String get shareFailed;
+
+  /// No description provided for @sharePreparing.
+  ///
+  /// In en, this message translates to:
+  /// **'Preparing files to share…'**
+  String get sharePreparing;
+
+  /// No description provided for @addedToPlaylist.
+  ///
+  /// In en, this message translates to:
+  /// **'Added to {name}'**
+  String addedToPlaylist(String name);
+
+  /// No description provided for @detailsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Details'**
+  String get detailsTitle;
+
+  /// No description provided for @detailsName.
+  ///
+  /// In en, this message translates to:
+  /// **'Name'**
+  String get detailsName;
+
+  /// No description provided for @detailsPath.
+  ///
+  /// In en, this message translates to:
+  /// **'Path'**
+  String get detailsPath;
+
+  /// No description provided for @detailsSize.
+  ///
+  /// In en, this message translates to:
+  /// **'Size'**
+  String get detailsSize;
+
+  /// No description provided for @detailsDuration.
+  ///
+  /// In en, this message translates to:
+  /// **'Duration'**
+  String get detailsDuration;
+
+  /// No description provided for @detailsResolution.
+  ///
+  /// In en, this message translates to:
+  /// **'Resolution'**
+  String get detailsResolution;
+
+  /// No description provided for @detailsDate.
+  ///
+  /// In en, this message translates to:
+  /// **'Date added'**
+  String get detailsDate;
+
+  /// No description provided for @detailsCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Items'**
+  String get detailsCount;
+
+  /// No description provided for @cancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel'**
+  String get cancel;
+
+  /// No description provided for @save.
+  ///
+  /// In en, this message translates to:
+  /// **'Save'**
+  String get save;
+
+  /// No description provided for @delete.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get delete;
+
+  /// No description provided for @hide.
+  ///
+  /// In en, this message translates to:
+  /// **'Hide'**
+  String get hide;
 }
 
 class _AppLocalizationsDelegate

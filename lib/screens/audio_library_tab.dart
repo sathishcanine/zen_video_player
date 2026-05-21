@@ -20,6 +20,7 @@ import '../widgets/language_picker_sheet.dart';
 import '../widgets/zen_brand_title.dart';
 import '../utils/audio_playback_launcher.dart';
 import 'audio_track_list_screen.dart';
+import 'playlist_list_screen.dart';
 
 enum _AudioSection { album, songs, artist, folder, playlist }
 
@@ -150,12 +151,6 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
     );
   }
 
-  void _showComingSoon() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(AppLocalizations.of(context)!.comingSoon)),
-    );
-  }
-
   void _openCastPicker() {
     unawaited(showCastDevicePicker(context));
   }
@@ -232,7 +227,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
         _buildSongsList(l10n),
         _buildArtistList(l10n),
         _buildFolderList(l10n),
-        _PlaylistPlaceholder(message: l10n.audioPlaylistHint),
+        const _VideoPlaylistEntry(),
       ],
     );
   }
@@ -619,10 +614,8 @@ class _NoAccessAudio extends StatelessWidget {
   }
 }
 
-class _PlaylistPlaceholder extends StatelessWidget {
-  const _PlaylistPlaceholder({required this.message});
-
-  final String message;
+class _VideoPlaylistEntry extends StatelessWidget {
+  const _VideoPlaylistEntry();
 
   @override
   Widget build(BuildContext context) {
@@ -640,18 +633,26 @@ class _PlaylistPlaceholder extends StatelessWidget {
             ),
             const SizedBox(height: 12),
             Text(
-              l10n.comingSoon,
+              l10n.playlistEmpty,
+              textAlign: TextAlign.center,
               style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
                 color: context.zen.textPrimary,
               ),
             ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: TextStyle(color: context.zen.textSecondary),
+            const SizedBox(height: 20),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(
+                    builder: (_) => const PlaylistListScreen(),
+                  ),
+                );
+              },
+              icon: const Icon(Icons.open_in_new),
+              label: Text(l10n.pillPlaylist),
             ),
           ],
         ),

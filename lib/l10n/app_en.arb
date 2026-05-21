@@ -196,5 +196,66 @@
       "count": {"type": "int"}
     }
   },
-  "duplicateDeleteFailed": "Could not delete. Check permissions and try again."
+  "duplicateDeleteFailed": "Could not delete. Check permissions and try again.",
+  "optionPlay": "Play",
+  "optionDelete": "Delete",
+  "optionSend": "Send",
+  "optionRename": "Rename",
+  "optionAddToPlaylist": "Add to playlist",
+  "optionHideFromList": "Hide from list",
+  "optionDetails": "Details",
+  "optionRemoveFromPlaylist": "Remove from playlist",
+  "createPlaylist": "Create Playlist",
+  "playlistNameHint": "Playlist name",
+  "playlistEmpty": "No playlists yet. Tap + Create Playlist.",
+  "playlistVideoCount": "{count, plural, =1{1 Video} other{{count} Videos}}",
+  "@playlistVideoCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "renamePlaylist": "Rename playlist",
+  "deletePlaylistTitle": "Delete playlist?",
+  "deletePlaylistBody": "Remove \"{name}\"? Videos on your device are not deleted.",
+  "@deletePlaylistBody": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "deleteFolderTitle": "Delete all videos?",
+  "deleteFolderBody": "Remove all {count} videos in \"{name}\" from this device? This cannot be undone.",
+  "@deleteFolderBody": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
+  "hideFolderTitle": "Hide folder?",
+  "hideFolderBody": "\"{name}\" will be hidden from the video list. You can restore it later in settings.",
+  "@hideFolderBody": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "renameNotSupported": "Renaming device folders and videos is not supported.",
+  "shareFailed": "Could not share files.",
+  "sharePreparing": "Preparing files to share…",
+  "addedToPlaylist": "Added to {name}",
+  "@addedToPlaylist": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "detailsTitle": "Details",
+  "detailsName": "Name",
+  "detailsPath": "Path",
+  "detailsSize": "Size",
+  "detailsDuration": "Duration",
+  "detailsResolution": "Resolution",
+  "detailsDate": "Date added",
+  "detailsCount": "Items",
+  "cancel": "Cancel",
+  "save": "Save",
+  "delete": "Delete",
+  "hide": "Hide"
 }

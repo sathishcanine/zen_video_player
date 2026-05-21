@@ -443,4 +443,126 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get duplicateDeleteFailed =>
       'Could not delete. Check permissions and try again.';
+
+  @override
+  String get optionPlay => 'Play';
+
+  @override
+  String get optionDelete => 'Delete';
+
+  @override
+  String get optionSend => 'Send';
+
+  @override
+  String get optionRename => 'Rename';
+
+  @override
+  String get optionAddToPlaylist => 'Add to playlist';
+
+  @override
+  String get optionHideFromList => 'Hide from list';
+
+  @override
+  String get optionDetails => 'Details';
+
+  @override
+  String get optionRemoveFromPlaylist => 'Remove from playlist';
+
+  @override
+  String get createPlaylist => 'Create Playlist';
+
+  @override
+  String get playlistNameHint => 'Playlist name';
+
+  @override
+  String get playlistEmpty => 'No playlists yet. Tap + Create Playlist.';
+
+  @override
+  String playlistVideoCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count Videos',
+      one: '1 Video',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get renamePlaylist => 'Rename playlist';
+
+  @override
+  String get deletePlaylistTitle => 'Delete playlist?';
+
+  @override
+  String deletePlaylistBody(String name) {
+    return 'Remove \"$name\"? Videos on your device are not deleted.';
+  }
+
+  @override
+  String get deleteFolderTitle => 'Delete all videos?';
+
+  @override
+  String deleteFolderBody(int count, String name) {
+    return 'Remove all $count videos in \"$name\" from this device? This cannot be undone.';
+  }
+
+  @override
+  String get hideFolderTitle => 'Hide folder?';
+
+  @override
+  String hideFolderBody(String name) {
+    return '\"$name\" will be hidden from the video list. You can restore it later in settings.';
+  }
+
+  @override
+  String get renameNotSupported =>
+      'Renaming device folders and videos is not supported.';
+
+  @override
+  String get shareFailed => 'Could not share files.';
+
+  @override
+  String get sharePreparing => 'Preparing files to share…';
+
+  @override
+  String addedToPlaylist(String name) {
+    return 'Added to $name';
+  }
+
+  @override
+  String get detailsTitle => 'Details';
+
+  @override
+  String get detailsName => 'Name';
+
+  @override
+  String get detailsPath => 'Path';
+
+  @override
+  String get detailsSize => 'Size';
+
+  @override
+  String get detailsDuration => 'Duration';
+
+  @override
+  String get detailsResolution => 'Resolution';
+
+  @override
+  String get detailsDate => 'Date added';
+
+  @override
+  String get detailsCount => 'Items';
+
+  @override
+  String get cancel => 'Cancel';
+
+  @override
+  String get save => 'Save';
+
+  @override
+  String get delete => 'Delete';
+
+  @override
+  String get hide => 'Hide';
 }

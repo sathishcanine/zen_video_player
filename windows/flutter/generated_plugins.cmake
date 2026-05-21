@@ -7,6 +7,7 @@ list(APPEND FLUTTER_PLUGIN_LIST
   firebase_core
   permission_handler_windows
   screen_brightness_windows
+  share_plus
   url_launcher_windows
   volume_controller
 )

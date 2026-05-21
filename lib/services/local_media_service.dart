@@ -3,6 +3,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/media_folder.dart';
+import 'hidden_folders_service.dart';
 import 'media_permission_service.dart';
 
 /// Loads on-device video albums via [photo_manager].
@@ -24,6 +25,7 @@ class LocalMediaService {
     );
 
     final seen = await _loadSeenAlbumIds();
+    final hidden = await HiddenFoldersService.loadHiddenIds();
     final folders = <MediaFolder>[];
 
     final recent = await _buildRecentlyAdded(paths);
@@ -31,6 +33,7 @@ class LocalMediaService {
 
     for (final path in paths) {
       if (path.isAll) continue;
+      if (hidden.contains(path.id)) continue;
       final count = await path.assetCountAsync;
       if (count == 0) continue;
       folders.add(
@@ -93,6 +96,30 @@ class LocalMediaService {
     final path = folder.assetPath;
     if (path == null) return const [];
     return path.getAssetListPaged(page: page, size: size);
+  }
+
+  /// Loads every video in a folder (paged) for share/delete actions.
+  static Future<List<AssetEntity>> loadAllVideosInFolder(
+    MediaFolder folder, {
+    int pageSize = 200,
+    int maxPages = 80,
+  }) async {
+    if (folder.isRecentlyAdded) {
+      return _loadRecentAssets();
+    }
+    final path = folder.assetPath;
+    if (path == null) return const [];
+
+    final out = <AssetEntity>[];
+    var page = 0;
+    while (page < maxPages) {
+      final batch = await path.getAssetListPaged(page: page, size: pageSize);
+      if (batch.isEmpty) break;
+      out.addAll(batch);
+      if (batch.length < pageSize) break;
+      page++;
+    }
+    return out;
   }
 
   static Future<List<AssetEntity>> _loadRecentAssets() async {
