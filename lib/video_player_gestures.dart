@@ -12,6 +12,16 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 
 const _kGestureTutorialPrefsKey = 'video_player_gesture_tutorial_v1';
 
+/// Width of left (brightness) / right (volume) swipe bands.
+double videoPlayerSideGestureWidth(double width, double height) {
+  const centerFlex = 56.0;
+  const sideFlexLandscape = 22.0;
+  const sideFlexPortrait = 12.0;
+  final portrait = height > width;
+  final sideFlex = portrait ? sideFlexPortrait : sideFlexLandscape;
+  return width * (sideFlex / (sideFlex * 2 + centerFlex));
+}
+
 enum _HintKind { brightness, volume, seek, speed2x }
 
 /// Wraps a [Chewie] (or fullscreen [ChewieControllerProvider]) with:
@@ -42,9 +52,6 @@ class VideoPlayerGestureShell extends StatefulWidget {
 class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
   static const double _bottomBandFraction = 0.42;
   static const double _topSpeedBandFraction = 0.36;
-  static const double _sideFlex = 22.0;
-  static const double _centerFlex = 56.0;
-
   Timer? _hideHintTimer;
   _HintKind? _hintKind;
   String? _hintText;
@@ -560,7 +567,7 @@ class _VideoPlayerGestureShellState extends State<VideoPlayerGestureShell> {
       builder: (context, constraints) {
         final w = constraints.maxWidth;
         final h = constraints.maxHeight;
-        final sideW = w * (_sideFlex / (_sideFlex * 2 + _centerFlex));
+        final sideW = videoPlayerSideGestureWidth(w, h);
         final bottomH = h * _bottomBandFraction;
         final topSpeedH = h * _topSpeedBandFraction;
         final topSpeedW = w * 0.42;

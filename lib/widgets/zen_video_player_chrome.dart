@@ -9,6 +9,7 @@ import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/services/cast_service.dart';
 import 'package:zen_video_player/video/video_color_filter.dart';
 import 'package:zen_video_player/ads/video_pause_native_ad.dart';
+import 'package:zen_video_player/video_player_gestures.dart';
 import 'package:zen_video_player/widgets/zen_color_filter_menu.dart';
 
 /// UPlayer-style video chrome: top bar, tool row, seek bar, transport controls.
@@ -229,6 +230,11 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     unawaited(_doubleTapSeek(forward: forward));
   }
 
+  double _edgeGestureSideWidth(BuildContext context) {
+    final size = MediaQuery.sizeOf(context);
+    return videoPlayerSideGestureWidth(size.width, size.height);
+  }
+
   double _doubleTapZoneBottomInset(BuildContext context) {
     final h = MediaQuery.sizeOf(context).height;
     return h * 0.36 + MediaQuery.paddingOf(context).bottom;
@@ -249,9 +255,10 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   /// Left/right double-tap seek above the control chrome when controls are visible.
   Widget? _doubleTapSeekWhenControlsVisible() {
     if (!_visible || _speedPanelOpen || _colorMenuOpen) return null;
+    final side = _edgeGestureSideWidth(context);
     return Positioned(
-      left: 0,
-      right: 0,
+      left: side,
+      right: side,
       top: 0,
       bottom: _doubleTapZoneBottomInset(context),
       child: Row(
@@ -978,29 +985,40 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
           child: AnimatedOpacity(
             opacity: _visible ? 1 : 0,
             duration: const Duration(milliseconds: 200),
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                  colors: [
-                    Colors.black.withValues(alpha: 0.72),
-                    Colors.transparent,
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.78),
-                  ],
-                  stops: const [0.0, 0.22, 0.62, 1.0],
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                const Positioned.fill(
+                  child: IgnorePointer(
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          begin: Alignment.topCenter,
+                          end: Alignment.bottomCenter,
+                          colors: [
+                            Color(0xB8000000),
+                            Colors.transparent,
+                            Colors.transparent,
+                            Color(0xC7000000),
+                          ],
+                          stops: [0.0, 0.22, 0.62, 1.0],
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
-              ),
-              child: Column(
-                children: [
-                  _topBar(),
-                  _toolRow(),
-                  const Spacer(),
-                  _progressBar(),
-                  _bottomBar(),
-                ],
-              ),
+                Column(
+                  children: [
+                    _topBar(),
+                    _toolRow(),
+                    Expanded(
+                      child: IgnorePointer(child: SizedBox.expand()),
+                    ),
+                    _progressBar(),
+                    _bottomBar(),
+                  ],
+                ),
+              ],
             ),
           ),
         ),
