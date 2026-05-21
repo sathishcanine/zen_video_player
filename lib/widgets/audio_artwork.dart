@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import '../services/audio_artwork_cache.dart';
-import '../theme/zen_theme.dart';
+import '../theme/zen_palette.dart';
 
 /// Album art from embedded audio tags, or a note placeholder.
 class AudioArtwork extends StatefulWidget {
@@ -67,10 +67,11 @@ class _AudioArtworkState extends State<AudioArtwork> {
   }
 
   Widget _placeholder({bool loading = false}) {
+    final zen = context.zen;
     return Container(
       width: widget.large ? double.infinity : 48,
       height: widget.large ? double.infinity : 48,
-      color: ZenTheme.surfaceElevated,
+      color: zen.surfaceElevated,
       alignment: Alignment.center,
       child: loading
           ? const SizedBox(
@@ -81,7 +82,7 @@ class _AudioArtworkState extends State<AudioArtwork> {
           : Icon(
               Icons.music_note,
               size: widget.large ? 56 : 28,
-              color: ZenTheme.textSecondary,
+              color: zen.textSecondary,
             ),
     );
   }

@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 
+import 'zen_palette.dart';
+
 /// Palette from the original Zen home / preview gradient screens.
 abstract final class ZenTheme {
   static const Color gradientTop = Color(0xFF0F0C29);
@@ -10,8 +12,8 @@ abstract final class ZenTheme {
   /// Legacy card tint: `Colors.white.withOpacity(.08)`.
   static final Color surface = Colors.white.withValues(alpha: 0.08);
   static final Color surfaceElevated = Colors.white.withValues(alpha: 0.12);
-  static const Color accent = Color(0xFF673AB7); // Colors.deepPurple
-  static const Color accentBlue = Color(0xFF7E57C2); // light purple from mid tone
+  static const Color accent = Color(0xFF673AB7); // default deep purple
+  static const Color accentBlue = Color(0xFF7E57C2);
   static const Color textPrimary = Color(0xFFFFFFFF);
   static const Color textSecondary = Color(0xB3FFFFFF); // white70
   static const Color badgeNew = Color(0xFFE53935);
@@ -25,37 +27,114 @@ abstract final class ZenTheme {
   /// Alias kept for onboarding — same gradient as the rest of the app.
   static const LinearGradient onboardingGradient = backgroundGradient;
 
-  static ThemeData dark() {
-    const colorScheme = ColorScheme.dark(
-      surface: gradientBottom,
-      primary: accent,
-      onPrimary: textPrimary,
-      onSurface: textPrimary,
+  static ThemeData dark({Color primary = accent}) => _build(
+        brightness: Brightness.dark,
+        primary: primary,
+        scaffoldBackground: gradientBottom,
+        surface: gradientBottom,
+        navBackground: gradientBottom,
+      );
+
+  static ThemeData light({Color primary = accent}) => _build(
+        brightness: Brightness.light,
+        primary: primary,
+        scaffoldBackground: Colors.white,
+        surface: Colors.white,
+        navBackground: Colors.white,
+      );
+
+  static ThemeData _build({
+    required Brightness brightness,
+    required Color primary,
+    required Color scaffoldBackground,
+    required Color surface,
+    required Color navBackground,
+  }) {
+    final isDark = brightness == Brightness.dark;
+    final onSurface = isDark ? textPrimary : const Color(0xFF1A1A1A);
+    final onSecondary = isDark ? textSecondary : const Color(0xFF757575);
+
+    final colorScheme = isDark
+        ? ColorScheme.dark(
+            surface: surface,
+            primary: primary,
+            onPrimary: textPrimary,
+            onSurface: onSurface,
+          )
+        : ColorScheme.light(
+            surface: surface,
+            primary: primary,
+            onPrimary: Colors.white,
+            onSurface: onSurface,
+          );
+
+    final palette = ZenPalette.forBrightness(
+      brightness: brightness,
+      primary: primary,
     );
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.dark,
-      scaffoldBackgroundColor: gradientBottom,
+      brightness: brightness,
+      scaffoldBackgroundColor: scaffoldBackground,
       colorScheme: colorScheme,
-      appBarTheme: const AppBarTheme(
+      extensions: [palette],
+      iconTheme: IconThemeData(color: onSurface),
+      textTheme: TextTheme(
+        bodyLarge: TextStyle(color: onSurface),
+        bodyMedium: TextStyle(color: onSurface),
+        bodySmall: TextStyle(color: onSecondary, fontSize: 13),
+        titleMedium: TextStyle(
+          color: onSurface,
+          fontWeight: FontWeight.w600,
+        ),
+        titleLarge: TextStyle(
+          color: onSurface,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+      dialogTheme: DialogThemeData(backgroundColor: palette.sheetBackground),
+      popupMenuTheme: PopupMenuThemeData(
+        color: palette.sheetBackground,
+        textStyle: TextStyle(color: onSurface),
+      ),
+      appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
         scrolledUnderElevation: 0,
-        foregroundColor: textPrimary,
+        foregroundColor: onSurface,
       ),
-      bottomNavigationBarTheme: const BottomNavigationBarThemeData(
-        backgroundColor: gradientBottom,
-        selectedItemColor: textPrimary,
-        unselectedItemColor: textSecondary,
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: navBackground,
+        selectedItemColor: primary,
+        unselectedItemColor: onSecondary,
         type: BottomNavigationBarType.fixed,
       ),
       filledButtonTheme: FilledButtonThemeData(
         style: FilledButton.styleFrom(
-          backgroundColor: accent,
-          foregroundColor: textPrimary,
+          backgroundColor: primary,
+          foregroundColor: isDark ? textPrimary : Colors.white,
         ),
       ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) return primary;
+          return null;
+        }),
+        trackColor: WidgetStateProperty.resolveWith((states) {
+          if (states.contains(WidgetState.selected)) {
+            return primary.withValues(alpha: 0.45);
+          }
+          return null;
+        }),
+      ),
+      listTileTheme: ListTileThemeData(
+        iconColor: onSurface,
+        textColor: onSurface,
+      ),
+      dividerColor: isDark
+          ? Colors.white.withValues(alpha: 0.12)
+          : Colors.black.withValues(alpha: 0.08),
       snackBarTheme: const SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
       ),
@@ -71,8 +150,12 @@ class ZenGradientBackground extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return DecoratedBox(
-      decoration: const BoxDecoration(gradient: ZenTheme.backgroundGradient),
+      decoration: BoxDecoration(
+        gradient: isDark ? ZenTheme.backgroundGradient : null,
+        color: isDark ? null : Theme.of(context).scaffoldBackgroundColor,
+      ),
       child: child,
     );
   }

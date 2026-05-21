@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
-import '../theme/zen_theme.dart';
+import '../theme/zen_palette.dart';
 
 /// Visible active-search strip with a clear action (below the app header).
 class SearchFilterBar extends StatelessWidget {
@@ -20,28 +20,27 @@ class SearchFilterBar extends StatelessWidget {
     final trimmed = query.trim();
     if (trimmed.isEmpty) return const SizedBox.shrink();
 
+    final zen = context.zen;
+    final primary = Theme.of(context).colorScheme.primary;
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
       child: Material(
-        color: ZenTheme.surface,
+        color: zen.surfaceCard,
         borderRadius: BorderRadius.circular(10),
         child: Padding(
           padding: const EdgeInsets.only(left: 12, top: 6, bottom: 6),
           child: Row(
             children: [
-              const Icon(
-                Icons.search,
-                size: 20,
-                color: ZenTheme.accentBlue,
-              ),
+              Icon(Icons.search, size: 20, color: primary),
               const SizedBox(width: 8),
               Expanded(
                 child: Text(
                   l10n.searchResultsFor(trimmed),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: ZenTheme.textPrimary,
+                  style: TextStyle(
+                    color: zen.textPrimary,
                     fontSize: 14,
                     fontWeight: FontWeight.w500,
                   ),
@@ -55,7 +54,7 @@ class SearchFilterBar extends StatelessWidget {
                   style: const TextStyle(fontWeight: FontWeight.w600),
                 ),
                 style: TextButton.styleFrom(
-                  foregroundColor: ZenTheme.accentBlue,
+                  foregroundColor: primary,
                   padding: const EdgeInsets.symmetric(horizontal: 12),
                 ),
               ),

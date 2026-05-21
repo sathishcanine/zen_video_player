@@ -8,6 +8,7 @@ import '../models/media_folder.dart';
 import '../services/local_media_service.dart';
 import '../services/locale_service.dart';
 import '../services/media_permission_service.dart';
+import '../theme/zen_palette.dart';
 import '../theme/zen_theme.dart';
 import '../widgets/language_icon_button.dart';
 import '../widgets/language_picker_sheet.dart';
@@ -311,7 +312,8 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: ZenTheme.gradientMid,
+        backgroundColor: Theme.of(ctx).extension<ZenPalette>()?.sheetBackground ??
+            Theme.of(ctx).colorScheme.surface,
         title: Text(l10n.searchFolders),
         content: TextField(
           controller: controller,
@@ -356,8 +358,9 @@ class _CategoryPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final zen = context.zen;
     return Material(
-      color: ZenTheme.surface,
+      color: zen.surfaceCard,
       borderRadius: BorderRadius.circular(20),
       child: InkWell(
         onTap: onTap,
@@ -367,15 +370,15 @@ class _CategoryPill extends StatelessWidget {
           child: Row(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(icon, size: 16, color: ZenTheme.textSecondary),
+              Icon(icon, size: 16, color: zen.textSecondary),
               const SizedBox(width: 6),
               Text(
                 label,
-                style: const TextStyle(
+                style: TextStyle(
                   fontSize: 11,
                   fontWeight: FontWeight.w600,
                   letterSpacing: 0.6,
-                  color: ZenTheme.textSecondary,
+                  color: zen.textSecondary,
                 ),
               ),
             ],
@@ -401,8 +404,9 @@ class _FolderTile extends StatelessWidget {
         ? countLabel
         : l10n.folderSizeSummary(countLabel, size);
 
+    final zen = context.zen;
     return ListTile(
-      leading: const Icon(Icons.folder_outlined, color: ZenTheme.textSecondary),
+      leading: Icon(Icons.folder_outlined, color: zen.textSecondary),
       title: Row(
         children: [
           Flexible(
@@ -410,9 +414,9 @@ class _FolderTile extends StatelessWidget {
               folder.displayName,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
+              style: TextStyle(
                 fontWeight: FontWeight.w600,
-                color: ZenTheme.textPrimary,
+                color: zen.textPrimary,
               ),
             ),
           ),
@@ -438,9 +442,9 @@ class _FolderTile extends StatelessWidget {
       ),
       subtitle: Text(
         subtitle,
-        style: const TextStyle(color: ZenTheme.textSecondary, fontSize: 13),
+        style: TextStyle(color: zen.textSecondary, fontSize: 13),
       ),
-      trailing: const Icon(Icons.more_vert, color: ZenTheme.textSecondary),
+      trailing: Icon(Icons.more_vert, color: zen.textSecondary),
       onTap: onTap,
     );
   }
@@ -469,7 +473,7 @@ class _NoAccessState extends StatelessWidget {
             Text(
               l10n.grantAccessToBrowse,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: ZenTheme.textSecondary),
+              style: TextStyle(color: context.zen.textSecondary),
             ),
             const SizedBox(height: 20),
             FilledButton(

@@ -8,7 +8,7 @@ import '../navigation/mini_player_visibility_observer.dart';
 import '../theme/zen_theme.dart';
 import '../widgets/audio_mini_player.dart';
 import 'audio_library_tab.dart';
-import 'placeholder_tab.dart';
+import 'settings_tab.dart';
 import 'video_library_tab.dart';
 
 /// Main shell: video library, audio/settings, mini-player pinned above bottom nav.
@@ -43,7 +43,7 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
     final tabs = <Widget>[
       const VideoLibraryTab(),
       const AudioLibraryTab(),
-      PlaceholderTab(hint: l10n.settingsTabHint),
+      const SettingsTab(),
     ];
 
     return LibraryShellScope(

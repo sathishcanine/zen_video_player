@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/zen_theme.dart';
-
 /// Language control shown left of search on the home screen.
 class LanguageIconButton extends StatelessWidget {
   const LanguageIconButton({
@@ -15,6 +13,7 @@ class LanguageIconButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final primary = Theme.of(context).colorScheme.primary;
     return IconButton(
       onPressed: onPressed,
       tooltip: tooltip,
@@ -23,19 +22,12 @@ class LanguageIconButton extends StatelessWidget {
         height: 36,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          gradient: LinearGradient(
-            colors: [
-              ZenTheme.accentBlue.withValues(alpha: 0.35),
-              ZenTheme.gradientMid.withValues(alpha: 0.5),
-            ],
-          ),
-          border: Border.all(
-            color: ZenTheme.accentBlue.withValues(alpha: 0.5),
-          ),
+          color: primary.withValues(alpha: 0.12),
+          border: Border.all(color: primary.withValues(alpha: 0.45)),
         ),
-        child: const Icon(
+        child: Icon(
           Icons.translate_rounded,
-          color: ZenTheme.textPrimary,
+          color: primary,
           size: 20,
         ),
       ),

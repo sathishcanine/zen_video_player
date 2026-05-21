@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../theme/zen_theme.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 class ZenBrandTitle extends StatelessWidget {
@@ -15,15 +14,18 @@ class ZenBrandTitle extends StatelessWidget {
     final first = name.substring(0, 1);
     final rest = name.length > 1 ? name.substring(1) : '';
 
+    final onSurface = Theme.of(context).colorScheme.onSurface;
+    final accent = Theme.of(context).colorScheme.primary;
+
     return RichText(
       text: TextSpan(
         style: TextStyle(
           fontSize: fontSize,
           fontWeight: FontWeight.w700,
-          color: ZenTheme.textPrimary,
+          color: onSurface,
         ),
         children: [
-          TextSpan(text: first, style: const TextStyle(color: ZenTheme.accentBlue)),
+          TextSpan(text: first, style: TextStyle(color: accent)),
           TextSpan(text: rest),
         ],
       ),

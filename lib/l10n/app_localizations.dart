@@ -709,6 +709,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Open a video and tap Cast to play it on your TV.'**
   String get castPlayVideoToCast;
+
+  /// No description provided for @settingsNetworkStream.
+  ///
+  /// In en, this message translates to:
+  /// **'Network stream'**
+  String get settingsNetworkStream;
+
+  /// No description provided for @settingsNetworkStreamSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Play media from network URL'**
+  String get settingsNetworkStreamSubtitle;
+
+  /// No description provided for @settingsFindDuplicate.
+  ///
+  /// In en, this message translates to:
+  /// **'Find duplicate'**
+  String get settingsFindDuplicate;
+
+  /// No description provided for @settingsFindDuplicateSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Find duplicate audio or video files'**
+  String get settingsFindDuplicateSubtitle;
+
+  /// No description provided for @settingsAppearance.
+  ///
+  /// In en, this message translates to:
+  /// **'Appearance'**
+  String get settingsAppearance;
+
+  /// No description provided for @settingsDarkTheme.
+  ///
+  /// In en, this message translates to:
+  /// **'Dark theme'**
+  String get settingsDarkTheme;
+
+  /// No description provided for @settingsDarkThemeSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Switch between light and dark appearance'**
+  String get settingsDarkThemeSubtitle;
+
+  /// No description provided for @settingsPrimaryColor.
+  ///
+  /// In en, this message translates to:
+  /// **'Primary color'**
+  String get settingsPrimaryColor;
+
+  /// No description provided for @settingsPrimaryColorSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose your accent color'**
+  String get settingsPrimaryColorSubtitle;
+
+  /// No description provided for @duplicateChooseTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Choose'**
+  String get duplicateChooseTitle;
+
+  /// No description provided for @duplicateChooseCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'CANCEL'**
+  String get duplicateChooseCancel;
+
+  /// No description provided for @duplicateScanning.
+  ///
+  /// In en, this message translates to:
+  /// **'Scanning storage'**
+  String get duplicateScanning;
+
+  /// No description provided for @duplicateScanFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Scan failed. Please try again.'**
+  String get duplicateScanFailed;
+
+  /// No description provided for @duplicateResultsTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Duplicates'**
+  String get duplicateResultsTitle;
+
+  /// No description provided for @duplicateNoneFound.
+  ///
+  /// In en, this message translates to:
+  /// **'No duplicate files found.'**
+  String get duplicateNoneFound;
+
+  /// No description provided for @duplicateGroupTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'{count} copies · {name}'**
+  String duplicateGroupTitle(int count, String name);
+
+  /// No description provided for @duplicateKeep.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep'**
+  String get duplicateKeep;
+
+  /// No description provided for @duplicateDeleteTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete file?'**
+  String get duplicateDeleteTitle;
+
+  /// No description provided for @duplicateDeleteBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove \"{name}\" from this device? This cannot be undone.'**
+  String duplicateDeleteBody(String name);
+
+  /// No description provided for @duplicateDeleteConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete'**
+  String get duplicateDeleteConfirm;
+
+  /// No description provided for @duplicateDeleteAll.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all'**
+  String get duplicateDeleteAll;
+
+  /// No description provided for @duplicateDeleteAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Delete all duplicates?'**
+  String get duplicateDeleteAllTitle;
+
+  /// No description provided for @duplicateDeleteAllBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Remove {count} duplicate files? The oldest copy in each group is kept.'**
+  String duplicateDeleteAllBody(int count);
+
+  /// No description provided for @duplicateDeleted.
+  ///
+  /// In en, this message translates to:
+  /// **'Deleted {count} file(s)'**
+  String duplicateDeleted(int count);
+
+  /// No description provided for @duplicateDeleteFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not delete. Check permissions and try again.'**
+  String get duplicateDeleteFailed;
 }
 
 class _AppLocalizationsDelegate

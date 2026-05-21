@@ -4,7 +4,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 import '../navigation/audio_routes.dart';
 import '../navigation/library_shell_scope.dart';
 import '../services/audio_player_service.dart';
-import '../theme/zen_theme.dart';
+import '../theme/zen_palette.dart';
 import 'audio_artwork.dart';
 import 'audio_queue_sheet.dart';
 
@@ -24,8 +24,10 @@ class AudioMiniPlayer extends StatelessWidget {
         final artist =
             track.artist.isEmpty ? l10n.unknownArtist : track.artist;
 
+        final zen = context.zen;
+        final isDark = Theme.of(context).brightness == Brightness.dark;
         return Material(
-          color: const Color(0xFF1A1A22),
+          color: isDark ? const Color(0xFF1A1A22) : zen.surfaceCard,
           child: InkWell(
             onTap: () {
               final route = AudioRoutes.nowPlayingRoute();
@@ -55,9 +57,9 @@ class AudioMiniPlayer extends StatelessWidget {
                           track.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: ZenTheme.textPrimary,
+                            color: zen.textPrimary,
                             fontSize: 14,
                           ),
                         ),
@@ -65,8 +67,8 @@ class AudioMiniPlayer extends StatelessWidget {
                           artist,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: ZenTheme.textSecondary,
+                          style: TextStyle(
+                            color: zen.textSecondary,
                             fontSize: 12,
                           ),
                         ),

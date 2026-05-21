@@ -354,4 +354,90 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get castPlayVideoToCast =>
       'Open a video and tap Cast to play it on your TV.';
+
+  @override
+  String get settingsNetworkStream => 'Network stream';
+
+  @override
+  String get settingsNetworkStreamSubtitle => 'Play media from network URL';
+
+  @override
+  String get settingsFindDuplicate => 'Find duplicate';
+
+  @override
+  String get settingsFindDuplicateSubtitle =>
+      'Find duplicate audio or video files';
+
+  @override
+  String get settingsAppearance => 'Appearance';
+
+  @override
+  String get settingsDarkTheme => 'Dark theme';
+
+  @override
+  String get settingsDarkThemeSubtitle =>
+      'Switch between light and dark appearance';
+
+  @override
+  String get settingsPrimaryColor => 'Primary color';
+
+  @override
+  String get settingsPrimaryColorSubtitle => 'Choose your accent color';
+
+  @override
+  String get duplicateChooseTitle => 'Choose';
+
+  @override
+  String get duplicateChooseCancel => 'CANCEL';
+
+  @override
+  String get duplicateScanning => 'Scanning storage';
+
+  @override
+  String get duplicateScanFailed => 'Scan failed. Please try again.';
+
+  @override
+  String get duplicateResultsTitle => 'Duplicates';
+
+  @override
+  String get duplicateNoneFound => 'No duplicate files found.';
+
+  @override
+  String duplicateGroupTitle(int count, String name) {
+    return '$count copies · $name';
+  }
+
+  @override
+  String get duplicateKeep => 'Keep';
+
+  @override
+  String get duplicateDeleteTitle => 'Delete file?';
+
+  @override
+  String duplicateDeleteBody(String name) {
+    return 'Remove \"$name\" from this device? This cannot be undone.';
+  }
+
+  @override
+  String get duplicateDeleteConfirm => 'Delete';
+
+  @override
+  String get duplicateDeleteAll => 'Delete all';
+
+  @override
+  String get duplicateDeleteAllTitle => 'Delete all duplicates?';
+
+  @override
+  String duplicateDeleteAllBody(int count) {
+    return 'Remove $count duplicate files? The oldest copy in each group is kept.';
+  }
+
+  @override
+  String duplicateDeleted(int count) {
+    return 'Deleted $count file(s)';
+  }
+
+  @override
+  String get duplicateDeleteFailed =>
+      'Could not delete. Check permissions and try again.';
 }

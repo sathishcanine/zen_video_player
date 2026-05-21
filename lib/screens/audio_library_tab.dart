@@ -11,7 +11,7 @@ import '../services/audio_player_service.dart';
 import '../services/local_audio_service.dart';
 import '../services/locale_service.dart';
 import '../services/media_permission_service.dart';
-import '../theme/zen_theme.dart';
+import '../theme/zen_palette.dart';
 import '../widgets/audio_artwork.dart';
 import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/language_icon_button.dart';
@@ -296,8 +296,8 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
                   _trackSubtitle(t, l10n),
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: ZenTheme.textSecondary,
+                  style: TextStyle(
+                    color: context.zen.textSecondary,
                     fontSize: 13,
                   ),
                 ),
@@ -306,8 +306,8 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
                   children: [
                     Text(
                       formatDuration(Duration(seconds: t.asset.duration)),
-                      style: const TextStyle(
-                        color: ZenTheme.textSecondary,
+                      style: TextStyle(
+                        color: context.zen.textSecondary,
                         fontSize: 13,
                       ),
                     ),
@@ -327,7 +327,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
           bottom: 12,
           child: FloatingActionButton.extended(
             heroTag: 'shuffle_all',
-            backgroundColor: ZenTheme.gradientMid,
+            backgroundColor: Theme.of(context).colorScheme.primary,
             onPressed: () async {
               await AudioPlaybackPermissions.ensureAcknowledged(context);
               await AudioPlayerService.instance.playShuffled(tracks);
@@ -357,15 +357,15 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
           final a = artists[i];
           return ListTile(
             leading: CircleAvatar(
-              backgroundColor: ZenTheme.surfaceElevated,
-              child: const Icon(Icons.person, color: ZenTheme.textSecondary),
+              backgroundColor: context.zen.surfaceElevated,
+              child: Icon(Icons.person, color: context.zen.textSecondary),
             ),
             title: Text(
               a.name.isEmpty ? l10n.unknownArtist : a.name,
             ),
             subtitle: Text(
               l10n.songCount(a.trackCount),
-              style: const TextStyle(color: ZenTheme.textSecondary),
+              style: TextStyle(color: context.zen.textSecondary),
             ),
             onTap: () => Navigator.push(
               context,
@@ -392,11 +392,11 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
         itemBuilder: (_, i) {
           final folder = _folders[i];
           return ListTile(
-            leading: const Icon(Icons.folder_outlined, color: ZenTheme.textSecondary),
+            leading: Icon(Icons.folder_outlined, color: context.zen.textSecondary),
             title: Text(folder.displayName),
             subtitle: Text(
               l10n.songCount(folder.videoCount),
-              style: const TextStyle(color: ZenTheme.textSecondary),
+              style: TextStyle(color: context.zen.textSecondary),
             ),
             onTap: () async {
               final tracks = await LocalAudioService.loadTracksInFolder(folder);
@@ -425,7 +425,8 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: ZenTheme.gradientMid,
+        backgroundColor: Theme.of(ctx).extension<ZenPalette>()?.sheetBackground ??
+            Theme.of(ctx).colorScheme.surface,
         title: Text(l10n.searchAudio),
         content: TextField(
           controller: controller,
@@ -463,6 +464,7 @@ class _AudioSubNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
+    final zen = context.zen;
     final items = [
       (l10n.audioSubAlbum, _AudioSection.album),
       (l10n.audioSubSongs, _AudioSection.songs),
@@ -491,7 +493,7 @@ class _AudioSubNav extends StatelessWidget {
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                     letterSpacing: 0.8,
-                    color: active ? ZenTheme.textPrimary : ZenTheme.textSecondary,
+                    color: active ? zen.textPrimary : zen.textSecondary,
                   ),
                 ),
                 const SizedBox(height: 8),
@@ -499,7 +501,7 @@ class _AudioSubNav extends StatelessWidget {
                   height: 3,
                   width: active ? 36 : 0,
                   decoration: BoxDecoration(
-                    color: ZenTheme.accentBlue,
+                    color: zen.tabIndicator,
                     borderRadius: BorderRadius.circular(2),
                   ),
                 ),
@@ -527,8 +529,9 @@ class _AlbumCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final artist =
         album.artist.isEmpty ? unknownArtist : album.artist;
+    final zen = context.zen;
     return Material(
-      color: ZenTheme.surface,
+      color: zen.surfaceCard,
       borderRadius: BorderRadius.circular(12),
       child: InkWell(
         onTap: onTap,
@@ -554,9 +557,9 @@ class _AlbumCard extends StatelessWidget {
                           album.title,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
+                          style: TextStyle(
                             fontWeight: FontWeight.w600,
-                            color: ZenTheme.textPrimary,
+                            color: zen.textPrimary,
                             fontSize: 14,
                           ),
                         ),
@@ -565,8 +568,8 @@ class _AlbumCard extends StatelessWidget {
                           artist,
                           maxLines: 1,
                           overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: ZenTheme.textSecondary,
+                          style: TextStyle(
+                            color: zen.textSecondary,
                             fontSize: 12,
                           ),
                         ),
@@ -575,7 +578,7 @@ class _AlbumCard extends StatelessWidget {
                   ),
                   IconButton(
                     icon: const Icon(Icons.more_vert, size: 20),
-                    color: ZenTheme.textSecondary,
+                    color: zen.textSecondary,
                     onPressed: () {},
                   ),
                 ],
@@ -605,7 +608,7 @@ class _NoAccessAudio extends StatelessWidget {
             Text(
               l10n.grantAccessToBrowse,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: ZenTheme.textSecondary),
+              style: TextStyle(color: context.zen.textSecondary),
             ),
             const SizedBox(height: 16),
             FilledButton(onPressed: onAllow, child: Text(l10n.allowAccess)),
@@ -633,22 +636,22 @@ class _PlaylistPlaceholder extends StatelessWidget {
             Icon(
               Icons.queue_music,
               size: 48,
-              color: ZenTheme.textSecondary.withValues(alpha: 0.5),
+              color: context.zen.textSecondary.withValues(alpha: 0.5),
             ),
             const SizedBox(height: 12),
             Text(
               l10n.comingSoon,
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 18,
                 fontWeight: FontWeight.w700,
-                color: ZenTheme.textPrimary,
+                color: context.zen.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: const TextStyle(color: ZenTheme.textSecondary),
+              style: TextStyle(color: context.zen.textSecondary),
             ),
           ],
         ),

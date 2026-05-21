@@ -14,6 +14,7 @@ import 'app_update/force_update_from_deeplink.dart';
 import 'app_update/force_update_screen.dart';
 import 'app_navigator.dart';
 import 'home_screen.dart';
+import 'services/app_settings_service.dart';
 import 'services/cast_service.dart';
 import 'services/locale_service.dart';
 import 'theme/zen_theme.dart';
@@ -29,6 +30,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
   await LocaleService.instance.load();
+  await AppSettingsService.instance.load();
   await Telemetry.init();
   if (!kIsWeb) {
     unawaited(CastService.instance.init());
@@ -214,13 +216,20 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
   @override
   Widget build(BuildContext context) {
     return ListenableBuilder(
-      listenable: LocaleService.instance,
+      listenable: Listenable.merge([
+        LocaleService.instance,
+        AppSettingsService.instance,
+      ]),
       builder: (context, _) {
         final saved = LocaleService.instance.locale;
+        final settings = AppSettingsService.instance;
+        final appTheme = settings.isDarkTheme
+            ? ZenTheme.dark(primary: settings.primaryColor)
+            : ZenTheme.light(primary: settings.primaryColor);
         return MaterialApp(
           navigatorKey: rootNavigatorKey,
           debugShowCheckedModeBanner: false,
-          theme: ZenTheme.dark(),
+          theme: appTheme,
           locale: saved,
           localeResolutionCallback: (locale, supported) {
             if (saved != null) {

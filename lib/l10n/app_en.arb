@@ -150,5 +150,51 @@
   "castUnsupportedPlatform": "Cast is not available on this platform.",
   "castUnsupportedContentUri": "Cast is not supported for videos opened from other apps.",
   "castLocalWifiRequired": "Connect to Wi‑Fi to cast local videos from this phone.",
-  "castPlayVideoToCast": "Open a video and tap Cast to play it on your TV."
+  "castPlayVideoToCast": "Open a video and tap Cast to play it on your TV.",
+  "settingsNetworkStream": "Network stream",
+  "settingsNetworkStreamSubtitle": "Play media from network URL",
+  "settingsFindDuplicate": "Find duplicate",
+  "settingsFindDuplicateSubtitle": "Find duplicate audio or video files",
+  "settingsAppearance": "Appearance",
+  "settingsDarkTheme": "Dark theme",
+  "settingsDarkThemeSubtitle": "Switch between light and dark appearance",
+  "settingsPrimaryColor": "Primary color",
+  "settingsPrimaryColorSubtitle": "Choose your accent color",
+  "duplicateChooseTitle": "Choose",
+  "duplicateChooseCancel": "CANCEL",
+  "duplicateScanning": "Scanning storage",
+  "duplicateScanFailed": "Scan failed. Please try again.",
+  "duplicateResultsTitle": "Duplicates",
+  "duplicateNoneFound": "No duplicate files found.",
+  "duplicateGroupTitle": "{count} copies · {name}",
+  "@duplicateGroupTitle": {
+    "placeholders": {
+      "count": {"type": "int"},
+      "name": {"type": "String"}
+    }
+  },
+  "duplicateKeep": "Keep",
+  "duplicateDeleteTitle": "Delete file?",
+  "duplicateDeleteBody": "Remove \"{name}\" from this device? This cannot be undone.",
+  "@duplicateDeleteBody": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "duplicateDeleteConfirm": "Delete",
+  "duplicateDeleteAll": "Delete all",
+  "duplicateDeleteAllTitle": "Delete all duplicates?",
+  "duplicateDeleteAllBody": "Remove {count} duplicate files? The oldest copy in each group is kept.",
+  "@duplicateDeleteAllBody": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "duplicateDeleted": "Deleted {count} file(s)",
+  "@duplicateDeleted": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "duplicateDeleteFailed": "Could not delete. Check permissions and try again."
 }

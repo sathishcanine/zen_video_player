@@ -1,0 +1,4 @@
+enum DuplicateMediaKind {
+  video,
+  audio,
+}
