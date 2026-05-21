@@ -44,7 +44,7 @@
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~3347511713</string>
+	<string>ca-app-pub-8723888126390754~6064872820</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Zen needs access to your photo library to find and play videos stored on your device.</string>
 	<key>NSLocalNetworkUsageDescription</key>

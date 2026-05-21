@@ -30,22 +30,29 @@ bool _isOpenWithVideoUri(Uri? uri) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  await LocaleService.instance.load();
-  await AppSettingsService.instance.load();
-  await ProFeaturesService.instance.load();
-  await Telemetry.init();
-  if (!kIsWeb) {
-    unawaited(CastService.instance.init());
-  }
+  // Parallel prefs — safe for 15k+ upgraders; avoids serial cold-start stalls.
+  await Future.wait<void>([
+    LocaleService.instance.load(),
+    AppSettingsService.instance.load(),
+    ProFeaturesService.instance.load(),
+  ]);
 
   final coldStartUri = await AppLinks().getInitialAppLink();
-  await AdsOrchestrator.init(coldStartUri: coldStartUri);
-
   final coldStartOpenVideo =
       _isOpenWithVideoUri(coldStartUri) ? coldStartUri : null;
 
   runZonedGuarded(
-    () => runApp(DiskwalaApp(coldStartOpenVideo: coldStartOpenVideo)),
+    () {
+      runApp(DiskwalaApp(coldStartOpenVideo: coldStartOpenVideo));
+      // Defer heavy SDK init until after first frame (reduces ANR risk on update).
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(Telemetry.init());
+        if (!kIsWeb) {
+          unawaited(CastService.instance.init());
+        }
+        unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
+      });
+    },
     (error, stack) => Telemetry.recordZoneError(error, stack),
   );
 }

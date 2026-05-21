@@ -445,6 +445,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _syncNativePipEligibility();
 
     setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_scheduleColorTutorialIfGestureAlreadyDone());
+    });
   }
 
   void _onVideoValueChanged() {
@@ -659,8 +662,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       return const [];
     }
     if (!video.value.isInitialized) return const [];
-
-    unawaited(_scheduleColorTutorialIfGestureAlreadyDone());
 
     return [
       Positioned.fill(

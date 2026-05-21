@@ -83,11 +83,10 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
-        <!-- AdMob application id — must match [adMobAppId] in lib/ads/ad_ids.dart
-             (Google sample app id while kUseTestAdIds is true). -->
+        <!-- AdMob application id — must match [kAdMobProdApplicationId] in lib/ads/ad_ids.dart -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-8723888126390754~6064872820"/>
         <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="com.felnanuke.google_cast.GoogleCastOptionsProvider"/>

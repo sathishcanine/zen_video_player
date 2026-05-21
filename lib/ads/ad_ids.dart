@@ -5,11 +5,11 @@
 /// (`AndroidManifest` / `Info.plist` `GADApplicationIdentifier`) to the same
 /// value as [adMobAppId] (your live `~` string).
 ///
-/// **Current:** `true` — Google sample app id + sample ad units + Unity test
-/// mode + InMobi test placement constants. Flip to `false` before release.
+/// **Production:** [kUseTestAdIds] is `false` — live app id + units below must
+/// match AdMob dashboard and native manifest / Info.plist.
 ///
 /// [kUseTestAdIds] must be a compile-time constant.
-const bool kUseTestAdIds = true;
+const bool kUseTestAdIds = false;
 
 // --- Google AdMob (official sample app + ad units) ---
 // See: https://developers.google.com/admob/android/test-ads#sample_ad_units
@@ -20,20 +20,25 @@ const String _adMobTestBannerUnit = 'ca-app-pub-3940256099942544/6300978111';
 const String _adMobTestNativeAdvancedUnit =
     'ca-app-pub-3940256099942544/2247696110';
 
-// Your AdMob app id (iOS "App ID" / Android Application ID) — must match
-// `com.google.android.gms.ads.APPLICATION_ID` in AndroidManifest and
-// `GADApplicationIdentifier` in iOS `Info.plist` when not using test app id.
-const String _adMobProdAppId = 'ca-app-pub-8723888126390754~6064872820';
+/// Live AdMob **application** id — must match AndroidManifest
+/// `com.google.android.gms.ads.APPLICATION_ID` and iOS
+/// `GADApplicationIdentifier` (tilde `~` form, not slash).
+const String kAdMobProdApplicationId = 'ca-app-pub-8723888126390754~6064872820';
+
+const String _adMobProdAppId = kAdMobProdApplicationId;
+
+// Live ad units (names from AdMob console):
+//   rewarded              → general playback rewarded
+//   Pro-User-Rewarded     → pro settings unlock
+//   v3-Home-Banner        → library home banner
+//   Native-ad             → video preview native
+//   v3-Pause-Native-Ad    → player pause / end native
 const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/7234751166';
-/// Pro unlock (dark theme, accent color, find duplicate).
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
-/// Home screen bottom banner (library shell).
 const String _adMobProdBannerUnit = 'ca-app-pub-8723888126390754/4197348615';
-/// Video preview screen (pre-play).
 const String _adMobProdNativeAdvancedUnit =
     'ca-app-pub-8723888126390754/5486908814';
-/// Video player — shown when user pauses playback.
 const String _adMobProdPauseNativeUnit =
     'ca-app-pub-8723888126390754/7649508461';
 
