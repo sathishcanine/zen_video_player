@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:path/path.dart' as p;
 import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/analytics/video_player_telemetry.dart';
 
@@ -11,7 +12,9 @@ import 'download_service.dart';
 import 'services/video_orientation_channel.dart';
 import 'video_pip_helper.dart';
 import 'video_player_gestures.dart';
+import 'video/video_color_filter.dart';
 import 'widgets/zen_chewie_player.dart';
+import 'widgets/zen_video_player_chrome.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoSource;
@@ -65,6 +68,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Dedupes [ChewieController] listener work when unrelated fields change.
   bool? _lastChewieFullScreen;
 
+  VideoColorFilterSettings _colorFilter = VideoColorFilterSettings.standard;
+
   static const List<DeviceOrientation> _playerOrientations = <DeviceOrientation>[
     DeviceOrientation.portraitUp,
     DeviceOrientation.portraitDown,
@@ -113,6 +118,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       allowFullScreen: true,
       allowMuting: true,
       allowPlaybackSpeedChanging: true,
+      showControls: false,
+      showControlsOnInitialize: false,
+      customControls: const SizedBox.shrink(),
       useRootNavigator: true,
       aspectRatio: aspectRatio,
       deviceOrientationsOnEnterFullScreen: _playerOrientations,
@@ -138,11 +146,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                         chewieController: _chewieController!,
                         videoChild: ZenChewiePlayer(
                           controller: _chewieController!,
+                          colorFilter: _colorFilter,
                         ),
                       ),
                     ),
                   ),
-                  ..._immersiveChromeOverlays(context),
+                  ..._playerChromeOverlays(context),
                 ],
               ),
             );
@@ -559,94 +568,58 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       key: _pipStageKeyEmbedded,
       child: VideoPlayerGestureShell(
         chewieController: chewie,
-        videoChild: ZenChewiePlayer(controller: chewie),
+        videoChild: ZenChewiePlayer(
+          controller: chewie,
+          colorFilter: _colorFilter,
+        ),
       ),
     );
   }
 
-  /// Back + download over the video (embedded and Chewie fullscreen route).
-  List<Widget> _immersiveChromeOverlays(BuildContext context) {
-    final chewieReady = _chewieController != null && _initError == null;
+  String get _videoTitle {
+    final src = widget.videoSource;
+    if (widget.useContentUri) return 'Video';
+    try {
+      if (src.startsWith('http://') || src.startsWith('https://')) {
+        final uri = Uri.parse(src);
+        final seg = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
+        if (seg.isNotEmpty) return Uri.decodeComponent(seg);
+      }
+      return p.basename(src);
+    } catch (_) {
+      return 'Video';
+    }
+  }
+
+  /// UPlayer-style controls (embedded + Chewie fullscreen route).
+  List<Widget> _playerChromeOverlays(BuildContext context) {
+    final video = _videoController;
+    final chewie = _chewieController;
+    if (_initError != null || video == null || chewie == null) {
+      return const [];
+    }
+    if (!video.value.isInitialized) return const [];
+
     return [
-      if (_initError == null)
-        Positioned(
-          top: 0,
-          left: 0,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Material(
-                color: Colors.black45,
-                shape: const CircleBorder(),
-                child: IconButton(
-                  icon: const Icon(Icons.arrow_back, color: Colors.white),
-                  onPressed: () => Navigator.of(context).maybePop(),
-                  tooltip: 'Back',
-                ),
-              ),
-            ),
-          ),
+      Positioned.fill(
+        child: ZenVideoPlayerChrome(
+          videoController: video,
+          chewieController: chewie,
+          title: _videoTitle,
+          onBack: () => Navigator.of(context).maybePop(),
+          onRotate: () => unawaited(_onRotatePressed()),
+          onDownload: _downloadVideo,
+          onPip: () => unawaited(_onPipButtonPressed()),
+          showDownload: !widget.isLocal &&
+              !widget.useContentUri &&
+              widget.allowNetworkDownload,
+          showPip: Platform.isAndroid,
+          colorFilter: _colorFilter,
+          onColorFilterChanged: (settings) {
+            if (mounted) setState(() => _colorFilter = settings);
+          },
         ),
-      if (chewieReady &&
-          !widget.isLocal &&
-          !widget.useContentUri &&
-          widget.allowNetworkDownload)
-        Positioned(
-          top: 0,
-          right: 0,
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(8),
-              child: Material(
-                color: Colors.black45,
-                shape: const CircleBorder(),
-                child: IconButton(
-                  icon: const Icon(Icons.download, color: Colors.white),
-                  onPressed: _downloadVideo,
-                  tooltip: 'Download',
-                ),
-              ),
-            ),
-          ),
-        ),
-      if (chewieReady && Platform.isAndroid) ...[
-        Positioned(
-          left: 8,
-          bottom: 8,
-          child: SafeArea(
-            child: Material(
-              color: Colors.black45,
-              shape: const CircleBorder(),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.screen_rotation_outlined,
-                  color: Colors.white,
-                ),
-                onPressed: () => unawaited(_onRotatePressed()),
-                tooltip: 'Rotate screen',
-              ),
-            ),
-          ),
-        ),
-        Positioned(
-          right: 8,
-          bottom: 8,
-          child: SafeArea(
-            child: Material(
-              color: Colors.black45,
-              shape: const CircleBorder(),
-              child: IconButton(
-                icon: const Icon(
-                  Icons.picture_in_picture_alt_outlined,
-                  color: Colors.white,
-                ),
-                onPressed: () => unawaited(_onPipButtonPressed()),
-                tooltip: 'Picture-in-picture',
-              ),
-            ),
-          ),
-        ),
-      ],
+      ),
     ];
   }
 
@@ -658,7 +631,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         fit: StackFit.expand,
         children: [
           _buildBody(),
-          ..._immersiveChromeOverlays(context),
+          ..._playerChromeOverlays(context),
         ],
       ),
     );

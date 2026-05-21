@@ -9,6 +9,7 @@ import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:zen_video_player/services/video_orientation_channel.dart';
+import 'package:zen_video_player/video/video_color_filter.dart';
 import 'package:zen_video_player/widgets/zen_video_surface.dart';
 
 /// Chewie controls with a rotation-friendly video surface.
@@ -16,9 +17,11 @@ class ZenChewiePlayer extends StatefulWidget {
   const ZenChewiePlayer({
     super.key,
     required this.controller,
+    this.colorFilter = VideoColorFilterSettings.standard,
   });
 
   final ChewieController controller;
+  final VideoColorFilterSettings colorFilter;
 
   @override
   State<ZenChewiePlayer> createState() => _ZenChewiePlayerState();
@@ -157,16 +160,11 @@ class _ZenChewiePlayerState extends State<ZenChewiePlayer> {
               scaleEnabled: chewie.zoomAndPan,
               child: ZenVideoSurface(
                 controller: chewie.videoPlayerController,
+                colorFilter: widget.colorFilter,
               ),
             ),
             if (chewie.overlay != null) chewie.overlay!,
-            if (!chewie.isFullScreen)
-              chewie.customControls ?? const MaterialControls()
-            else
-              SafeArea(
-                bottom: false,
-                child: chewie.customControls ?? const MaterialControls(),
-              ),
+            chewie.customControls ?? const SizedBox.shrink(),
           ],
         ),
       ),
