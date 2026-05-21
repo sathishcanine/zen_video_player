@@ -8,8 +8,10 @@ import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/analytics/video_player_telemetry.dart';
 
 import 'download_service.dart';
+import 'services/video_orientation_channel.dart';
 import 'video_pip_helper.dart';
 import 'video_player_gestures.dart';
+import 'widgets/zen_chewie_player.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoSource;
@@ -63,6 +65,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Dedupes [ChewieController] listener work when unrelated fields change.
   bool? _lastChewieFullScreen;
 
+  static const List<DeviceOrientation> _playerOrientations = <DeviceOrientation>[
+    DeviceOrientation.portraitUp,
+    DeviceOrientation.portraitDown,
+    DeviceOrientation.landscapeLeft,
+    DeviceOrientation.landscapeRight,
+  ];
+
   static void _restoreSystemChrome() {
     SystemChrome.setEnabledSystemUIMode(
       SystemUiMode.manual,
@@ -70,11 +79,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     );
   }
 
+  /// Lets the Android Activity rotate; avoids Flutter re-locking portrait.
+  Future<void> _primePlayerOrientation() async {
+    await SystemChrome.setPreferredOrientations(const <DeviceOrientation>[]);
+    await VideoOrientationChannel.enterPlayerMode();
+  }
+
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    unawaited(SystemChrome.setPreferredOrientations(DeviceOrientation.values));
+    unawaited(_primePlayerOrientation());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(
@@ -88,9 +103,65 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     unawaited(_initializePlayer());
   }
 
+  ChewieController _createChewieController(VideoPlayerController controller) {
+    final size = MediaQuery.sizeOf(context);
+    final aspectRatio = size.width / size.height;
+    return ChewieController(
+      videoPlayerController: controller,
+      autoPlay: true,
+      looping: false,
+      allowFullScreen: true,
+      allowMuting: true,
+      allowPlaybackSpeedChanging: true,
+      useRootNavigator: true,
+      aspectRatio: aspectRatio,
+      deviceOrientationsOnEnterFullScreen: _playerOrientations,
+      deviceOrientationsAfterFullScreen: _playerOrientations,
+      transformationController: _zoomTransform,
+      zoomAndPan: true,
+      routePageBuilder: (ctx, animation, secondaryAnimation, provider) {
+        return AnimatedBuilder(
+          animation: animation,
+          builder: (context, _) {
+            return Scaffold(
+              resizeToAvoidBottomInset: false,
+              backgroundColor: Colors.black,
+              body: Stack(
+                fit: StackFit.expand,
+                children: [
+                  KeyedSubtree(
+                    key: _pipStageKeyFullscreen,
+                    child: Container(
+                      color: Colors.black,
+                      alignment: Alignment.center,
+                      child: VideoPlayerGestureShell(
+                        chewieController: _chewieController!,
+                        videoChild: ZenChewiePlayer(
+                          controller: _chewieController!,
+                        ),
+                      ),
+                    ),
+                  ),
+                  ..._immersiveChromeOverlays(context),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+  }
+
+  @override
+  void didChangeMetrics() {
+    super.didChangeMetrics();
+    if (mounted) setState(() {});
+  }
+
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      unawaited(VideoOrientationChannel.enterPlayerMode());
       // Re-arm PiP after returning from PiP/fullscreen; native auto-enter may reset.
       _pipPreparedSignature = null;
       _syncNativePipEligibility();
@@ -173,6 +244,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!mounted) return;
     _pipPreparedSignature = null;
     _syncNativePipEligibility();
+  }
+
+  Future<void> _onRotatePressed() async {
+    await VideoOrientationChannel.toggleOrientation();
+    if (mounted) setState(() {});
   }
 
   Future<void> _onPipButtonPressed() async {
@@ -280,6 +356,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         _initError = _humanizeError(e);
       });
       await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      unawaited(VideoOrientationChannel.exitPlayerMode());
       _restoreSystemChrome();
       await controller.dispose();
       if (identical(_videoController, controller)) {
@@ -290,6 +367,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     if (!mounted) {
       await SystemChrome.setPreferredOrientations(DeviceOrientation.values);
+      unawaited(VideoOrientationChannel.exitPlayerMode());
       _restoreSystemChrome();
       await controller.dispose();
       return;
@@ -308,19 +386,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     controller.addListener(_onVideoValueChanged);
     _syncNativePipEligibility();
 
-    final sz = controller.value.size;
-    final bool portraitVideo =
-        sz.width > 0 && sz.height > 0 && sz.height > sz.width;
-    final videoOrientations = portraitVideo
-        ? const <DeviceOrientation>[
-            DeviceOrientation.portraitUp,
-            DeviceOrientation.portraitDown,
-          ]
-        : const <DeviceOrientation>[
-            DeviceOrientation.landscapeLeft,
-            DeviceOrientation.landscapeRight,
-          ];
-    await SystemChrome.setPreferredOrientations(videoOrientations);
+    await VideoOrientationChannel.enterPlayerMode();
     if (!mounted) return;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
@@ -331,47 +397,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _zoomTransform?.dispose();
     _zoomTransform = TransformationController();
 
-    _chewieController = ChewieController(
-      videoPlayerController: controller,
-      autoPlay: true,
-      looping: false,
-      allowFullScreen: true,
-      allowMuting: true,
-      allowPlaybackSpeedChanging: true,
-      deviceOrientationsOnEnterFullScreen: videoOrientations,
-      deviceOrientationsAfterFullScreen: videoOrientations,
-      transformationController: _zoomTransform,
-      zoomAndPan: true,
-      routePageBuilder: (ctx, animation, secondaryAnimation, provider) {
-        return AnimatedBuilder(
-          animation: animation,
-          builder: (context, _) {
-            return Scaffold(
-              resizeToAvoidBottomInset: false,
-              backgroundColor: Colors.black,
-              body: Stack(
-                fit: StackFit.expand,
-                children: [
-                  KeyedSubtree(
-                    key: _pipStageKeyFullscreen,
-                    child: Container(
-                      color: Colors.black,
-                      alignment: Alignment.center,
-                      child: VideoPlayerGestureShell(
-                        chewieController: _chewieController!,
-                        videoChild: provider,
-                      ),
-                    ),
-                  ),
-                  ..._immersiveChromeOverlays(context),
-                ],
-              ),
-            );
-          },
-        );
-      },
-    );
-
+    _chewieController = _createChewieController(controller);
     _lastChewieFullScreen = _chewieController!.isFullScreen;
     _chewieController!.addListener(_onChewieChanged);
     _pipPreparedSignature = null;
@@ -462,6 +488,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     WidgetsBinding.instance.removeObserver(this);
     _pipPreparedSignature = null;
     unawaited(VideoPipHelper.clearPipEligibility());
+    unawaited(VideoOrientationChannel.exitPlayerMode());
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
     _restoreSystemChrome();
     _videoController?.removeListener(_onVideoValueChanged);
@@ -532,7 +559,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       key: _pipStageKeyEmbedded,
       child: VideoPlayerGestureShell(
         chewieController: chewie,
-        videoChild: Chewie(controller: chewie),
+        videoChild: ZenChewiePlayer(controller: chewie),
       ),
     );
   }
@@ -582,7 +609,25 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             ),
           ),
         ),
-      if (chewieReady && Platform.isAndroid)
+      if (chewieReady && Platform.isAndroid) ...[
+        Positioned(
+          left: 8,
+          bottom: 8,
+          child: SafeArea(
+            child: Material(
+              color: Colors.black45,
+              shape: const CircleBorder(),
+              child: IconButton(
+                icon: const Icon(
+                  Icons.screen_rotation_outlined,
+                  color: Colors.white,
+                ),
+                onPressed: () => unawaited(_onRotatePressed()),
+                tooltip: 'Rotate screen',
+              ),
+            ),
+          ),
+        ),
         Positioned(
           right: 8,
           bottom: 8,
@@ -601,6 +646,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             ),
           ),
         ),
+      ],
     ];
   }
 

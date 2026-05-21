@@ -13,6 +13,7 @@ class MainActivity : FlutterActivity() {
 
     private var inMobiBridge: InMobiBridge? = null
     private var audioMetadataBridge: AudioMetadataBridge? = null
+    private var videoOrientationBridge: VideoOrientationBridge? = null
 
     /** When true, pre-Android-12 devices may enter PiP from [onUserLeaveHint]. */
     private var pipPreparedForLeave: Boolean = false
@@ -60,6 +61,11 @@ class MainActivity : FlutterActivity() {
         return b.build()
     }
 
+    override fun onResume() {
+        super.onResume()
+        VideoOrientationBridge.reapplyIfNeeded(this)
+    }
+
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
@@ -68,6 +74,7 @@ class MainActivity : FlutterActivity() {
             messenger = messenger,
         )
         audioMetadataBridge = AudioMetadataBridge(messenger).also { it.register() }
+        videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
 
         MethodChannel(
             flutterEngine.dartExecutor.binaryMessenger,

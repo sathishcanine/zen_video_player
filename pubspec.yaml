@@ -36,6 +36,8 @@ dependencies:
   video_player: ^2.8.2
   just_audio: ^0.9.42
   chewie: ^1.7.4
+  provider: ^6.1.2
+  wakelock_plus: ^1.2.8
   file_picker: ^8.0.0
   app_links: ^3.4.1
   google_mobile_ads: ^8.0.0
