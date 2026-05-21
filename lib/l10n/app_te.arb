@@ -31,6 +31,8 @@
   "pasteVideoUrl": "వీడియో URL ఇక్కడ అతకండి",
   "playVideo": "వీడియో ప్లే",
   "searchFolders": "ఫోల్డర్లు వెతకండి",
+  "clearSearch": "తొలగించు",
+  "searchResultsFor": "\"{query}\" ఫలితాలు",
   "cast": "కాస్ట్",
   "moreOptions": "మరిన్ని",
   "loadingLibrary": "లైబ్రరీ లోడ్ అవుతోంది…",

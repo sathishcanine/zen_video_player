@@ -12,6 +12,7 @@ import '../services/media_permission_service.dart';
 import '../theme/zen_theme.dart';
 import '../widgets/audio_artwork.dart';
 import '../widgets/language_icon_button.dart';
+import '../widgets/search_filter_bar.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/zen_brand_title.dart';
 import '../utils/audio_playback_launcher.dart';
@@ -195,7 +196,10 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
           section: _section,
           onChanged: _selectSection,
         ),
-        const SizedBox(height: 4),
+        SearchFilterBar(
+          query: _query,
+          onClear: _clearSearch,
+        ),
         Expanded(child: _buildBody(l10n)),
       ],
     );
@@ -406,6 +410,8 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
     );
   }
 
+  void _clearSearch() => setState(() => _query = '');
+
   Future<void> _showSearch(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: _query);
@@ -420,6 +426,11 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
           decoration: InputDecoration(hintText: l10n.searchAudio),
         ),
         actions: [
+          if (controller.text.trim().isNotEmpty)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, ''),
+              child: Text(l10n.clearSearch),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(l10n.notNow),

@@ -114,6 +114,14 @@ class AppLocalizationsZh extends AppLocalizations {
   String get searchFolders => '搜索文件夹';
 
   @override
+  String get clearSearch => '清除';
+
+  @override
+  String searchResultsFor(String query) {
+    return '“$query”的搜索结果';
+  }
+
+  @override
   String get cast => '投屏';
 
   @override

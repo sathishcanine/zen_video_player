@@ -118,6 +118,14 @@ class AppLocalizationsPt extends AppLocalizations {
   String get searchFolders => 'Buscar pastas';
 
   @override
+  String get clearSearch => 'Limpar';
+
+  @override
+  String searchResultsFor(String query) {
+    return 'Resultados de \"$query\"';
+  }
+
+  @override
   String get cast => 'Transmitir';
 
   @override

@@ -47,6 +47,13 @@
   "pasteVideoUrl": "Paste video URL here",
   "playVideo": "Play Video",
   "searchFolders": "Search folders",
+  "clearSearch": "Clear",
+  "searchResultsFor": "Results for \"{query}\"",
+  "@searchResultsFor": {
+    "placeholders": {
+      "query": {"type": "String"}
+    }
+  },
   "cast": "Cast",
   "moreOptions": "More",
   "loadingLibrary": "Loading your library…",

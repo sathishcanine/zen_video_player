@@ -116,6 +116,14 @@ class AppLocalizationsTe extends AppLocalizations {
   String get searchFolders => 'ఫోల్డర్లు వెతకండి';
 
   @override
+  String get clearSearch => 'తొలగించు';
+
+  @override
+  String searchResultsFor(String query) {
+    return '\"$query\" ఫలితాలు';
+  }
+
+  @override
   String get cast => 'కాస్ట్';
 
   @override

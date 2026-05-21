@@ -31,6 +31,8 @@
   "pasteVideoUrl": "在此粘贴视频 URL",
   "playVideo": "播放",
   "searchFolders": "搜索文件夹",
+  "clearSearch": "清除",
+  "searchResultsFor": "“{query}”的搜索结果",
   "cast": "投屏",
   "moreOptions": "更多",
   "loadingLibrary": "正在加载媒体库…",

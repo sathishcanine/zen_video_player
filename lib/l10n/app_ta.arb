@@ -31,6 +31,8 @@
   "pasteVideoUrl": "வீடியோ URL ஐ இங்கே ஒட்டு",
   "playVideo": "வீடியோ இயக்கு",
   "searchFolders": "கோப்புறை தேடு",
+  "clearSearch": "அழி",
+  "searchResultsFor": "\"{query}\" முடிவுகள்",
   "cast": "காஸ்ட்",
   "moreOptions": "மேலும்",
   "loadingLibrary": "நூலகம் ஏற்றப்படுகிறது…",

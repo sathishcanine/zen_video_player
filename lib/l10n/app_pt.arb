@@ -31,6 +31,8 @@
   "pasteVideoUrl": "Cole a URL do vídeo aqui",
   "playVideo": "Reproduzir",
   "searchFolders": "Buscar pastas",
+  "clearSearch": "Limpar",
+  "searchResultsFor": "Resultados de \"{query}\"",
   "cast": "Transmitir",
   "moreOptions": "Mais",
   "loadingLibrary": "Carregando biblioteca…",

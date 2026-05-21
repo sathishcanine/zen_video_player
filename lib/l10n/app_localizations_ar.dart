@@ -115,6 +115,14 @@ class AppLocalizationsAr extends AppLocalizations {
   String get searchFolders => 'بحث في المجلدات';
 
   @override
+  String get clearSearch => 'مسح';
+
+  @override
+  String searchResultsFor(String query) {
+    return 'نتائج \"$query\"';
+  }
+
+  @override
   String get cast => 'بث';
 
   @override

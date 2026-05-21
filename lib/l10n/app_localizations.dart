@@ -296,6 +296,18 @@ abstract class AppLocalizations {
   /// **'Search folders'**
   String get searchFolders;
 
+  /// No description provided for @clearSearch.
+  ///
+  /// In en, this message translates to:
+  /// **'Clear'**
+  String get clearSearch;
+
+  /// No description provided for @searchResultsFor.
+  ///
+  /// In en, this message translates to:
+  /// **'Results for \"{query}\"'**
+  String searchResultsFor(String query);
+
   /// No description provided for @cast.
   ///
   /// In en, this message translates to:

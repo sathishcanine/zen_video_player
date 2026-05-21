@@ -116,6 +116,14 @@ class AppLocalizationsTa extends AppLocalizations {
   String get searchFolders => 'கோப்புறை தேடு';
 
   @override
+  String get clearSearch => 'அழி';
+
+  @override
+  String searchResultsFor(String query) {
+    return '\"$query\" முடிவுகள்';
+  }
+
+  @override
   String get cast => 'காஸ்ட்';
 
   @override

@@ -31,6 +31,8 @@
   "pasteVideoUrl": "الصق رابط الفيديو هنا",
   "playVideo": "تشغيل",
   "searchFolders": "بحث في المجلدات",
+  "clearSearch": "مسح",
+  "searchResultsFor": "نتائج \"{query}\"",
   "cast": "بث",
   "moreOptions": "المزيد",
   "loadingLibrary": "جاري تحميل المكتبة…",

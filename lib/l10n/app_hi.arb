@@ -31,6 +31,8 @@
   "pasteVideoUrl": "वीडियो URL यहाँ पेस्ट करें",
   "playVideo": "वीडियो चलाएँ",
   "searchFolders": "फ़ोल्डर खोजें",
+  "clearSearch": "साफ़ करें",
+  "searchResultsFor": "\"{query}\" के परिणाम",
   "cast": "कास्ट",
   "moreOptions": "अधिक",
   "loadingLibrary": "लाइब्रेरी लोड हो रही है…",

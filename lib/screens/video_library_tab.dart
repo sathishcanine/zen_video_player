@@ -11,6 +11,7 @@ import '../widgets/language_icon_button.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/language_tutorial_overlay.dart';
 import '../widgets/network_stream_sheet.dart';
+import '../widgets/search_filter_bar.dart';
 import '../widgets/zen_brand_title.dart';
 import 'folder_detail_screen.dart';
 import '../utils/video_navigation.dart';
@@ -239,7 +240,10 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
             ],
           ),
         ),
-        const SizedBox(height: 8),
+        SearchFilterBar(
+          query: _query,
+          onClear: _clearSearch,
+        ),
         Expanded(
           child: _loading
               ? Center(child: Text(l10n.loadingLibrary))
@@ -287,6 +291,13 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     }
   }
 
+  void _clearSearch() {
+    setState(() {
+      _query = '';
+      _applyFilter();
+    });
+  }
+
   Future<void> _showSearch(BuildContext context) async {
     final l10n = AppLocalizations.of(context)!;
     final controller = TextEditingController(text: _query);
@@ -301,6 +312,11 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
           decoration: InputDecoration(hintText: l10n.searchFolders),
         ),
         actions: [
+          if (controller.text.trim().isNotEmpty)
+            TextButton(
+              onPressed: () => Navigator.pop(ctx, ''),
+              child: Text(l10n.clearSearch),
+            ),
           TextButton(
             onPressed: () => Navigator.pop(ctx),
             child: Text(l10n.notNow),

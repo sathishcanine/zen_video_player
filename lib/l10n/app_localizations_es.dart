@@ -118,6 +118,14 @@ class AppLocalizationsEs extends AppLocalizations {
   String get searchFolders => 'Buscar carpetas';
 
   @override
+  String get clearSearch => 'Borrar';
+
+  @override
+  String searchResultsFor(String query) {
+    return 'Resultados de \"$query\"';
+  }
+
+  @override
   String get cast => 'Transmitir';
 
   @override

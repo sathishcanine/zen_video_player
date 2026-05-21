@@ -117,6 +117,14 @@ class AppLocalizationsHi extends AppLocalizations {
   String get searchFolders => 'फ़ोल्डर खोजें';
 
   @override
+  String get clearSearch => 'साफ़ करें';
+
+  @override
+  String searchResultsFor(String query) {
+    return '\"$query\" के परिणाम';
+  }
+
+  @override
   String get cast => 'कास्ट';
 
   @override
