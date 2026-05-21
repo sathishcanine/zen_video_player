@@ -7,14 +7,18 @@ import 'ad_ids.dart';
 import 'ad_throttle.dart';
 import 'ads_orchestrator.dart';
 
-/// Native Advanced overlay when [controller] is paused (UPlayer-style).
+/// Native Advanced overlay when the user tapped pause or the video ended.
 class VideoPauseNativeAdOverlay extends StatefulWidget {
   const VideoPauseNativeAdOverlay({
     super.key,
     required this.controller,
+    this.userPausedForAd = false,
   });
 
   final VideoPlayerController controller;
+
+  /// Set by player chrome when the user taps the pause control (not buffering).
+  final bool userPausedForAd;
 
   @override
   State<VideoPauseNativeAdOverlay> createState() =>
@@ -130,13 +134,30 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
     ad.load();
   }
 
+  bool get _videoEnded {
+    final v = widget.controller.value;
+    if (!v.isInitialized || v.hasError) return false;
+    final duration = v.duration;
+    if (duration <= Duration.zero) return false;
+    if (v.isPlaying || v.isBuffering) return false;
+    final remaining = duration - v.position;
+    return remaining <= const Duration(milliseconds: 500);
+  }
+
+  bool get _eligiblePauseState {
+    return widget.userPausedForAd || _videoEnded;
+  }
+
   bool get _visible {
     if (kIsWeb || _loadFailed) return false;
     if (!AdsOrchestrator.config.bannerEnabled) return false;
     if (_dismissedThisPause) return false;
     if (!_loaded || _ad == null) return false;
     final v = widget.controller.value;
-    if (!v.isInitialized || v.isPlaying) return false;
+    if (!v.isInitialized || v.isPlaying || v.isBuffering || v.hasError) {
+      return false;
+    }
+    if (!_eligiblePauseState) return false;
     return true;
   }
 
