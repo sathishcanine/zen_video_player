@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
@@ -11,6 +13,7 @@ import '../services/locale_service.dart';
 import '../services/media_permission_service.dart';
 import '../theme/zen_theme.dart';
 import '../widgets/audio_artwork.dart';
+import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/language_icon_button.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/language_picker_sheet.dart';
@@ -153,6 +156,10 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
     );
   }
 
+  void _openCastPicker() {
+    unawaited(showCastDevicePicker(context));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -178,7 +185,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
               IconButton(
                 icon: const Icon(Icons.cast_outlined),
                 tooltip: l10n.cast,
-                onPressed: _showComingSoon,
+                onPressed: _openCastPicker,
               ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),

@@ -13,6 +13,8 @@ import 'services/video_orientation_channel.dart';
 import 'video_pip_helper.dart';
 import 'video_player_gestures.dart';
 import 'video/video_color_filter.dart';
+import 'services/cast_service.dart';
+import 'widgets/cast_device_picker_sheet.dart';
 import 'widgets/zen_chewie_player.dart';
 import 'widgets/zen_video_player_chrome.dart';
 
@@ -258,6 +260,29 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> _onRotatePressed() async {
     await VideoOrientationChannel.toggleOrientation();
     if (mounted) setState(() {});
+  }
+
+  void _onCastPressed(BuildContext chromeContext) {
+    final video = _videoController;
+    final position = video?.value.isInitialized == true
+        ? video!.value.position
+        : Duration.zero;
+    final duration = video?.value.isInitialized == true
+        ? video!.value.duration
+        : null;
+    unawaited(
+      showCastDevicePicker(
+        chromeContext,
+        media: CastMediaPayload(
+          title: _videoTitle,
+          videoSource: widget.videoSource,
+          isLocal: widget.isLocal,
+          useContentUri: widget.useContentUri,
+          playPosition: position,
+          duration: duration,
+        ),
+      ),
+    );
   }
 
   Future<void> _onPipButtonPressed() async {
@@ -608,6 +633,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           title: _videoTitle,
           onBack: () => Navigator.of(context).maybePop(),
           onRotate: () => unawaited(_onRotatePressed()),
+          onCast: _onCastPressed,
           onDownload: _downloadVideo,
           onPip: () => unawaited(_onPipButtonPressed()),
           showDownload: !widget.isLocal &&

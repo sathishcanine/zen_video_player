@@ -3,6 +3,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../services/audio_player_service.dart';
 import '../theme/zen_theme.dart';
+import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/audio_artwork.dart';
 import '../widgets/audio_queue_sheet.dart';
 
@@ -34,7 +35,10 @@ class AudioNowPlayingScreen extends StatelessWidget {
           },
         ),
         actions: [
-          IconButton(icon: const Icon(Icons.cast_outlined), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.cast_outlined),
+            onPressed: () => showCastDevicePicker(context),
+          ),
           IconButton(icon: const Icon(Icons.bar_chart), onPressed: () {}),
           IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
         ],

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:app_links/app_links.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
@@ -13,6 +14,7 @@ import 'app_update/force_update_from_deeplink.dart';
 import 'app_update/force_update_screen.dart';
 import 'app_navigator.dart';
 import 'home_screen.dart';
+import 'services/cast_service.dart';
 import 'services/locale_service.dart';
 import 'theme/zen_theme.dart';
 import 'video_player_screen.dart';
@@ -28,6 +30,9 @@ Future<void> main() async {
 
   await LocaleService.instance.load();
   await Telemetry.init();
+  if (!kIsWeb) {
+    unawaited(CastService.instance.init());
+  }
 
   final coldStartUri = await AppLinks().getInitialAppLink();
   await AdsOrchestrator.init(coldStartUri: coldStartUri);

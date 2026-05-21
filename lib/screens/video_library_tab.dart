@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
@@ -12,6 +14,7 @@ import '../widgets/language_picker_sheet.dart';
 import '../widgets/language_tutorial_overlay.dart';
 import '../widgets/network_stream_sheet.dart';
 import '../widgets/search_filter_bar.dart';
+import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/zen_brand_title.dart';
 import 'folder_detail_screen.dart';
 import '../utils/video_navigation.dart';
@@ -160,6 +163,10 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     );
   }
 
+  void _openCastPicker() {
+    unawaited(showCastDevicePicker(context));
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -186,7 +193,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
               IconButton(
                 icon: const Icon(Icons.cast_outlined),
                 tooltip: l10n.cast,
-                onPressed: _showComingSoon,
+                onPressed: _openCastPicker,
               ),
               PopupMenuButton<String>(
                 icon: const Icon(Icons.more_vert),

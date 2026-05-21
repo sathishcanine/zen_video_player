@@ -13,6 +13,18 @@ subprojects {
     project.evaluationDependsOn(":app")
 }
 
+// AGP 8+ requires `namespace` in every Android library module. Older plugins
+// (e.g. flutter_chrome_cast 0.0.11) only declare `package` in AndroidManifest.
+subprojects { subproject ->
+    subproject.plugins.withId("com.android.library") {
+        subproject.android {
+            if (namespace == null) {
+                namespace = subproject.group.toString()
+            }
+        }
+    }
+}
+
 tasks.register("clean", Delete) {
     delete rootProject.buildDir
 }

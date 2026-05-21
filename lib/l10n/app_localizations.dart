@@ -637,6 +637,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'SHUFFLE ALL'**
   String get shuffleAll;
+
+  /// No description provided for @castSelectDevice.
+  ///
+  /// In en, this message translates to:
+  /// **'Cast to device'**
+  String get castSelectDevice;
+
+  /// No description provided for @castSearching.
+  ///
+  /// In en, this message translates to:
+  /// **'Looking for Cast devices…'**
+  String get castSearching;
+
+  /// No description provided for @castWifiHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Phone and TV must be on the same Wi‑Fi network.'**
+  String get castWifiHint;
+
+  /// No description provided for @castDisconnect.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnect'**
+  String get castDisconnect;
+
+  /// No description provided for @castDisconnected.
+  ///
+  /// In en, this message translates to:
+  /// **'Disconnected from Cast'**
+  String get castDisconnected;
+
+  /// No description provided for @castConnectedTo.
+  ///
+  /// In en, this message translates to:
+  /// **'Connected to {device}'**
+  String castConnectedTo(String device);
+
+  /// No description provided for @castPlayingOn.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing on {device}'**
+  String castPlayingOn(String device);
+
+  /// No description provided for @castFailed.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not cast this video. Try again.'**
+  String get castFailed;
+
+  /// No description provided for @castUnsupportedPlatform.
+  ///
+  /// In en, this message translates to:
+  /// **'Cast is not available on this platform.'**
+  String get castUnsupportedPlatform;
+
+  /// No description provided for @castUnsupportedContentUri.
+  ///
+  /// In en, this message translates to:
+  /// **'Cast is not supported for videos opened from other apps.'**
+  String get castUnsupportedContentUri;
+
+  /// No description provided for @castLocalWifiRequired.
+  ///
+  /// In en, this message translates to:
+  /// **'Connect to Wi‑Fi to cast local videos from this phone.'**
+  String get castLocalWifiRequired;
+
+  /// No description provided for @castPlayVideoToCast.
+  ///
+  /// In en, this message translates to:
+  /// **'Open a video and tap Cast to play it on your TV.'**
+  String get castPlayVideoToCast;
 }
 
 class _AppLocalizationsDelegate

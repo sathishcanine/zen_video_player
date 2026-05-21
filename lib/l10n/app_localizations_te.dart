@@ -310,4 +310,48 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get shuffleAll => 'అన్నీ షఫుల్ చేయి';
+
+  @override
+  String get castSelectDevice => 'Cast to device';
+
+  @override
+  String get castSearching => 'Looking for Cast devices…';
+
+  @override
+  String get castWifiHint => 'Phone and TV must be on the same Wi‑Fi network.';
+
+  @override
+  String get castDisconnect => 'Disconnect';
+
+  @override
+  String get castDisconnected => 'Disconnected from Cast';
+
+  @override
+  String castConnectedTo(String device) {
+    return 'Connected to $device';
+  }
+
+  @override
+  String castPlayingOn(String device) {
+    return 'Playing on $device';
+  }
+
+  @override
+  String get castFailed => 'Could not cast this video. Try again.';
+
+  @override
+  String get castUnsupportedPlatform =>
+      'Cast is not available on this platform.';
+
+  @override
+  String get castUnsupportedContentUri =>
+      'Cast is not supported for videos opened from other apps.';
+
+  @override
+  String get castLocalWifiRequired =>
+      'Connect to Wi‑Fi to cast local videos from this phone.';
+
+  @override
+  String get castPlayVideoToCast =>
+      'Open a video and tap Cast to play it on your TV.';
 }

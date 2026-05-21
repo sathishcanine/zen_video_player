@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:video_player/video_player.dart';
+import 'package:zen_video_player/services/cast_service.dart';
 import 'package:zen_video_player/video/video_color_filter.dart';
 import 'package:zen_video_player/widgets/zen_color_filter_menu.dart';
 
@@ -18,6 +19,7 @@ class ZenVideoPlayerChrome extends StatefulWidget {
     required this.title,
     required this.onBack,
     required this.onRotate,
+    required this.onCast,
     this.onDownload,
     this.onPip,
     this.showPip = false,
@@ -31,6 +33,7 @@ class ZenVideoPlayerChrome extends StatefulWidget {
   final String title;
   final VoidCallback onBack;
   final VoidCallback onRotate;
+  final void Function(BuildContext context) onCast;
   final VoidCallback? onDownload;
   final VoidCallback? onPip;
   final bool showPip;
@@ -436,9 +439,17 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
             ),
           ),
           IconButton(
-            icon: const Icon(Icons.cast, color: Colors.white),
+            icon: Icon(
+              CastService.instance.isConnected
+                  ? Icons.cast_connected
+                  : Icons.cast,
+              color: Colors.white,
+            ),
             tooltip: 'Cast',
-            onPressed: () => _showSnack('Cast is not available yet.'),
+            onPressed: () {
+              _wakeControls();
+              widget.onCast(context);
+            },
           ),
           IconButton(
             icon: const Icon(Icons.audiotrack, color: Colors.white),

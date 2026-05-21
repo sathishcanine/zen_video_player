@@ -47,5 +47,12 @@
 	<string>ca-app-pub-3940256099942544~3347511713</string>
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>Zen needs access to your photo library to find and play videos stored on your device.</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Zen uses the local network to discover Cast-enabled devices on your Wi‑Fi network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_CC1AD845._googlecast._tcp</string>
+		<string>_googlecast._tcp</string>
+	</array>
 </dict>
 </plist>

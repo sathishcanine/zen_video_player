@@ -128,5 +128,27 @@
   "backgroundPlaybackTitle": "Allow continuous background playback",
   "backgroundPlaybackBody": "To prevent playback from being stopped by the system, please give the necessary permission.",
   "queue": "Queue",
-  "shuffleAll": "SHUFFLE ALL"
+  "shuffleAll": "SHUFFLE ALL",
+  "castSelectDevice": "Cast to device",
+  "castSearching": "Looking for Cast devices…",
+  "castWifiHint": "Phone and TV must be on the same Wi‑Fi network.",
+  "castDisconnect": "Disconnect",
+  "castDisconnected": "Disconnected from Cast",
+  "castConnectedTo": "Connected to {device}",
+  "@castConnectedTo": {
+    "placeholders": {
+      "device": {"type": "String"}
+    }
+  },
+  "castPlayingOn": "Playing on {device}",
+  "@castPlayingOn": {
+    "placeholders": {
+      "device": {"type": "String"}
+    }
+  },
+  "castFailed": "Could not cast this video. Try again.",
+  "castUnsupportedPlatform": "Cast is not available on this platform.",
+  "castUnsupportedContentUri": "Cast is not supported for videos opened from other apps.",
+  "castLocalWifiRequired": "Connect to Wi‑Fi to cast local videos from this phone.",
+  "castPlayVideoToCast": "Open a video and tap Cast to play it on your TV."
 }
