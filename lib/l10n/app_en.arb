@@ -1,0 +1,125 @@
+{
+  "@@locale": "en",
+  "appName": "Zen",
+  "appNameFull": "Zen Video Player",
+  "accessYourMedia": "Access Your Media",
+  "mediaAccessDescription": "{appName} needs access to your media files to find and play videos and music stored on your device.",
+  "@mediaAccessDescription": {
+    "placeholders": {
+      "appName": {"type": "String"}
+    }
+  },
+  "featurePlayLocal": "Play local videos & audio",
+  "featureBrowseFiles": "Browse files easily",
+  "featureLockPrivate": "Lock private folders",
+  "allowAccess": "Allow Access",
+  "notNow": "Not now",
+  "permissionRequired": "Media access is required to browse your library. You can allow access in Settings.",
+  "openSettings": "Open Settings",
+  "tabVideo": "Video",
+  "tabAudio": "Audio",
+  "tabSettings": "Settings",
+  "pillPlaylist": "PLAYLIST",
+  "pillMediaServer": "MEDIA SERVER",
+  "pillNetworkStream": "NETWORK STREAM",
+  "comingSoon": "Coming soon",
+  "audioTabHint": "Audio browsing will be available in a future update.",
+  "settingsTabHint": "Settings will be available in a future update.",
+  "folderRecentlyAdded": "Recently added",
+  "videoCount": "{count, plural, =1{1 video} other{{count} videos}}",
+  "@videoCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "folderSizeSummary": "{count} • {size}",
+  "@folderSizeSummary": {
+    "placeholders": {
+      "count": {"type": "String"},
+      "size": {"type": "String"}
+    }
+  },
+  "badgeNew": "NEW",
+  "noVideosFound": "No videos found on this device",
+  "grantAccessToBrowse": "Allow media access to browse folders on your device.",
+  "pickVideoFile": "Pick a video file",
+  "playFromUrl": "Play from URL",
+  "pasteVideoUrl": "Paste video URL here",
+  "playVideo": "Play Video",
+  "searchFolders": "Search folders",
+  "cast": "Cast",
+  "moreOptions": "More",
+  "loadingLibrary": "Loading your library…",
+  "calculatingSize": "Calculating…",
+  "videosInFolder": "Videos in {folder}",
+  "@videosInFolder": {
+    "placeholders": {
+      "folder": {"type": "String"}
+    }
+  },
+  "permissionWhyTitle": "Why the app needs permission",
+  "permissionWhyBody1": "{appName} needs access to videos, songs, and subtitles on your device to function properly.",
+  "@permissionWhyBody1": {
+    "placeholders": {
+      "appName": {"type": "String"}
+    }
+  },
+  "permissionWhyBody2": "File access is used so you can discover and play media stored on your phone. After you allow access, you will see folders with your videos in the app.",
+  "permissionWhyPrivacy": "{appName} promises that it will not use these permissions to access your private data.",
+  "@permissionWhyPrivacy": {
+    "placeholders": {
+      "appName": {"type": "String"}
+    }
+  },
+  "permissionWhyMoreInfo": "For more information",
+  "permissionWhySupportUrl": "https://support.google.com/googleplay/android-developer/answer/10467955",
+  "ok": "OK",
+  "skip": "Skip",
+  "next": "Next",
+  "getStarted": "Get Started",
+  "onboardingTitle1": "All-in-One Media Player",
+  "onboardingPictureModes": "Picture Modes",
+  "pictureModeStandard": "Standard",
+  "pictureModeVivid": "Vivid",
+  "pictureModeGame": "Game",
+  "pictureModeMovie": "Movie",
+  "pictureModeCozy": "Cozy",
+  "pictureModeDynamic": "Dynamic",
+  "onboardingSubtitle1": "HDR video player handles all files. Powerful music player for your entire library.",
+  "onboardingTitle2": "Premium Audio Experience",
+  "onboardingSubtitle2": "Crystal clear equalizer with true bass. Elegant music visualizers.",
+  "onboardingTitle3": "Stunning Visualizers",
+  "onboardingSubtitle3": "Crystal-clear equalizer. Deep bass. Elegant visualizers.",
+  "onboardingTitle4": "Advanced Features",
+  "onboardingSubtitle4": "Download subtitles for any video. Secure folder locker for privacy.",
+  "chooseLanguage": "Choose language",
+  "languageEnglish": "English",
+  "languageTamil": "Tamil",
+  "languageHindi": "Hindi",
+  "languageTelugu": "Telugu",
+  "languageTamilPicker": "Tamil (தமிழ்)",
+  "languageHindiPicker": "Hindi (हिन्दी)",
+  "languageTeluguPicker": "Telugu (తెలుగు)",
+  "languageTutorialTitle": "Choose your language",
+  "languageTutorialBody": "Tap the language button here to switch the app between Tamil, English, Hindi, and Telugu.",
+  "gotIt": "Got it",
+  "audioSubAlbum": "ALBUM",
+  "audioSubSongs": "SONGS",
+  "audioSubArtist": "ARTIST",
+  "audioSubFolder": "FOLDER",
+  "audioSubPlaylist": "PLAYLIST",
+  "noAudioFound": "No audio found on this device",
+  "searchAudio": "Search audio",
+  "unknownArtist": "<unknown>",
+  "songCount": "{count, plural, =1{1 song} other{{count} songs}}",
+  "@songCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "audioPlaylistHint": "Create and manage playlists in a future update.",
+  "backgroundPlaybackTitle": "Allow continuous background playback",
+  "backgroundPlaybackBody": "To prevent playback from being stopped by the system, please give the necessary permission.",
+  "queue": "Queue",
+  "shuffleAll": "SHUFFLE ALL"
+}

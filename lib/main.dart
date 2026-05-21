@@ -2,6 +2,8 @@ import 'dart:async';
 
 import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
+import 'package:zen_video_player/l10n/app_localizations.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:zen_video_player/analytics/telemetry.dart';
 import 'package:zen_video_player/video_preview_screen.dart';
 
@@ -11,6 +13,8 @@ import 'app_update/force_update_from_deeplink.dart';
 import 'app_update/force_update_screen.dart';
 import 'app_navigator.dart';
 import 'home_screen.dart';
+import 'services/locale_service.dart';
+import 'theme/zen_theme.dart';
 import 'video_player_screen.dart';
 
 bool _isOpenWithVideoUri(Uri? uri) {
@@ -22,6 +26,7 @@ bool _isOpenWithVideoUri(Uri? uri) {
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  await LocaleService.instance.load();
   await Telemetry.init();
 
   final coldStartUri = await AppLinks().getInitialAppLink();
@@ -52,14 +57,18 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
   @override
   void initState() {
     super.initState();
+    LocaleService.instance.addListener(_onLocaleChanged);
     initDeepLinks();
   }
 
   @override
   void dispose() {
+    LocaleService.instance.removeListener(_onLocaleChanged);
     _linkSubscription?.cancel();
     super.dispose();
   }
+
+  void _onLocaleChanged() => setState(() {});
 
   /// Handles a deeplink URI. Responsibilities:
   ///   0. If `latest_version` is set and this build is older, show the
@@ -199,13 +208,39 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: rootNavigatorKey,
-      debugShowCheckedModeBanner: false,
-      theme: ThemeData.dark(),
-      initialRoute: '/',
-      onGenerateInitialRoutes: _onGenerateInitialRoutes,
-      onGenerateRoute: _onGenerateRoute,
+    return ListenableBuilder(
+      listenable: LocaleService.instance,
+      builder: (context, _) {
+        final saved = LocaleService.instance.locale;
+        return MaterialApp(
+          navigatorKey: rootNavigatorKey,
+          debugShowCheckedModeBanner: false,
+          theme: ZenTheme.dark(),
+          locale: saved,
+          localeResolutionCallback: (locale, supported) {
+            if (saved != null) {
+              for (final l in supported) {
+                if (l.languageCode == saved.languageCode) return l;
+              }
+            }
+            if (locale == null) return const Locale('en');
+            for (final l in supported) {
+              if (l.languageCode == locale.languageCode) return l;
+            }
+            return const Locale('en');
+          },
+          localizationsDelegates: const [
+            AppLocalizations.delegate,
+            GlobalMaterialLocalizations.delegate,
+            GlobalWidgetsLocalizations.delegate,
+            GlobalCupertinoLocalizations.delegate,
+          ],
+          supportedLocales: AppLocalizations.supportedLocales,
+          initialRoute: '/',
+          onGenerateInitialRoutes: _onGenerateInitialRoutes,
+          onGenerateRoute: _onGenerateRoute,
+        );
+      },
     );
   }
 }

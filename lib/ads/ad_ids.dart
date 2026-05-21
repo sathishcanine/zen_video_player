@@ -1,12 +1,15 @@
 /// Ad network IDs — [kUseTestAdIds] switches Google sample AdMob units + Unity
 /// test mode + InMobi "test" slots vs **live** dashboard values.
 ///
-/// **Production:** keep [kUseTestAdIds] `false` and keep native **AdMob app id**
-/// (`AndroidManifest` / `Info.plist` `GADApplicationIdentifier`) equal to
-/// [adMobAppId] (the `~` string from AdMob).
+/// **Production:** set [kUseTestAdIds] to `false` and set native **AdMob app id**
+/// (`AndroidManifest` / `Info.plist` `GADApplicationIdentifier`) to the same
+/// value as [adMobAppId] (your live `~` string).
+///
+/// **Current:** `true` — Google sample app id + sample ad units + Unity test
+/// mode + InMobi test placement constants. Flip to `false` before release.
 ///
 /// [kUseTestAdIds] must be a compile-time constant.
-const bool kUseTestAdIds = false;
+const bool kUseTestAdIds = true;
 
 // --- Google AdMob (official sample app + ad units) ---
 // See: https://developers.google.com/admob/android/test-ads#sample_ad_units

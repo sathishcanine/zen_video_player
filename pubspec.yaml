@@ -30,7 +30,11 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
+  flutter_localizations:
+    sdk: flutter
+  intl: any
   video_player: ^2.8.2
+  just_audio: ^0.9.42
   chewie: ^1.7.4
   file_picker: ^8.0.0
   app_links: ^3.4.1
@@ -39,9 +43,9 @@ dependencies:
   shared_preferences: ^2.2.2
   url_launcher: ^6.3.0
   path_provider: ^2.1.2
-#  permission_handler: ^11.3.0
+  permission_handler: ^11.3.0
   package_info_plus: ^8.0.0
-#  photo_manager: ^3.0.0
+  photo_manager: ^3.0.0
   path: ^1.9.0
   flutter_launcher_icons: ^0.14.4
   firebase_core: ^3.6.0
@@ -71,6 +75,7 @@ dev_dependencies:
 
 # The following section is specific to Flutter packages.
 flutter:
+  generate: true
 
   # The following line ensures that the Material Icons font is
   # included with your application, so that you can use the icons in
@@ -78,6 +83,7 @@ flutter:
   uses-material-design: true
   assets:
     - android/app/src/main/res/mipmap-hdpi/ic_launcher.png
+    - assets/images/onboarding_picture_modes.jpg
 
   # To add assets to your application, add an assets section, like this:
   # assets:
