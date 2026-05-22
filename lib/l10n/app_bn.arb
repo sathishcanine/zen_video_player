@@ -1,0 +1,19 @@
+{
+  "@@locale": "bn",
+  "chooseLanguage": "ভাষা বেছে নিন",
+  "languageEnglish": "ইংরেজি",
+  "languageSpanishPicker": "স্প্যানিশ (Español)",
+  "languageArabicPicker": "আরবি (العربية)",
+  "languageFrenchPicker": "ফরাসি (Français)",
+  "languageBengaliPicker": "বাংলা (বাংলা)",
+  "languagePortuguesePicker": "পর্তুগিজ (Português)",
+  "languageRussianPicker": "রুশ (Русский)",
+  "languageUrduPicker": "উর্দু (اردو)",
+  "languageMandarinPicker": "চীনা (中文)",
+  "languageTamilPicker": "তামিল (தமிழ்)",
+  "languageHindiPicker": "হিন্দি (हिन्दी)",
+  "languageTeluguPicker": "তেলুগু (తెలుగు)",
+  "languageTutorialTitle": "আপনার ভাষা বেছে নিন",
+  "languageTutorialBody": "যেকোনো সময় অ্যাপের ভাষা পরিবর্তন করতে ভাষা বোতামে ট্যাপ করুন।",
+  "gotIt": "বুঝেছি"
+}

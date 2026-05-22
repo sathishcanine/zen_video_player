@@ -36,7 +36,7 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get allFilesAccessRequired =>
-      'Please turn on Allow permission for All files access in Settings to continue.';
+      'Please allow access to videos and music to browse your library. You can change this anytime in Settings.';
 
   @override
   String get notNow => 'ఇప్పుడు కాదు';
@@ -103,6 +103,47 @@ class AppLocalizationsTe extends AppLocalizations {
   @override
   String get grantAccessToBrowse =>
       'ఫోల్డర్లను బ్రౌజ్ చేయడానికి మీడియా యాక్సెస్ అనుమతించండి.';
+
+  @override
+  String get limitedVideoAccessTitle => 'Allow access to all videos';
+
+  @override
+  String get limitedVideoAccessBody =>
+      'You allowed only selected videos. Zen needs access to all videos on your device to show folders like Camera and Downloads. Tap below, then choose Allow all on the system screen.';
+
+  @override
+  String get allowAllVideos => 'Allow all videos';
+
+  @override
+  String get limitedAudioAccessTitle => 'Allow access to all music';
+
+  @override
+  String get limitedAudioAccessBody =>
+      'You allowed only selected music. Tap below, then choose Allow all on the system screen to browse your full library.';
+
+  @override
+  String get allowAllMusic => 'Allow all music';
+
+  @override
+  String get limitedAccessPreviewHint =>
+      'Folders on your device — allow all videos to open and play them.';
+
+  @override
+  String get limitedPartialLibraryHint =>
+      'You only allowed selected videos, so Zen can show a few folders. Allow all videos to browse Downloads and your full library.';
+
+  @override
+  String get limitedPartialFolderNote => 'allow all to browse';
+
+  @override
+  String get limitedAccessAlternatives => 'Or play without full library access';
+
+  @override
+  String get lockedFolderUnlock => 'Allow all videos to view';
+
+  @override
+  String get limitedAccessSettingsSnackbar =>
+      'In Settings, open Videos (or Photos and videos) and choose Allow all — not Select photos.';
 
   @override
   String get pickVideoFile => 'వీడియో ఫైల్ ఎంచుకోండి';
@@ -233,6 +274,9 @@ class AppLocalizationsTe extends AppLocalizations {
   String get chooseLanguage => 'భాష ఎంచుకోండి';
 
   @override
+  String get moreLanguages => 'More languages';
+
+  @override
   String get languageEnglish => 'ఆంగ్లం';
 
   @override
@@ -243,6 +287,30 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get languageTelugu => 'తెలుగు';
+
+  @override
+  String get languageSpanishPicker => 'స్పానిష్ (Español)';
+
+  @override
+  String get languageArabicPicker => 'అరబిక్ (العربية)';
+
+  @override
+  String get languageFrenchPicker => 'ఫ్రెంచ్ (Français)';
+
+  @override
+  String get languageBengaliPicker => 'బెంగాలీ (বাংলা)';
+
+  @override
+  String get languagePortuguesePicker => 'పోర్చుగీస్ (Português)';
+
+  @override
+  String get languageRussianPicker => 'రష్యన్ (Русский)';
+
+  @override
+  String get languageUrduPicker => 'ఉర్దూ (اردو)';
+
+  @override
+  String get languageMandarinPicker => 'చైనీస్ (中文)';
 
   @override
   String get languageTamilPicker => 'Tamil (தமிழ்)';
@@ -258,7 +326,7 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get languageTutorialBody =>
-      'తమిళం, ఆంగ్లం, హిందీ, తెలుగు మార్చడానికి ఇక్కడ భాష బటన్‌ను నొక్కండి.';
+      'ఎప్పుడైనా యాప్ భాష మార్చడానికి భాష బటన్‌ను నొక్కండి.';
 
   @override
   String get gotIt => 'అర్థమైంది';
@@ -575,7 +643,7 @@ class AppLocalizationsTe extends AppLocalizations {
   String get hide => 'Hide';
 
   @override
-  String get proBadge => 'PRO';
+  String get proBadge => 'FREE PRO';
 
   @override
   String proUnlockTitleFeature(String feature) {

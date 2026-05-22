@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'ad_config.dart';
+import 'ad_ids.dart' show homeBannerUnitId;
 import 'ad_network.dart';
 import 'ad_throttle.dart';
 import 'admob_adapter.dart';
@@ -168,5 +169,23 @@ class AdsOrchestrator {
       if (w != null) return w;
     }
     return null;
+  }
+
+  /// Home library banner with unit chosen by video permission level.
+  static Widget? buildHomeBanner({required bool hasFullVideoAccess}) {
+    if (!_config.bannerEnabled) return null;
+    final unitId = homeBannerUnitId(hasFullVideoAccess: hasFullVideoAccess);
+    for (final n in _orderedNetworks()) {
+      if (n is AdmobAdapter) {
+        final w = n.buildBannerWithUnitId(unitId);
+        if (w != null) return w;
+      }
+    }
+    for (final n in _registry) {
+      if (n is AdmobAdapter) {
+        return n.buildBannerWithUnitId(unitId) ?? buildBanner();
+      }
+    }
+    return buildBanner();
   }
 }

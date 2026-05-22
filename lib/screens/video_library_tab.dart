@@ -13,6 +13,7 @@ import '../theme/zen_theme.dart';
 import '../widgets/language_icon_button.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/language_tutorial_overlay.dart';
+import '../widgets/limited_video_library_preview.dart';
 import '../widgets/network_stream_sheet.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/cast_device_picker_sheet.dart';
@@ -36,6 +37,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
   List<MediaFolder> _filtered = [];
   bool _loading = true;
   bool _hasAccess = false;
+  bool _hasFullAccess = false;
   String _query = '';
   bool _awaitingPermission = false;
   final GlobalKey _languageButtonKey = GlobalKey();
@@ -87,7 +89,8 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
 
   Future<void> _refresh() async {
     setState(() => _loading = true);
-    _hasAccess = await MediaPermissionService.hasMediaAccess();
+    _hasAccess = await MediaPermissionService.hasVideoAccess();
+    _hasFullAccess = await MediaPermissionService.hasFullVideoAccess();
     if (_hasAccess) {
       final folders = await LocalMediaService.loadVideoFolders();
       if (!mounted) return;
@@ -108,8 +111,39 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
       setState(() {
         _folders = [];
         _filtered = [];
+        _hasFullAccess = false;
         _loading = false;
       });
+    }
+  }
+
+  Future<void> _requestFullAccess() async {
+    final l10n = AppLocalizations.of(context)!;
+    final result = await MediaPermissionService.requestFullVideoAccess();
+    if (!mounted) return;
+
+    switch (result) {
+      case FullMediaAccessResult.granted:
+        await _refresh();
+        return;
+      case FullMediaAccessResult.needsSettings:
+        _awaitingPermission = true;
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.limitedAccessSettingsSnackbar),
+            behavior: SnackBarBehavior.floating,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+        await MediaPermissionService.openVideoPermissionSettings();
+        return;
+      case FullMediaAccessResult.denied:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.allFilesAccessRequired),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
     }
   }
 
@@ -239,10 +273,10 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
                     value: 'url',
                     child: Text(l10n.playFromUrl),
                   ),
-                  if (!_hasAccess)
+                  if (!_hasFullAccess)
                     PopupMenuItem(
                       value: 'access',
-                      child: Text(l10n.allowAccess),
+                      child: Text(l10n.allowAllVideos),
                     ),
                 ],
               ),
@@ -283,6 +317,17 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
                       onUrl: () =>
                           showNetworkStreamSheet(context, onSubmit: _openUrl),
                     )
+                  : _hasAccess && !_hasFullAccess
+                      ? LimitedVideoLibraryPreview(
+                          visibleFolders: _folders,
+                          onGrantFullAccess: _requestFullAccess,
+                          onOpenSettings: _requestFullAccess,
+                          onPickFile: _pickFile,
+                          onPlayFromUrl: () => showNetworkStreamSheet(
+                            context,
+                            onSubmit: _openUrl,
+                          ),
+                        )
                   : _filtered.isEmpty
                       ? Center(child: Text(l10n.noVideosFound))
                       : RefreshIndicator(
@@ -313,9 +358,9 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
 
   Future<void> _requestAccess() async {
     _awaitingPermission = true;
-    await MediaPermissionService.openAllFilesAccessSettings();
+    await MediaPermissionService.requestMediaAccess();
     if (!mounted) return;
-    if (await MediaPermissionService.hasMediaAccess()) {
+    if (await MediaPermissionService.hasVideoAccess()) {
       _awaitingPermission = false;
       await _refresh();
     }

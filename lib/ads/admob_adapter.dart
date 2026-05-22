@@ -144,15 +144,18 @@ class AdmobAdapter implements AdNetwork {
   }
 
   @override
-  Widget? buildBanner() {
+  Widget? buildBanner() => buildBannerWithUnitId(bannerUnitId);
+
+  /// Banner with an explicit AdMob unit (e.g. full vs limited home placement).
+  Widget? buildBannerWithUnitId(String unitId) {
     if (!_initialized) return null;
-    return _AdmobBanner(unitId: bannerUnitId);
+    return _AdmobBanner(key: ValueKey<String>(unitId), unitId: unitId);
   }
 }
 
 class _AdmobBanner extends StatefulWidget {
   final String unitId;
-  const _AdmobBanner({required this.unitId});
+  const _AdmobBanner({super.key, required this.unitId});
 
   @override
   State<_AdmobBanner> createState() => _AdmobBannerState();
@@ -165,13 +168,30 @@ class _AdmobBannerState extends State<_AdmobBanner> {
   @override
   void initState() {
     super.initState();
+    _loadBanner();
+  }
+
+  @override
+  void didUpdateWidget(covariant _AdmobBanner oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (oldWidget.unitId != widget.unitId) {
+      _ad?.dispose();
+      _ad = null;
+      _failed = false;
+      _loadBanner();
+    }
+  }
+
+  void _loadBanner() {
     AdThrottle.recordRequest();
     _ad = BannerAd(
       size: AdSize.banner,
       adUnitId: widget.unitId,
       request: const AdRequest(),
       listener: BannerAdListener(
-        onAdLoaded: (_) => setState(() {}),
+        onAdLoaded: (_) {
+          if (mounted) setState(() {});
+        },
         onAdFailedToLoad: (ad, err) {
           ad.dispose();
           if (mounted) setState(() => _failed = true);

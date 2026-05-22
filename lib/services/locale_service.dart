@@ -10,13 +10,31 @@ class LocaleService extends ChangeNotifier {
   static const _localeKey = 'app_locale_code';
   static const tutorialSeenKey = 'language_tutorial_seen_v1';
 
-  /// Languages offered in the home-screen picker.
-  static const List<Locale> pickerLocales = [
+  /// Shown at the top of the language picker (always visible).
+  static const List<Locale> primaryPickerLocales = [
     Locale('en'),
     Locale('ta'),
     Locale('hi'),
     Locale('te'),
+    Locale('fr'),
+    Locale('bn'),
   ];
+
+  /// Shown in a scrollable section below the primary list.
+  static const List<Locale> morePickerLocales = [
+    Locale('es'),
+    Locale('ar'),
+    Locale('pt'),
+    Locale('ru'),
+    Locale('ur'),
+    Locale('zh'),
+  ];
+
+  /// All selectable languages (primary + more).
+  static List<Locale> get pickerLocales => [
+        ...primaryPickerLocales,
+        ...morePickerLocales,
+      ];
 
   Locale? _locale;
 

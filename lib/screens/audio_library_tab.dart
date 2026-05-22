@@ -17,6 +17,7 @@ import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/language_icon_button.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/language_picker_sheet.dart';
+import '../widgets/limited_media_access_prompt.dart';
 import '../widgets/zen_brand_title.dart';
 import '../utils/audio_playback_launcher.dart';
 import 'audio_track_list_screen.dart';
@@ -37,6 +38,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
   late final PageController _pageController;
   bool _loading = true;
   bool _hasAccess = false;
+  bool _limitedAccess = false;
   String _query = '';
 
   List<AudioTrack> _tracks = [];
@@ -80,7 +82,8 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
   Future<void> _refresh() async {
     setState(() => _loading = true);
     AudioArtworkCache.instance.clear();
-    _hasAccess = await MediaPermissionService.hasMediaAccess();
+    _hasAccess = await MediaPermissionService.hasAudioAccess();
+    _limitedAccess = await MediaPermissionService.isAudioAccessLimited();
     if (!_hasAccess) {
       if (!mounted) return;
       setState(() {
@@ -88,6 +91,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
         _albums = [];
         _artists = [];
         _folders = [];
+        _limitedAccess = false;
         _loading = false;
       });
       return;
@@ -207,16 +211,52 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
     );
   }
 
+  Future<void> _requestFullAudioAccess(
+    BuildContext context,
+    AppLocalizations l10n,
+  ) async {
+    final result = await MediaPermissionService.requestFullAudioAccess();
+    if (!context.mounted) return;
+    switch (result) {
+      case FullMediaAccessResult.granted:
+        await _refresh();
+        return;
+      case FullMediaAccessResult.needsSettings:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(l10n.limitedAccessSettingsSnackbar),
+            duration: const Duration(seconds: 5),
+          ),
+        );
+        await MediaPermissionService.openVideoPermissionSettings();
+        return;
+      case FullMediaAccessResult.denied:
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(l10n.allFilesAccessRequired)),
+        );
+    }
+  }
+
   Widget _buildBody(AppLocalizations l10n) {
     if (_loading) {
       return Center(child: Text(l10n.loadingLibrary));
     }
     if (!_hasAccess) {
       return _NoAccessAudio(onAllow: () async {
-        await MediaPermissionService.openAllFilesAccessSettings();
-        await LocalAudioService.requestAudioAccess();
+        await MediaPermissionService.requestMediaAccess();
         await _refresh();
       });
+    }
+
+    if (_limitedAccess && _tracks.isEmpty) {
+      return LimitedMediaAccessPrompt(
+        title: l10n.limitedAudioAccessTitle,
+        message: l10n.limitedAudioAccessBody,
+        primaryLabel: l10n.allowAllMusic,
+        onGrantFullAccess: () => _requestFullAudioAccess(context, l10n),
+        settingsLabel: l10n.openSettings,
+        onOpenSettings: () => _requestFullAudioAccess(context, l10n),
+      );
     }
 
     return PageView(

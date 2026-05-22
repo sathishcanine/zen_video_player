@@ -4,87 +4,89 @@ import 'app_localizations.dart';
 
 // ignore_for_file: type=lint
 
-/// The translations for Arabic (`ar`).
-class AppLocalizationsAr extends AppLocalizations {
-  AppLocalizationsAr([String locale = 'ar']) : super(locale);
+/// The translations for Urdu (`ur`).
+class AppLocalizationsUr extends AppLocalizations {
+  AppLocalizationsUr([String locale = 'ur']) : super(locale);
 
   @override
   String get appName => 'Zen';
 
   @override
-  String get appNameFull => 'Zen مشغل الفيديو';
+  String get appNameFull => 'Zen Video Player';
 
   @override
-  String get accessYourMedia => 'الوصول إلى الوسائط';
+  String get accessYourMedia => 'Access Your Media';
 
   @override
   String mediaAccessDescription(String appName) {
-    return 'يحتاج $appName إلى الوصول إلى ملفات الوسائط للعثور على مقاطع الفيديو والموسيقى وتشغيلها على جهازك.';
+    return '$appName needs access to your media files to find and play videos and music stored on your device.';
   }
 
   @override
-  String get featurePlayLocal => 'تشغيل الفيديو والصوت المحلي';
+  String get featurePlayLocal => 'Play local videos & audio';
 
   @override
-  String get featureBrowseFiles => 'تصفح الملفات بسهولة';
+  String get featureBrowseFiles => 'Browse files easily';
 
   @override
-  String get featureLockPrivate => 'قفل المجلدات الخاصة';
+  String get featureLockPrivate => 'Lock private folders';
 
   @override
-  String get allowAccess => 'السماح بالوصول';
+  String get allowAccess => 'Allow Access';
 
   @override
   String get allFilesAccessRequired =>
       'Please allow access to videos and music to browse your library. You can change this anytime in Settings.';
 
   @override
-  String get notNow => 'ليس الآن';
+  String get notNow => 'Not now';
 
   @override
   String get permissionRequired =>
-      'يلزم الوصول إلى الوسائط لتصفح المكتبة. يمكنك السماح في الإعدادات.';
+      'Media access is required to browse your library. You can allow access in Settings.';
 
   @override
-  String get openSettings => 'فتح الإعدادات';
+  String get openSettings => 'Open Settings';
 
   @override
-  String get tabVideo => 'فيديو';
+  String get tabVideo => 'Video';
 
   @override
-  String get tabAudio => 'صوت';
+  String get tabAudio => 'Audio';
 
   @override
-  String get tabSettings => 'إعدادات';
+  String get tabSettings => 'Settings';
 
   @override
-  String get pillPlaylist => 'قائمة التشغيل';
+  String get pillPlaylist => 'PLAYLIST';
 
   @override
-  String get pillMediaServer => 'خادم الوسائط';
+  String get pillMediaServer => 'MEDIA SERVER';
 
   @override
-  String get pillNetworkStream => 'بث الشبكة';
+  String get pillNetworkStream => 'NETWORK STREAM';
 
   @override
-  String get comingSoon => 'قريباً';
+  String get comingSoon => 'Coming soon';
 
   @override
-  String get audioTabHint => 'تصفح الصوت سيكون متاحاً في تحديث لاحق.';
+  String get audioTabHint =>
+      'Audio browsing will be available in a future update.';
 
   @override
-  String get settingsTabHint => 'الإعدادات ستكون متاحة في تحديث لاحق.';
+  String get settingsTabHint =>
+      'Settings will be available in a future update.';
 
   @override
-  String get folderRecentlyAdded => 'أُضيف مؤخراً';
+  String get folderRecentlyAdded => 'Recently added';
 
   @override
   String videoCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count فيديو',
-      one: 'فيديو واحد',
+      other: '$count videos',
+      one: '1 video',
     );
     return '$_temp0';
   }
@@ -95,13 +97,14 @@ class AppLocalizationsAr extends AppLocalizations {
   }
 
   @override
-  String get badgeNew => 'جديد';
+  String get badgeNew => 'NEW';
 
   @override
-  String get noVideosFound => 'لم يتم العثور على فيديوهات على هذا الجهاز';
+  String get noVideosFound => 'No videos found on this device';
 
   @override
-  String get grantAccessToBrowse => 'اسمح بالوصول إلى الوسائط لتصفح المجلدات.';
+  String get grantAccessToBrowse =>
+      'Allow media access to browse folders on your device.';
 
   @override
   String get limitedVideoAccessTitle => 'Allow access to all videos';
@@ -145,189 +148,190 @@ class AppLocalizationsAr extends AppLocalizations {
       'In Settings, open Videos (or Photos and videos) and choose Allow all — not Select photos.';
 
   @override
-  String get pickVideoFile => 'اختر ملف فيديو';
+  String get pickVideoFile => 'Pick a video file';
 
   @override
-  String get playFromUrl => 'تشغيل من رابط';
+  String get playFromUrl => 'Play from URL';
 
   @override
-  String get pasteVideoUrl => 'الصق رابط الفيديو هنا';
+  String get pasteVideoUrl => 'Paste video URL here';
 
   @override
-  String get playVideo => 'تشغيل';
+  String get playVideo => 'Play Video';
 
   @override
-  String get searchFolders => 'بحث في المجلدات';
+  String get searchFolders => 'Search folders';
 
   @override
-  String get clearSearch => 'مسح';
+  String get clearSearch => 'Clear';
 
   @override
   String searchResultsFor(String query) {
-    return 'نتائج \"$query\"';
+    return 'Results for \"$query\"';
   }
 
   @override
-  String get cast => 'بث';
+  String get cast => 'Cast';
 
   @override
-  String get moreOptions => 'المزيد';
+  String get moreOptions => 'More';
 
   @override
-  String get loadingLibrary => 'جاري تحميل المكتبة…';
+  String get loadingLibrary => 'Loading your library…';
 
   @override
-  String get calculatingSize => 'جاري الحساب…';
+  String get calculatingSize => 'Calculating…';
 
   @override
   String videosInFolder(String folder) {
-    return 'فيديوهات في $folder';
+    return 'Videos in $folder';
   }
 
   @override
-  String get permissionWhyTitle => 'لماذا يحتاج التطبيق إلى إذن';
+  String get permissionWhyTitle => 'Why the app needs permission';
 
   @override
   String permissionWhyBody1(String appName) {
-    return 'يحتاج $appName إلى الوصول إلى مقاطع الفيديو والأغاني والترجمات على جهازك ليعمل بشكل صحيح.';
+    return '$appName needs access to videos, songs, and subtitles on your device to function properly.';
   }
 
   @override
   String get permissionWhyBody2 =>
-      'يُستخدم الوصول إلى الملفات لاكتشاف الوسائط وتشغيلها على هاتفك. بعد السماح، ستظهر مجلدات الفيديو في التطبيق.';
+      'File access is used so you can discover and play media stored on your phone. After you allow access, you will see folders with your videos in the app.';
 
   @override
   String permissionWhyPrivacy(String appName) {
-    return 'يعد $appName بعدم استخدام هذه الأذونات للوصول إلى بياناتك الخاصة.';
+    return '$appName promises that it will not use these permissions to access your private data.';
   }
 
   @override
-  String get permissionWhyMoreInfo => 'لمزيد من المعلومات';
+  String get permissionWhyMoreInfo => 'For more information';
 
   @override
   String get permissionWhySupportUrl =>
       'https://support.google.com/googleplay/android-developer/answer/10467955';
 
   @override
-  String get ok => 'موافق';
+  String get ok => 'OK';
 
   @override
-  String get skip => 'تخطي';
+  String get skip => 'Skip';
 
   @override
-  String get next => 'التالي';
+  String get next => 'Next';
 
   @override
-  String get getStarted => 'ابدأ';
+  String get getStarted => 'Get Started';
 
   @override
-  String get onboardingTitle1 => 'مشغل وسائط شامل';
+  String get onboardingTitle1 => 'All-in-One Media Player';
 
   @override
-  String get onboardingPictureModes => 'أوضاع الصورة';
+  String get onboardingPictureModes => 'Picture Modes';
 
   @override
-  String get pictureModeStandard => 'قياسي';
+  String get pictureModeStandard => 'Standard';
 
   @override
-  String get pictureModeVivid => 'حيوي';
+  String get pictureModeVivid => 'Vivid';
 
   @override
-  String get pictureModeGame => 'لعبة';
+  String get pictureModeGame => 'Game';
 
   @override
-  String get pictureModeMovie => 'فيلم';
+  String get pictureModeMovie => 'Movie';
 
   @override
-  String get pictureModeCozy => 'مريح';
+  String get pictureModeCozy => 'Cozy';
 
   @override
-  String get pictureModeDynamic => 'ديناميكي';
+  String get pictureModeDynamic => 'Dynamic';
 
   @override
   String get onboardingSubtitle1 =>
-      'مشغل فيديو HDR يتعامل مع جميع الملفات. مشغل موسيقى قوي لمكتبتك بالكامل.';
+      'HDR video player handles all files. Powerful music player for your entire library.';
 
   @override
-  String get onboardingTitle2 => 'تجربة صوت مميزة';
+  String get onboardingTitle2 => 'Premium Audio Experience';
 
   @override
   String get onboardingSubtitle2 =>
-      'معادل صوت واضح مع باس حقيقي. مُصوّرات موسيقية أنيقة.';
+      'Crystal clear equalizer with true bass. Elegant music visualizers.';
 
   @override
-  String get onboardingTitle3 => 'مُصوّرات مذهلة';
+  String get onboardingTitle3 => 'Stunning Visualizers';
 
   @override
-  String get onboardingSubtitle3 => 'معادل صوت واضح. باس عميق. مُصوّرات أنيقة.';
+  String get onboardingSubtitle3 =>
+      'Crystal-clear equalizer. Deep bass. Elegant visualizers.';
 
   @override
-  String get onboardingTitle4 => 'ميزات متقدمة';
+  String get onboardingTitle4 => 'Advanced Features';
 
   @override
   String get onboardingSubtitle4 =>
-      'تنزيل ترجمات لأي فيديو. مجلد آمن لخصوصيتك.';
+      'Download subtitles for any video. Secure folder locker for privacy.';
 
   @override
-  String get chooseLanguage => 'اختر اللغة';
+  String get chooseLanguage => 'زبان منتخب کریں';
 
   @override
   String get moreLanguages => 'More languages';
 
   @override
-  String get languageEnglish => 'الإنجليزية';
+  String get languageEnglish => 'انگریزی';
 
   @override
-  String get languageTamil => 'التاميلية';
+  String get languageTamil => 'Tamil';
 
   @override
-  String get languageHindi => 'الهندية';
+  String get languageHindi => 'Hindi';
 
   @override
-  String get languageTelugu => 'التيلوجو';
+  String get languageTelugu => 'Telugu';
 
   @override
-  String get languageSpanishPicker => 'الإسبانية (Español)';
+  String get languageSpanishPicker => 'ہسپانوی (Español)';
 
   @override
-  String get languageArabicPicker => 'العربية (العربية)';
+  String get languageArabicPicker => 'عربی (العربية)';
 
   @override
-  String get languageFrenchPicker => 'الفرنسية (Français)';
+  String get languageFrenchPicker => 'فرانسیسی (Français)';
 
   @override
-  String get languageBengaliPicker => 'البنغالية (বাংলা)';
+  String get languageBengaliPicker => 'بنگالی (বাংলা)';
 
   @override
-  String get languagePortuguesePicker => 'البرتغالية (Português)';
+  String get languagePortuguesePicker => 'پرتگالی (Português)';
 
   @override
-  String get languageRussianPicker => 'الروسية (Русский)';
+  String get languageRussianPicker => 'روسی (Русский)';
 
   @override
-  String get languageUrduPicker => 'الأردية (اردو)';
+  String get languageUrduPicker => 'اردو (اردو)';
 
   @override
-  String get languageMandarinPicker => 'الصينية (中文)';
+  String get languageMandarinPicker => 'چینی (中文)';
 
   @override
-  String get languageTamilPicker => 'Tamil (தமிழ்)';
+  String get languageTamilPicker => 'تامل (தமிழ்)';
 
   @override
-  String get languageHindiPicker => 'Hindi (हिन्दी)';
+  String get languageHindiPicker => 'ہندی (हिन्दी)';
 
   @override
-  String get languageTeluguPicker => 'Telugu (తెలుగు)';
+  String get languageTeluguPicker => 'تیلگو (తెలుగు)';
 
   @override
-  String get languageTutorialTitle => 'اختر لغتك';
+  String get languageTutorialTitle => 'اپنی زبان منتخب کریں';
 
   @override
   String get languageTutorialBody =>
-      'اضغط زر اللغة لتغيير لغة التطبيق في أي وقت.';
+      'کسی بھی وقت ایپ کی زبان بدلنے کے لیے زبان کے بٹن پر ٹیپ کریں۔';
 
   @override
-  String get gotIt => 'حسناً';
+  String get gotIt => 'سمجھ گیا';
 
   @override
   String get colorTutorialTitle => 'Color filters';
@@ -337,55 +341,56 @@ class AppLocalizationsAr extends AppLocalizations {
       'Choose a look for your video — tap a preset or open Custom to adjust contrast, brightness, and more.';
 
   @override
-  String get audioSubAlbum => 'الألبوم';
+  String get audioSubAlbum => 'ALBUM';
 
   @override
-  String get audioSubSongs => 'الأغاني';
+  String get audioSubSongs => 'SONGS';
 
   @override
-  String get audioSubArtist => 'الفنان';
+  String get audioSubArtist => 'ARTIST';
 
   @override
-  String get audioSubFolder => 'المجلد';
+  String get audioSubFolder => 'FOLDER';
 
   @override
-  String get audioSubPlaylist => 'قائمة';
+  String get audioSubPlaylist => 'PLAYLIST';
 
   @override
-  String get noAudioFound => 'لم يتم العثور على صوت على هذا الجهاز';
+  String get noAudioFound => 'No audio found on this device';
 
   @override
-  String get searchAudio => 'بحث الصوت';
+  String get searchAudio => 'Search audio';
 
   @override
-  String get unknownArtist => '<غير معروف>';
+  String get unknownArtist => '<unknown>';
 
   @override
   String songCount(int count) {
     String _temp0 = intl.Intl.pluralLogic(
       count,
       locale: localeName,
-      other: '$count أغاني',
-      one: 'أغنية واحدة',
+      other: '$count songs',
+      one: '1 song',
     );
     return '$_temp0';
   }
 
   @override
-  String get audioPlaylistHint => 'قوائم التشغيل ستكون متاحة في تحديث لاحق.';
+  String get audioPlaylistHint =>
+      'Create and manage playlists in a future update.';
 
   @override
-  String get backgroundPlaybackTitle => 'السماح بالتشغيل المستمر في الخلفية';
+  String get backgroundPlaybackTitle => 'Allow continuous background playback';
 
   @override
   String get backgroundPlaybackBody =>
-      'لمنع النظام من إيقاف التشغيل، يرجى منح الإذن اللازم.';
+      'To prevent playback from being stopped by the system, please give the necessary permission.';
 
   @override
-  String get queue => 'قائمة الانتظار';
+  String get queue => 'Queue';
 
   @override
-  String get shuffleAll => 'خلط الكل';
+  String get shuffleAll => 'SHUFFLE ALL';
 
   @override
   String get castSelectDevice => 'Cast to device';

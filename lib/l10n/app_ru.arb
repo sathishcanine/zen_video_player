@@ -1,0 +1,19 @@
+{
+  "@@locale": "ru",
+  "chooseLanguage": "Выберите язык",
+  "languageEnglish": "Английский",
+  "languageSpanishPicker": "Испанский (Español)",
+  "languageArabicPicker": "Арабский (العربية)",
+  "languageFrenchPicker": "Французский (Français)",
+  "languageBengaliPicker": "Бенгали (বাংলা)",
+  "languagePortuguesePicker": "Португальский (Português)",
+  "languageRussianPicker": "Русский (Русский)",
+  "languageUrduPicker": "Урду (اردو)",
+  "languageMandarinPicker": "Китайский (中文)",
+  "languageTamilPicker": "Тамильский (தமிழ்)",
+  "languageHindiPicker": "Хинди (हिन्दी)",
+  "languageTeluguPicker": "Телугу (తెలుగు)",
+  "languageTutorialTitle": "Выберите язык",
+  "languageTutorialBody": "Нажмите кнопку языка, чтобы в любой момент сменить язык приложения.",
+  "gotIt": "Понятно"
+}

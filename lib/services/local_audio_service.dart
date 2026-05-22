@@ -20,7 +20,7 @@ class LocalAudioService {
   );
 
   static Future<List<AudioTrack>> loadTracks() async {
-    if (!await MediaPermissionService.hasMediaAccess()) {
+    if (!await MediaPermissionService.hasAudioAccess()) {
       return const [];
     }
 
@@ -164,7 +164,7 @@ class LocalAudioService {
   }
 
   static Future<List<MediaFolder>> loadAudioFolders() async {
-    if (!await MediaPermissionService.hasMediaAccess()) {
+    if (!await MediaPermissionService.hasAudioAccess()) {
       return const [];
     }
 

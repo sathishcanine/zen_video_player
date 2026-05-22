@@ -1,0 +1,19 @@
+{
+  "@@locale": "fr",
+  "chooseLanguage": "Choisir la langue",
+  "languageEnglish": "Anglais",
+  "languageSpanishPicker": "Espagnol (Español)",
+  "languageArabicPicker": "Arabe (العربية)",
+  "languageFrenchPicker": "Français (Français)",
+  "languageBengaliPicker": "Bengali (বাংলা)",
+  "languagePortuguesePicker": "Portugais (Português)",
+  "languageRussianPicker": "Russe (Русский)",
+  "languageUrduPicker": "Urdu (اردو)",
+  "languageMandarinPicker": "Chinois (中文)",
+  "languageTamilPicker": "Tamoul (தமிழ்)",
+  "languageHindiPicker": "Hindi (हिन्दी)",
+  "languageTeluguPicker": "Télougou (తెలుగు)",
+  "languageTutorialTitle": "Choisissez votre langue",
+  "languageTutorialBody": "Appuyez sur le bouton de langue pour changer la langue de l'application à tout moment.",
+  "gotIt": "Compris"
+}

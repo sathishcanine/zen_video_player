@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
+import 'package:zen_video_player/l10n/picker_locale_labels.dart';
 
 import '../services/locale_service.dart';
 import '../theme/zen_theme.dart';
@@ -77,12 +78,7 @@ class LanguageTutorialOverlay {
               child: _TutorialCard(
                 title: l10n.languageTutorialTitle,
                 body: l10n.languageTutorialBody,
-                languages: [
-                  l10n.languageTamilPicker,
-                  l10n.languageEnglish,
-                  l10n.languageHindiPicker,
-                  l10n.languageTeluguPicker,
-                ],
+                languages: _tutorialLanguageSamples(l10n),
                 onGotIt: dismiss,
               ),
             ),
@@ -102,12 +98,7 @@ class LanguageTutorialOverlay {
               child: _TutorialCard(
                 title: l10n.languageTutorialTitle,
                 body: l10n.languageTutorialBody,
-                languages: [
-                  l10n.languageTamilPicker,
-                  l10n.languageEnglish,
-                  l10n.languageHindiPicker,
-                  l10n.languageTeluguPicker,
-                ],
+                languages: _tutorialLanguageSamples(l10n),
                 onGotIt: dismiss,
               ),
             ),
@@ -124,6 +115,14 @@ class LanguageTutorialOverlay {
     _entry = null;
     LocaleService.markLanguageTutorialSeen();
   }
+}
+
+List<String> _tutorialLanguageSamples(AppLocalizations l10n) {
+  const sampleCodes = ['en', 'es', 'ar', 'zh', 'hi', 'fr'];
+  return [
+    for (final code in sampleCodes)
+      pickerLabelForLocale(Locale(code), l10n),
+  ];
 }
 
 class _TutorialCard extends StatelessWidget {

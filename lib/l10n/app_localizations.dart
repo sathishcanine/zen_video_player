@@ -6,12 +6,16 @@ import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:intl/intl.dart' as intl;
 
 import 'app_localizations_ar.dart';
+import 'app_localizations_bn.dart';
 import 'app_localizations_en.dart';
 import 'app_localizations_es.dart';
+import 'app_localizations_fr.dart';
 import 'app_localizations_hi.dart';
 import 'app_localizations_pt.dart';
+import 'app_localizations_ru.dart';
 import 'app_localizations_ta.dart';
 import 'app_localizations_te.dart';
+import 'app_localizations_ur.dart';
 import 'app_localizations_zh.dart';
 
 // ignore_for_file: type=lint
@@ -101,12 +105,16 @@ abstract class AppLocalizations {
   /// A list of this localizations delegate's supported locales.
   static const List<Locale> supportedLocales = <Locale>[
     Locale('ar'),
+    Locale('bn'),
     Locale('en'),
     Locale('es'),
+    Locale('fr'),
     Locale('hi'),
     Locale('pt'),
+    Locale('ru'),
     Locale('ta'),
     Locale('te'),
+    Locale('ur'),
     Locale('zh')
   ];
 
@@ -161,7 +169,7 @@ abstract class AppLocalizations {
   /// No description provided for @allFilesAccessRequired.
   ///
   /// In en, this message translates to:
-  /// **'Please turn on Allow permission for All files access in Settings to continue.'**
+  /// **'Please allow access to videos and music to browse your library. You can change this anytime in Settings.'**
   String get allFilesAccessRequired;
 
   /// No description provided for @notNow.
@@ -271,6 +279,78 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Allow media access to browse folders on your device.'**
   String get grantAccessToBrowse;
+
+  /// No description provided for @limitedVideoAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow access to all videos'**
+  String get limitedVideoAccessTitle;
+
+  /// No description provided for @limitedVideoAccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed only selected videos. Zen needs access to all videos on your device to show folders like Camera and Downloads. Tap below, then choose Allow all on the system screen.'**
+  String get limitedVideoAccessBody;
+
+  /// No description provided for @allowAllVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow all videos'**
+  String get allowAllVideos;
+
+  /// No description provided for @limitedAudioAccessTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow access to all music'**
+  String get limitedAudioAccessTitle;
+
+  /// No description provided for @limitedAudioAccessBody.
+  ///
+  /// In en, this message translates to:
+  /// **'You allowed only selected music. Tap below, then choose Allow all on the system screen to browse your full library.'**
+  String get limitedAudioAccessBody;
+
+  /// No description provided for @allowAllMusic.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow all music'**
+  String get allowAllMusic;
+
+  /// No description provided for @limitedAccessPreviewHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders on your device — allow all videos to open and play them.'**
+  String get limitedAccessPreviewHint;
+
+  /// No description provided for @limitedPartialLibraryHint.
+  ///
+  /// In en, this message translates to:
+  /// **'You only allowed selected videos, so Zen can show a few folders. Allow all videos to browse Downloads and your full library.'**
+  String get limitedPartialLibraryHint;
+
+  /// No description provided for @limitedPartialFolderNote.
+  ///
+  /// In en, this message translates to:
+  /// **'allow all to browse'**
+  String get limitedPartialFolderNote;
+
+  /// No description provided for @limitedAccessAlternatives.
+  ///
+  /// In en, this message translates to:
+  /// **'Or play without full library access'**
+  String get limitedAccessAlternatives;
+
+  /// No description provided for @lockedFolderUnlock.
+  ///
+  /// In en, this message translates to:
+  /// **'Allow all videos to view'**
+  String get lockedFolderUnlock;
+
+  /// No description provided for @limitedAccessSettingsSnackbar.
+  ///
+  /// In en, this message translates to:
+  /// **'In Settings, open Videos (or Photos and videos) and choose Allow all — not Select photos.'**
+  String get limitedAccessSettingsSnackbar;
 
   /// No description provided for @pickVideoFile.
   ///
@@ -500,6 +580,12 @@ abstract class AppLocalizations {
   /// **'Choose language'**
   String get chooseLanguage;
 
+  /// No description provided for @moreLanguages.
+  ///
+  /// In en, this message translates to:
+  /// **'More languages'**
+  String get moreLanguages;
+
   /// No description provided for @languageEnglish.
   ///
   /// In en, this message translates to:
@@ -523,6 +609,54 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Telugu'**
   String get languageTelugu;
+
+  /// No description provided for @languageSpanishPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Spanish (Español)'**
+  String get languageSpanishPicker;
+
+  /// No description provided for @languageArabicPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Arabic (العربية)'**
+  String get languageArabicPicker;
+
+  /// No description provided for @languageFrenchPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'French (Français)'**
+  String get languageFrenchPicker;
+
+  /// No description provided for @languageBengaliPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Bengali (বাংলা)'**
+  String get languageBengaliPicker;
+
+  /// No description provided for @languagePortuguesePicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Portuguese (Português)'**
+  String get languagePortuguesePicker;
+
+  /// No description provided for @languageRussianPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Russian (Русский)'**
+  String get languageRussianPicker;
+
+  /// No description provided for @languageUrduPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Urdu (اردو)'**
+  String get languageUrduPicker;
+
+  /// No description provided for @languageMandarinPicker.
+  ///
+  /// In en, this message translates to:
+  /// **'Chinese (中文)'**
+  String get languageMandarinPicker;
 
   /// No description provided for @languageTamilPicker.
   ///
@@ -551,7 +685,7 @@ abstract class AppLocalizations {
   /// No description provided for @languageTutorialBody.
   ///
   /// In en, this message translates to:
-  /// **'Tap the language button here to switch the app between Tamil, English, Hindi, and Telugu.'**
+  /// **'Tap the language button here to switch the app language anytime.'**
   String get languageTutorialBody;
 
   /// No description provided for @gotIt.
@@ -1091,7 +1225,7 @@ abstract class AppLocalizations {
   /// No description provided for @proBadge.
   ///
   /// In en, this message translates to:
-  /// **'PRO'**
+  /// **'FREE PRO'**
   String get proBadge;
 
   /// No description provided for @proUnlockTitleFeature.
@@ -1143,12 +1277,16 @@ class _AppLocalizationsDelegate
   @override
   bool isSupported(Locale locale) => <String>[
         'ar',
+        'bn',
         'en',
         'es',
+        'fr',
         'hi',
         'pt',
+        'ru',
         'ta',
         'te',
+        'ur',
         'zh'
       ].contains(locale.languageCode);
 
@@ -1161,18 +1299,26 @@ AppLocalizations lookupAppLocalizations(Locale locale) {
   switch (locale.languageCode) {
     case 'ar':
       return AppLocalizationsAr();
+    case 'bn':
+      return AppLocalizationsBn();
     case 'en':
       return AppLocalizationsEn();
     case 'es':
       return AppLocalizationsEs();
+    case 'fr':
+      return AppLocalizationsFr();
     case 'hi':
       return AppLocalizationsHi();
     case 'pt':
       return AppLocalizationsPt();
+    case 'ru':
+      return AppLocalizationsRu();
     case 'ta':
       return AppLocalizationsTa();
     case 'te':
       return AppLocalizationsTe();
+    case 'ur':
+      return AppLocalizationsUr();
     case 'zh':
       return AppLocalizationsZh();
   }

@@ -36,7 +36,7 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get allFilesAccessRequired =>
-      'Please turn on Allow permission for All files access in Settings to continue.';
+      'Please allow access to videos and music to browse your library. You can change this anytime in Settings.';
 
   @override
   String get notNow => '暂不';
@@ -101,6 +101,47 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get grantAccessToBrowse => '允许媒体访问以浏览设备上的文件夹。';
+
+  @override
+  String get limitedVideoAccessTitle => 'Allow access to all videos';
+
+  @override
+  String get limitedVideoAccessBody =>
+      'You allowed only selected videos. Zen needs access to all videos on your device to show folders like Camera and Downloads. Tap below, then choose Allow all on the system screen.';
+
+  @override
+  String get allowAllVideos => 'Allow all videos';
+
+  @override
+  String get limitedAudioAccessTitle => 'Allow access to all music';
+
+  @override
+  String get limitedAudioAccessBody =>
+      'You allowed only selected music. Tap below, then choose Allow all on the system screen to browse your full library.';
+
+  @override
+  String get allowAllMusic => 'Allow all music';
+
+  @override
+  String get limitedAccessPreviewHint =>
+      'Folders on your device — allow all videos to open and play them.';
+
+  @override
+  String get limitedPartialLibraryHint =>
+      'You only allowed selected videos, so Zen can show a few folders. Allow all videos to browse Downloads and your full library.';
+
+  @override
+  String get limitedPartialFolderNote => 'allow all to browse';
+
+  @override
+  String get limitedAccessAlternatives => 'Or play without full library access';
+
+  @override
+  String get lockedFolderUnlock => 'Allow all videos to view';
+
+  @override
+  String get limitedAccessSettingsSnackbar =>
+      'In Settings, open Videos (or Photos and videos) and choose Allow all — not Select photos.';
 
   @override
   String get pickVideoFile => '选择视频文件';
@@ -226,6 +267,9 @@ class AppLocalizationsZh extends AppLocalizations {
   String get chooseLanguage => '选择语言';
 
   @override
+  String get moreLanguages => 'More languages';
+
+  @override
   String get languageEnglish => '英语';
 
   @override
@@ -236,6 +280,30 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get languageTelugu => '泰卢固语';
+
+  @override
+  String get languageSpanishPicker => '西班牙语 (Español)';
+
+  @override
+  String get languageArabicPicker => '阿拉伯语 (العربية)';
+
+  @override
+  String get languageFrenchPicker => '法语 (Français)';
+
+  @override
+  String get languageBengaliPicker => '孟加拉语 (বাংলা)';
+
+  @override
+  String get languagePortuguesePicker => '葡萄牙语 (Português)';
+
+  @override
+  String get languageRussianPicker => '俄语 (Русский)';
+
+  @override
+  String get languageUrduPicker => '乌尔都语 (اردو)';
+
+  @override
+  String get languageMandarinPicker => '中文 (中文)';
 
   @override
   String get languageTamilPicker => 'Tamil (தமிழ்)';
@@ -250,7 +318,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get languageTutorialTitle => '选择您的语言';
 
   @override
-  String get languageTutorialBody => '点击语言按钮可在泰米尔语、英语、印地语和泰卢固语之间切换。';
+  String get languageTutorialBody => '点击语言按钮可随时切换应用语言。';
 
   @override
   String get gotIt => '知道了';
@@ -565,7 +633,7 @@ class AppLocalizationsZh extends AppLocalizations {
   String get hide => 'Hide';
 
   @override
-  String get proBadge => 'PRO';
+  String get proBadge => 'FREE PRO';
 
   @override
   String proUnlockTitleFeature(String feature) {

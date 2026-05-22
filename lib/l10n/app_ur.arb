@@ -1,0 +1,19 @@
+{
+  "@@locale": "ur",
+  "chooseLanguage": "زبان منتخب کریں",
+  "languageEnglish": "انگریزی",
+  "languageSpanishPicker": "ہسپانوی (Español)",
+  "languageArabicPicker": "عربی (العربية)",
+  "languageFrenchPicker": "فرانسیسی (Français)",
+  "languageBengaliPicker": "بنگالی (বাংলা)",
+  "languagePortuguesePicker": "پرتگالی (Português)",
+  "languageRussianPicker": "روسی (Русский)",
+  "languageUrduPicker": "اردو (اردو)",
+  "languageMandarinPicker": "چینی (中文)",
+  "languageTamilPicker": "تامل (தமிழ்)",
+  "languageHindiPicker": "ہندی (हिन्दी)",
+  "languageTeluguPicker": "تیلگو (తెలుగు)",
+  "languageTutorialTitle": "اپنی زبان منتخب کریں",
+  "languageTutorialBody": "کسی بھی وقت ایپ کی زبان بدلنے کے لیے زبان کے بٹن پر ٹیپ کریں۔",
+  "gotIt": "سمجھ گیا"
+}

@@ -3,7 +3,6 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../services/media_permission_service.dart';
 import '../theme/zen_theme.dart';
-import '../widgets/permission_rationale_dialog.dart';
 
 class MediaAccessScreen extends StatefulWidget {
   const MediaAccessScreen({
@@ -17,32 +16,13 @@ class MediaAccessScreen extends StatefulWidget {
   State<MediaAccessScreen> createState() => _MediaAccessScreenState();
 }
 
-class _MediaAccessScreenState extends State<MediaAccessScreen>
-    with WidgetsBindingObserver {
+class _MediaAccessScreenState extends State<MediaAccessScreen> {
   bool _busy = false;
-  bool _awaitingSettingsReturn = false;
 
-  @override
-  void initState() {
-    super.initState();
-    WidgetsBinding.instance.addObserver(this);
-  }
-
-  @override
-  void dispose() {
-    WidgetsBinding.instance.removeObserver(this);
-    super.dispose();
-  }
-
-  @override
-  void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed && _awaitingSettingsReturn) {
-      _onReturnedFromSettings();
-    }
-  }
-
-  void _finishAllowFlow({required bool granted}) {
-    _awaitingSettingsReturn = false;
+  Future<void> _allow() async {
+    if (_busy) return;
+    setState(() => _busy = true);
+    final granted = await MediaPermissionService.requestMediaAccess();
     if (!mounted) return;
     setState(() => _busy = false);
     if (granted) {
@@ -56,33 +36,6 @@ class _MediaAccessScreenState extends State<MediaAccessScreen>
         behavior: SnackBarBehavior.floating,
       ),
     );
-  }
-
-  Future<void> _onReturnedFromSettings() async {
-    if (!_awaitingSettingsReturn) return;
-    final granted = await MediaPermissionService.hasMediaAccess();
-    _finishAllowFlow(granted: granted);
-  }
-
-  /// Allow → system All files access (Android) / photo library (iOS).
-  Future<void> _allow() async {
-    if (_busy) return;
-    setState(() {
-      _busy = true;
-      _awaitingSettingsReturn = true;
-    });
-    await MediaPermissionService.openAllFilesAccessSettings();
-    if (!mounted) return;
-    // Android: [request] completes when user leaves settings — check then.
-    if (!_awaitingSettingsReturn) return;
-    final granted = await MediaPermissionService.hasMediaAccess();
-    _finishAllowFlow(granted: granted);
-  }
-
-  /// Not now → "Why the app needs permission" dialog; OK returns to this screen.
-  Future<void> _notNow() async {
-    if (_busy) return;
-    await showPermissionRationaleDialog(context);
   }
 
   @override
@@ -161,14 +114,6 @@ class _MediaAccessScreenState extends State<MediaAccessScreen>
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                  ),
-                ),
-                const SizedBox(height: 14),
-                TextButton(
-                  onPressed: _busy ? null : _notNow,
-                  child: Text(
-                    l10n.notNow,
-                    style: const TextStyle(color: ZenTheme.textSecondary),
                   ),
                 ),
                 const SizedBox(height: 24),

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
-import '../ads/ads_orchestrator.dart';
+import '../ads/home_banner_ad.dart';
 import '../navigation/library_shell_scope.dart';
 import '../navigation/library_tab_index.dart';
 import '../navigation/mini_player_visibility_observer.dart';
@@ -38,8 +38,6 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
-    final banner = AdsOrchestrator.buildBanner();
-
     final tabs = <Widget>[
       const VideoLibraryTab(),
       const AudioLibraryTab(),
@@ -96,15 +94,7 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
                   ),
                 ],
               ),
-              if (banner != null)
-                SafeArea(
-                  top: false,
-                  child: SizedBox(
-                    width: double.infinity,
-                    height: 50,
-                    child: banner,
-                  ),
-                ),
+              const HomeBannerAd(),
             ],
           ),
         ),
