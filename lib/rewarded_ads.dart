@@ -34,6 +34,7 @@ class AdManager {
 
     OverlayEntry? entry;
     var loaderRemoved = false;
+    var rewardGranted = false;
 
     void removeLoader() {
       if (loaderRemoved) return;
@@ -54,9 +55,17 @@ class AdManager {
 
       await AdsOrchestrator.showRewarded(
         onReward: () {
-          // Reward fires from ad SDK callbacks mid teardown; defer until the
-          // next frame so Navigator/context lookups see a consistent tree.
+          rewardGranted = true;
+          // The loader (entry) was never removed when the ad opened — it sits
+          // hidden behind the native full-screen ad. When the ad closes and
+          // the Flutter surface becomes visible, the loader is already there,
+          // immediately blocking interaction with the preview screen.
+          //
+          // We schedule removeLoader + navigation for the next frame so the
+          // loader stays visible until the player is pushed. The finally block
+          // is told to skip cleanup (rewardGranted = true) so it doesn't race.
           WidgetsBinding.instance.addPostFrameCallback((_) {
+            removeLoader();
             if (!context.mounted) return;
             startVideo(
               context,
@@ -66,11 +75,16 @@ class AdManager {
               allowNetworkDownloadInPlayer,
             );
           });
+          WidgetsBinding.instance.scheduleFrame();
         },
-        onAdOpening: overlay != null ? removeLoader : null,
+        // Intentionally no onAdOpening: the loader is kept in the overlay
+        // during the native ad so it reappears the moment the ad dismisses.
       );
     } finally {
-      removeLoader();
+      // Only remove the loader here on the error/fallback path (no reward).
+      // On the normal reward path removeLoader() is called inside the
+      // addPostFrameCallback above, after the frame has been painted.
+      if (!rewardGranted) removeLoader();
       _rewardedFlowActive = false;
     }
   }
@@ -127,18 +141,12 @@ class AdManager {
         );
       }
     } else {
-      // Do not use [context] to resolve Navigator — after a fullscreen ad,
-      // the overlay subtree can be torn down while callbacks still hold the old
-      // BuildContext (StatefulElement.state null crashes).
       if (!context.mounted) return;
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (!context.mounted) return;
-        VideoNavigation.openPlayer(
-          videoSource: url,
-          isLocal: isLocal,
-          allowNetworkDownload: allowNetworkDownloadInPlayer,
-        );
-      });
+      VideoNavigation.openPlayer(
+        videoSource: url,
+        isLocal: isLocal,
+        allowNetworkDownload: allowNetworkDownloadInPlayer,
+      );
     }
   }
 }
