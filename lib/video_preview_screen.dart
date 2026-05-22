@@ -4,6 +4,7 @@ import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 
 import 'ads/video_preview_native_ad.dart';
+import 'video/video_playback_handoff.dart';
 
 class VideoPreviewScreen extends StatefulWidget {
 
@@ -69,14 +70,23 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   }
 
   void _playVideo() {
-
     AdManager.showRewarded(
       context,
       url: widget.videoSource,
       isLocal: widget.isLocal,
       allowNetworkDownloadInPlayer: widget.openedViaDeeplink,
+      onBeforeNavigate: _offerControllerHandoff,
     );
+  }
 
+  /// Transfers ownership of the already-initialized preview controller to
+  /// [VideoPlaybackHandoff] so the player screen can skip re-initializing.
+  /// Sets [_previewController] to null so [dispose] doesn't double-dispose it.
+  void _offerControllerHandoff() {
+    final c = _previewController;
+    if (c == null || !c.value.isInitialized) return;
+    VideoPlaybackHandoff.offer(c, widget.videoSource);
+    _previewController = null;
   }
 
   void _downloadVideo() {

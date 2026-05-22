@@ -28,6 +28,7 @@ class AdManager {
     bool download = false,
     bool isLocal = false,
     bool allowNetworkDownloadInPlayer = true,
+    VoidCallback? onBeforeNavigate,
   }) async {
     if (_rewardedFlowActive) return;
     _rewardedFlowActive = true;
@@ -73,6 +74,7 @@ class AdManager {
               download,
               isLocal,
               allowNetworkDownloadInPlayer,
+              onBeforeNavigate: onBeforeNavigate,
             );
           });
           WidgetsBinding.instance.scheduleFrame();
@@ -96,8 +98,9 @@ class AdManager {
     String url,
     bool download,
     bool isLocal,
-    bool allowNetworkDownloadInPlayer,
-  ) async {
+    bool allowNetworkDownloadInPlayer, {
+    VoidCallback? onBeforeNavigate,
+  }) async {
     if (download) {
       if (!context.mounted) return;
       final messenger = ScaffoldMessenger.of(context);
@@ -142,6 +145,7 @@ class AdManager {
       }
     } else {
       if (!context.mounted) return;
+      onBeforeNavigate?.call();
       VideoNavigation.openPlayer(
         videoSource: url,
         isLocal: isLocal,

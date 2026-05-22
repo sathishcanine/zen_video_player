@@ -9,7 +9,7 @@
 /// match AdMob dashboard and native manifest / Info.plist.
 ///
 /// [kUseTestAdIds] must be a compile-time constant.
-const bool kUseTestAdIds = true;
+const bool kUseTestAdIds = false;
 
 // --- Google AdMob (official sample app + ad units) ---
 // See: https://developers.google.com/admob/android/test-ads#sample_ad_units
