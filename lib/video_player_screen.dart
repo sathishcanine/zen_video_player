@@ -11,6 +11,7 @@ import 'package:zen_video_player/analytics/video_player_telemetry.dart';
 
 import 'download_service.dart';
 import 'services/video_orientation_channel.dart';
+import 'video/video_playback_handoff.dart';
 import 'video_pip_helper.dart';
 import 'services/video_player_color_tutorial_service.dart';
 import 'video_player_gestures.dart';
@@ -317,13 +318,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   Future<void> _initializePlayer() async {
     _lastEmittedPlaybackError = null;
-    final sw = Stopwatch()..start();
+    if (mounted) setState(() { _initError = null; });
 
-    if (mounted) {
-      setState(() {
-        _initError = null;
-      });
+    // content:// URIs never go through VideoPreviewScreen, so no handoff exists.
+    if (!widget.useContentUri) {
+      final handoff = VideoPlaybackHandoff.take(widget.videoSource);
+      if (handoff != null) {
+        await _applyHandoffController(handoff);
+        return;
+      }
     }
+
+    // Full init path: local file opened directly, content URI, or no handoff.
+    final sw = Stopwatch()..start();
 
     void dismissLoadingHint() {
       if (!mounted) return;
@@ -431,6 +438,46 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!mounted) return;
     SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
 
+    _pipPreparedSignature = null;
+    unawaited(VideoPipHelper.clearPipEligibility());
+    _chewieController?.removeListener(_onChewieChanged);
+    _chewieController?.dispose();
+    _zoomTransform?.dispose();
+    _zoomTransform = TransformationController();
+
+    _chewieController = _createChewieController(controller);
+    _lastChewieFullScreen = _chewieController!.isFullScreen;
+    _chewieController!.addListener(_onChewieChanged);
+    _pipPreparedSignature = null;
+    _syncNativePipEligibility();
+
+    setState(() {});
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) unawaited(_scheduleColorTutorialIfGestureAlreadyDone());
+    });
+  }
+
+  /// Fast path: the preview screen already initialized the controller and
+  /// handed it off via [VideoPlaybackHandoff].  We skip the heavy
+  /// [controller.initialize()] call and go straight to playback setup.
+  Future<void> _applyHandoffController(VideoPlayerController controller) async {
+    _videoController = controller;
+
+    // Preview muted the controller for the silent thumbnail; restore volume.
+    await controller.setVolume(1);
+
+    if (!mounted) {
+      await controller.dispose();
+      return;
+    }
+
+    controller.addListener(_onVideoValueChanged);
+    _syncNativePipEligibility();
+
+    await VideoOrientationChannel.enterPlayerMode();
+    if (!mounted) return;
+
+    SystemChrome.setEnabledSystemUIMode(SystemUiMode.immersiveSticky);
     _pipPreparedSignature = null;
     unawaited(VideoPipHelper.clearPipEligibility());
     _chewieController?.removeListener(_onChewieChanged);
