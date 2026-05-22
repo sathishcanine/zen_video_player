@@ -3,8 +3,10 @@ import 'package:flutter/foundation.dart';
 import 'audio_metadata_channel.dart';
 import 'package:photo_manager/photo_manager.dart';
 
+import '../analytics/telemetry.dart';
 import '../models/audio_track.dart';
 import '../models/media_folder.dart';
+import 'media_asset_filter.dart';
 import 'media_permission_service.dart';
 
 /// Loads on-device audio via [photo_manager].
@@ -27,24 +29,36 @@ class LocalAudioService {
     final paths = await PhotoManager.getAssetPathList(
       type: RequestType.audio,
       hasAll: true,
+      onlyAll: false,
+      filterOption: kMediaAssetFilter,
     );
-
-    final allPath = paths.where((p) => p.isAll).firstOrNull;
-    if (allPath == null) return const [];
 
     final tracks = <AudioTrack>[];
     const pageSize = 200;
-    var page = 0;
 
-    while (true) {
-      final batch = await allPath.getAssetListPaged(page: page, size: pageSize);
-      if (batch.isEmpty) break;
-      for (final asset in batch) {
-        tracks.add(_trackFromAsset(asset));
+    // Page per album — avoid `isAll` (OEM SQL: `ORDER BY LIMIT` when option null).
+    for (final path in paths) {
+      if (path.isAll) continue;
+      try {
+        var page = 0;
+        while (page <= 50) {
+          final batch = await path.getAssetListPaged(page: page, size: pageSize);
+          if (batch.isEmpty) break;
+          for (final asset in batch) {
+            tracks.add(_trackFromAsset(asset));
+          }
+          if (batch.length < pageSize) break;
+          page++;
+        }
+      } catch (e, st) {
+        debugPrint('[audio] album ${path.id} skipped: $e\n$st');
+        await Telemetry.recordNonFatal(
+          e,
+          st,
+          reason: 'loadTracksAlbum',
+          context: {'albumId': path.id},
+        );
       }
-      if (batch.length < pageSize) break;
-      page++;
-      if (page > 50) break;
     }
 
     tracks.sort((a, b) => a.title.toLowerCase().compareTo(b.title.toLowerCase()));
@@ -173,6 +187,7 @@ class LocalAudioService {
         type: RequestType.audio,
         hasAll: true,
         onlyAll: false,
+        filterOption: kMediaAssetFilter,
       );
 
       final folders = <MediaFolder>[];
@@ -200,8 +215,14 @@ class LocalAudioService {
   static Future<List<AudioTrack>> loadTracksInFolder(MediaFolder folder) async {
     final path = folder.assetPath;
     if (path == null) return const [];
-    final assets = await path.getAssetListPaged(page: 0, size: 300);
-    return assets.map(_trackFromAsset).toList();
+    try {
+      final assets = await path.getAssetListPaged(page: 0, size: 300);
+      return assets.map(_trackFromAsset).toList();
+    } catch (e, st) {
+      debugPrint('[audio] folder tracks failed: $e\n$st');
+      await Telemetry.recordNonFatal(e, st, reason: 'loadTracksInFolder');
+      return const [];
+    }
   }
 
   static Future<void> requestAudioAccess() async {
@@ -209,10 +230,3 @@ class LocalAudioService {
   }
 }
 
-extension _FirstOrNull<E> on Iterable<E> {
-  E? get firstOrNull {
-    final it = iterator;
-    if (!it.moveNext()) return null;
-    return it.current;
-  }
-}

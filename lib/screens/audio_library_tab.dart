@@ -97,7 +97,13 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
       return;
     }
 
-    final tracks = await LocalAudioService.loadTracks();
+    List<AudioTrack> tracks;
+    try {
+      tracks = await LocalAudioService.loadTracks();
+    } catch (e, st) {
+      debugPrint('[audio_library] loadTracks failed: $e\n$st');
+      tracks = const [];
+    }
     final artists = LocalAudioService.groupArtists(tracks);
     final folders = await LocalAudioService.loadAudioFolders();
 

@@ -6,6 +6,7 @@ import 'package:photo_manager/photo_manager.dart';
 import '../models/duplicate_group.dart';
 import '../models/duplicate_media_item.dart';
 import '../models/duplicate_media_kind.dart';
+import 'media_asset_filter.dart';
 import 'media_permission_service.dart';
 
 class DuplicateScanProgress {
@@ -226,6 +227,7 @@ class DuplicateFinderService {
         type: type,
         hasAll: true,
         onlyAll: false,
+        filterOption: kMediaAssetFilter,
       ).timeout(_pathListTimeout);
     } on TimeoutException {
       debugPrint('[duplicate] getAssetPathList timed out');

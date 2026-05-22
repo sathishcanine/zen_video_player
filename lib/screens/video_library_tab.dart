@@ -92,7 +92,13 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     _hasAccess = await MediaPermissionService.hasVideoAccess();
     _hasFullAccess = await MediaPermissionService.hasFullVideoAccess();
     if (_hasAccess) {
-      final folders = await LocalMediaService.loadVideoFolders();
+      List<MediaFolder> folders;
+      try {
+        folders = await LocalMediaService.loadVideoFolders();
+      } catch (e, st) {
+        debugPrint('[video_library] loadVideoFolders failed: $e\n$st');
+        folders = const [];
+      }
       if (!mounted) return;
       setState(() {
         _folders = _localizedFolders(folders);

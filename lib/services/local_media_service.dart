@@ -2,8 +2,10 @@ import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../analytics/telemetry.dart';
 import '../models/media_folder.dart';
 import 'hidden_folders_service.dart';
+import 'media_asset_filter.dart';
 import 'media_permission_service.dart';
 
 /// Loads on-device video albums via [photo_manager].
@@ -22,29 +24,45 @@ class LocalMediaService {
       type: RequestType.video,
       hasAll: true,
       onlyAll: false,
+      filterOption: kMediaAssetFilter,
     );
 
     final seen = await _loadSeenAlbumIds();
     final hidden = await HiddenFoldersService.loadHiddenIds();
     final folders = <MediaFolder>[];
 
-    final recent = await _buildRecentlyAdded(paths);
-    if (recent != null) folders.add(recent);
+    try {
+      final recent = await _buildRecentlyAdded(paths);
+      if (recent != null) folders.add(recent);
+    } catch (e, st) {
+      debugPrint('[media] recently added failed: $e\n$st');
+      await Telemetry.recordNonFatal(e, st, reason: 'buildRecentlyAdded');
+    }
 
     for (final path in paths) {
       if (path.isAll) continue;
       if (hidden.contains(path.id)) continue;
-      final count = await path.assetCountAsync;
-      if (count == 0) continue;
-      folders.add(
-        MediaFolder(
-          id: path.id,
-          displayName: path.name,
-          videoCount: count,
-          assetPath: path,
-          isNew: !seen.contains(path.id),
-        ),
-      );
+      try {
+        final count = await path.assetCountAsync;
+        if (count == 0) continue;
+        folders.add(
+          MediaFolder(
+            id: path.id,
+            displayName: path.name,
+            videoCount: count,
+            assetPath: path,
+            isNew: !seen.contains(path.id),
+          ),
+        );
+      } catch (e, st) {
+        debugPrint('[media] album ${path.id} skipped: $e\n$st');
+        await Telemetry.recordNonFatal(
+          e,
+          st,
+          reason: 'albumCount',
+          context: {'albumId': path.id},
+        );
+      }
     }
 
     folders.sort(
@@ -62,11 +80,24 @@ class LocalMediaService {
     final recentAssets = <AssetEntity>[];
 
     for (final path in paths) {
-      final page = await path.getAssetListPaged(page: 0, size: 80);
-      for (final asset in page) {
-        if (asset.createDateTime.isAfter(cutoff)) {
-          recentAssets.add(asset);
+      // Skip the synthetic "All" album — OEM MediaStore often breaks paging it
+      // (invalid `ORDER BY LIMIT` SQL). Per-folder scans are enough for "Recent".
+      if (path.isAll) continue;
+      try {
+        final page = await path.getAssetListPaged(page: 0, size: 80);
+        for (final asset in page) {
+          if (asset.createDateTime.isAfter(cutoff)) {
+            recentAssets.add(asset);
+          }
         }
+      } catch (e, st) {
+        debugPrint('[media] recent page ${path.id} skipped: $e\n$st');
+        await Telemetry.recordNonFatal(
+          e,
+          st,
+          reason: 'recentAlbumPage',
+          context: {'albumId': path.id},
+        );
       }
       if (recentAssets.length >= 120) break;
     }
@@ -126,11 +157,13 @@ class LocalMediaService {
     final paths = await PhotoManager.getAssetPathList(
       type: RequestType.video,
       hasAll: true,
+      filterOption: kMediaAssetFilter,
     );
     final cutoff = DateTime.now().subtract(const Duration(days: _recentDays));
     final out = <AssetEntity>[];
 
     for (final path in paths) {
+      if (path.isAll) continue;
       final page = await path.getAssetListPaged(page: 0, size: 100);
       for (final asset in page) {
         if (asset.createDateTime.isAfter(cutoff)) out.add(asset);
