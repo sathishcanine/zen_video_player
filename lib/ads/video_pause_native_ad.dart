@@ -34,6 +34,9 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
 
   static const double _adHeight = 300;
   static const double _maxWidth = 340;
+  /// Space between dismiss control and [AdWidget] to cut accidental ad clicks.
+  static const double _closeToAdGap = 20;
+  static const double _closeTapSize = 48;
 
   @override
   void initState() {
@@ -174,48 +177,75 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
     final cardWidth = width > _maxWidth + 48 ? _maxWidth : width - 48;
 
     return Positioned.fill(
-      child: ColoredBox(
-        color: Colors.black.withValues(alpha: 0.55),
-        child: Center(
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              Material(
-                color: Colors.transparent,
-                elevation: 8,
-                borderRadius: BorderRadius.circular(8),
-                child: SizedBox(
-                  width: cardWidth,
-                  height: _adHeight,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(8),
-                    child: AdWidget(ad: ad),
-                  ),
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _dismiss,
+        child: ColoredBox(
+          color: Colors.black.withValues(alpha: 0.55),
+          child: Center(
+            child: GestureDetector(
+              onTap: () {},
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                _PauseAdDismissButton(
+                  onPressed: _dismiss,
+                  size: _closeTapSize,
                 ),
-              ),
-              Positioned(
-                left: -6,
-                top: -6,
-                child: Material(
-                  color: Colors.white,
-                  shape: const CircleBorder(),
-                  elevation: 2,
-                  child: InkWell(
-                    customBorder: const CircleBorder(),
-                    onTap: _dismiss,
-                    child: const Padding(
-                      padding: EdgeInsets.all(6),
-                      child: Icon(
-                        Icons.close,
-                        size: 18,
-                        color: Colors.black87,
-                      ),
+                const SizedBox(height: _closeToAdGap),
+                Material(
+                  color: Colors.transparent,
+                  elevation: 8,
+                  borderRadius: BorderRadius.circular(8),
+                  child: SizedBox(
+                    width: cardWidth,
+                    height: _adHeight,
+                    child: ClipRRect(
+                      borderRadius: BorderRadius.circular(8),
+                      child: AdWidget(ad: ad),
                     ),
                   ),
                 ),
+                  ],
+                ),
               ),
-            ],
+            ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Dismiss control kept outside the native ad bounds (AdMob accidental-click).
+class _PauseAdDismissButton extends StatelessWidget {
+  const _PauseAdDismissButton({
+    required this.onPressed,
+    required this.size,
+  });
+
+  final VoidCallback onPressed;
+  final double size;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.white,
+      elevation: 3,
+      shape: const CircleBorder(),
+      child: SizedBox(
+        width: size,
+        height: size,
+        child: IconButton(
+          icon: const Icon(Icons.close, size: 22),
+          color: Colors.black87,
+          tooltip: 'Close',
+          padding: EdgeInsets.zero,
+          constraints: BoxConstraints.tightFor(width: size, height: size),
+          onPressed: onPressed,
         ),
       ),
     );
