@@ -1,3 +1,5 @@
+import 'dart:async' show unawaited;
+
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
@@ -12,10 +14,14 @@ class VideoPauseNativeAdOverlay extends StatefulWidget {
   const VideoPauseNativeAdOverlay({
     super.key,
     required this.controller,
+    required this.isLocalPlayback,
     this.userPausedForAd = false,
   });
 
   final VideoPlayerController controller;
+
+  /// Local file or `content://` playback (not http/https stream).
+  final bool isLocalPlayback;
 
   /// Set by player chrome when the user taps the pause control (not buffering).
   final bool userPausedForAd;
@@ -55,6 +61,15 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
       oldWidget.controller.removeListener(_onVideoUpdate);
       widget.controller.addListener(_onVideoUpdate);
     }
+    if (oldWidget.isLocalPlayback != widget.isLocalPlayback) {
+      _ad?.dispose();
+      _ad = null;
+      _loaded = false;
+      _loadFailed = false;
+      if (!kIsWeb) {
+        unawaited(_loadAd());
+      }
+    }
   }
 
   @override
@@ -88,8 +103,10 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
 
     AdThrottle.recordRequest();
 
+    final unitId = adMobPauseNativeUnitId(isLocalPlayback: widget.isLocalPlayback);
+
     final ad = NativeAd(
-      adUnitId: adMobPauseNativeUnitId,
+      adUnitId: unitId,
       listener: NativeAdListener(
         onAdLoaded: (_) {
           if (!mounted) return;

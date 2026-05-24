@@ -732,6 +732,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             if (mounted) setState(() => _colorFilter = settings);
           },
           colorTutorialTrigger: _colorTutorialTrigger,
+          isLocalPlayback: widget.isLocal || widget.useContentUri,
           ),
         ),
       ),

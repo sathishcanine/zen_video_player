@@ -31,6 +31,7 @@ class ZenVideoPlayerChrome extends StatefulWidget {
     required this.colorFilter,
     required this.onColorFilterChanged,
     this.colorTutorialTrigger = 0,
+    this.isLocalPlayback = true,
   });
 
   final VideoPlayerController videoController;
@@ -48,6 +49,9 @@ class ZenVideoPlayerChrome extends StatefulWidget {
 
   /// Increment to request the post-gesture color tutorial.
   final int colorTutorialTrigger;
+
+  /// Drives pause native ad unit (local vs network) in [VideoPauseNativeAdOverlay].
+  final bool isLocalPlayback;
 
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 2.0;
@@ -1084,6 +1088,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
         _modeBannerOverlay(),
         VideoPauseNativeAdOverlay(
           controller: _video,
+          isLocalPlayback: widget.isLocalPlayback,
           userPausedForAd: _userPausedForAd,
         ),
       ],

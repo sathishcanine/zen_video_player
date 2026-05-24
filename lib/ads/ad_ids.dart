@@ -8,7 +8,7 @@
 /// **Production:** [kUseTestAdIds] is `false` — live app id + units below must
 /// match AdMob dashboard and native manifest / Info.plist.
 ///
-/// [kUseTestAdIds] must be a compile-time constant.
+/// [kUseTestAdIds] must be a compile-time constant. true == testing, false == production
 const bool kUseTestAdIds = false;
 
 // --- Google AdMob (official sample app + ad units) ---
@@ -33,7 +33,8 @@ const String _adMobProdAppId = kAdMobProdApplicationId;
 //   v3-Home-Banner        → library home banner (full video access)
 //   limited-home-banner   → library home banner (partial / no full access)
 //   Native-ad             → video preview native
-//   v3-Pause-Native-Ad    → player pause / end native
+//   v3-Pause-Native-Ad    → player pause / end native (network stream)
+//   pause-native-local    → player pause / end native (local / content URI)
 const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/7234751166';
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
@@ -42,8 +43,10 @@ const String _adMobProdLimitedBannerUnit =
     'ca-app-pub-8723888126390754/7727351312';
 const String _adMobProdNativeAdvancedUnit =
     'ca-app-pub-8723888126390754/5486908814';
-const String _adMobProdPauseNativeUnit =
+const String _adMobProdPauseNativeNetworkUnit =
     'ca-app-pub-8723888126390754/7649508461';
+const String _adMobProdPauseNativeLocalUnit =
+    'ca-app-pub-8723888126390754/4924176731';
 
 // --- Unity Ads: each **platform has its own Game ID** in the Monetization
 // dashboard. Using a legacy "sample" pair (e.g. 14850 / 14851) can trigger
@@ -100,8 +103,13 @@ String homeBannerUnitId({required bool hasFullVideoAccess}) =>
 String get adMobNativeAdvancedUnitId =>
     kUseTestAdIds ? _adMobTestNativeAdvancedUnit : _adMobProdNativeAdvancedUnit;
 
-String get adMobPauseNativeUnitId =>
-    kUseTestAdIds ? _adMobTestNativeAdvancedUnit : _adMobProdPauseNativeUnit;
+/// Pause overlay native — local file / content URI vs network URL.
+String adMobPauseNativeUnitId({required bool isLocalPlayback}) {
+  if (kUseTestAdIds) return _adMobTestNativeAdvancedUnit;
+  return isLocalPlayback
+      ? _adMobProdPauseNativeLocalUnit
+      : _adMobProdPauseNativeNetworkUnit;
+}
 
 /// Unity: `UnityAds.init(..., testMode: true)` only when [kUseTestAdIds] is
 /// true. Production must use `false` in the Unity dashboard for live traffic.
