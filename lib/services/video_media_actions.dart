@@ -85,7 +85,14 @@ class VideoMediaActions {
         final assets = await LocalMediaService.loadAllVideosInFolder(folder);
         final ids = assets.map((a) => a.id).toList();
         if (ids.isNotEmpty) {
-          await PhotoManager.editor.deleteWithIds(ids);
+          final deleted = await _deleteAssetIds(ids);
+          if (!context.mounted) return;
+          if (!deleted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text(l10n.duplicateDeleteFailed)),
+            );
+            return;
+          }
         }
         onLibraryChanged();
       case MediaOptionAction.send:
@@ -149,8 +156,15 @@ class VideoMediaActions {
           body: l10n.duplicateDeleteBody(name),
           confirm: l10n.delete,
         );
-        if (!ok) return;
-        await PhotoManager.editor.deleteWithIds([asset.id]);
+        if (!ok || !context.mounted) return;
+        final deleted = await _deleteAssetIds([asset.id]);
+        if (!context.mounted) return;
+        if (!deleted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text(l10n.duplicateDeleteFailed)),
+          );
+          return;
+        }
         onListChanged?.call();
       case MediaOptionAction.send:
         final shared = await MediaShareService.shareAssets([asset]);
@@ -271,6 +285,18 @@ class VideoMediaActions {
       videoSource: file.path,
       isLocal: true,
     );
+  }
+
+  /// Returns false when MediaStore delete fails (permissions, OEM, limited access).
+  static Future<bool> _deleteAssetIds(List<String> ids) async {
+    if (ids.isEmpty) return true;
+    try {
+      final result = await PhotoManager.editor.deleteWithIds(ids);
+      return result.isNotEmpty;
+    } catch (e, st) {
+      debugPrint('[media] deleteWithIds failed: $e\n$st');
+      return false;
+    }
   }
 
   static Future<bool> _confirm(

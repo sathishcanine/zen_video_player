@@ -4,8 +4,9 @@ import 'package:zen_video_player/video/video_color_filter.dart';
 
 /// Video layer that resizes when the device rotates.
 ///
-/// Chewie's built-in [AspectRatio] can keep a portrait box after the system
-/// UI has already gone landscape; [FittedBox] tracks [LayoutBuilder] bounds.
+/// Sizes the video using the **display** aspect ratio (decoder size plus
+/// [VideoPlayerValue.rotationCorrection]), so portrait phone videos are not
+/// stretched to the screen shape.
 class ZenVideoSurface extends StatelessWidget {
   const ZenVideoSurface({
     super.key,
@@ -16,27 +17,33 @@ class ZenVideoSurface extends StatelessWidget {
   final VideoPlayerController controller;
   final VideoColorFilterSettings colorFilter;
 
+  /// Width/height from the decoder; [VideoPlayer] applies [rotationCorrection]
+  /// via [RotatedBox]. The layout box must match the *displayed* aspect ratio.
+  static double displayAspectRatio(VideoPlayerValue value) {
+    final w = value.size.width;
+    final h = value.size.height;
+    if (!value.isInitialized || w <= 0 || h <= 0) return 1.0;
+    final rot = value.rotationCorrection % 360;
+    if (rot == 90 || rot == 270) return h / w;
+    return w / h;
+  }
+
   @override
   Widget build(BuildContext context) {
     final value = controller.value;
-    final w = value.size.width;
-    final h = value.size.height;
-    if (!value.isInitialized || w <= 0 || h <= 0) {
+    if (!value.isInitialized ||
+        value.size.width <= 0 ||
+        value.size.height <= 0) {
       return const ColoredBox(color: Colors.black);
     }
 
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return FittedBox(
-          fit: BoxFit.contain,
-          alignment: Alignment.center,
-          child: SizedBox(
-            width: w,
-            height: h,
-            child: _filteredPlayer(),
-          ),
-        );
-      },
+    final aspectRatio = displayAspectRatio(value);
+
+    return Center(
+      child: AspectRatio(
+        aspectRatio: aspectRatio,
+        child: _filteredPlayer(),
+      ),
     );
   }
 

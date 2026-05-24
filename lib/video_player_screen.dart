@@ -20,6 +20,7 @@ import 'services/cast_service.dart';
 import 'widgets/cast_device_picker_sheet.dart';
 import 'widgets/zen_chewie_player.dart';
 import 'widgets/zen_video_player_chrome.dart';
+import 'widgets/zen_video_surface.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoSource;
@@ -118,8 +119,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   ChewieController _createChewieController(VideoPlayerController controller) {
-    final size = MediaQuery.sizeOf(context);
-    final aspectRatio = size.width / size.height;
+    final aspectRatio = ZenVideoSurface.displayAspectRatio(controller.value);
     return ChewieController(
       videoPlayerController: controller,
       autoPlay: true,
