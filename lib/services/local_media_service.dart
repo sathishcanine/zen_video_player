@@ -174,36 +174,6 @@ class LocalMediaService {
     return out;
   }
 
-  static Future<void> fillFolderSizes(List<MediaFolder> folders) async {
-    for (var i = 0; i < folders.length; i++) {
-      final folder = folders[i];
-      if (folder.isRecentlyAdded || folder.assetPath == null) continue;
-      try {
-        final assets = await folder.assetPath!
-            .getAssetListRange(start: 0, end: 40);
-        var total = 0;
-        for (final asset in assets) {
-          final file = await asset.file;
-          if (file != null) total += await file.length();
-        }
-        if (total > 0 && assets.isNotEmpty) {
-          final scale = folder.videoCount / assets.length;
-          folders[i] = MediaFolder(
-            id: folder.id,
-            displayName: folder.displayName,
-            videoCount: folder.videoCount,
-            assetPath: folder.assetPath,
-            totalBytes: (total * scale).round(),
-            isRecentlyAdded: folder.isRecentlyAdded,
-            isNew: folder.isNew,
-          );
-        }
-      } catch (e, st) {
-        debugPrint('[media] size estimate failed for ${folder.id}: $e\n$st');
-      }
-    }
-  }
-
   static Future<Set<String>> _loadSeenAlbumIds() async {
     final prefs = await SharedPreferences.getInstance();
     return (prefs.getStringList(_seenAlbumsKey) ?? []).toSet();

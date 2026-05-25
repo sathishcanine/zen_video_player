@@ -14,6 +14,7 @@ import 'app_update/force_update_from_deeplink.dart';
 import 'app_update/force_update_screen.dart';
 import 'app_navigator.dart';
 import 'home_screen.dart';
+import 'services/app_cache_maintenance.dart';
 import 'services/app_settings_service.dart';
 import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
@@ -29,6 +30,9 @@ bool _isOpenWithVideoUri(Uri? uri) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Silent cache repair for 3.0.2 storage leak — no user steps required.
+  await AppCacheMaintenance.runOnColdStart();
 
   // Parallel prefs — safe for 15k+ upgraders; avoids serial cold-start stalls.
   await Future.wait<void>([

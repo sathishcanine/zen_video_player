@@ -2,8 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:zen_video_player/theme/zen_theme.dart';
-import 'package:zen_video_player/utils/format_bytes.dart';
-
 import '../models/video_playlist.dart';
 import '../services/playlist_service.dart';
 import '../services/video_media_actions.dart';
@@ -66,15 +64,11 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
     );
   }
 
-  Future<String> _subtitle(AssetEntity asset) async {
-    try {
-      final file = await asset.file;
-      if (file != null) {
-        final len = await file.length();
-        return '${formatBytes(len)} · ${asset.width}×${asset.height}';
-      }
-    } catch (_) {}
-    return '${asset.width}×${asset.height}';
+  String _subtitle(AssetEntity asset) {
+    if (asset.width > 0 && asset.height > 0) {
+      return '${asset.width}×${asset.height}';
+    }
+    return '';
   }
 
   @override
@@ -117,24 +111,19 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                         final asset = _assets[index];
                         final name =
                             asset.title ?? asset.relativePath ?? 'Video';
-                        return FutureBuilder<String>(
+                        return VideoAssetTile(
                           key: ValueKey(asset.id),
-                          future: _subtitle(asset),
-                          builder: (context, snap) {
-                            return VideoAssetTile(
-                              asset: asset,
-                              title: name,
-                              subtitle: snap.data ?? '',
-                              onTap: () => VideoMediaActions.handlePlaylistAsset(
-                                context,
-                                playlistId: widget.playlistId,
-                                asset: asset,
-                                action: MediaOptionAction.play,
-                                onChanged: _load,
-                              ),
-                              onMenu: () => _openMenu(asset),
-                            );
-                          },
+                          asset: asset,
+                          title: name,
+                          subtitle: _subtitle(asset),
+                          onTap: () => VideoMediaActions.handlePlaylistAsset(
+                            context,
+                            playlistId: widget.playlistId,
+                            asset: asset,
+                            action: MediaOptionAction.play,
+                            onChanged: _load,
+                          ),
+                          onMenu: () => _openMenu(asset),
                         );
                       },
                     ),

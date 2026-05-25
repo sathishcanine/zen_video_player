@@ -131,10 +131,8 @@ class LocalAudioService {
     AssetEntity? cover = album.coverAsset;
 
     for (final track in album.tracks.take(12)) {
-      final file = await track.asset.file;
-      if (file == null) continue;
       try {
-        final info = await AudioMetadataChannel.getMetadata(file.path);
+        final info = await AudioMetadataChannel.getMetadataForAsset(track.asset);
         if (info != null) {
           if (info.album.isNotEmpty) title = info.album;
           if (info.artist.isNotEmpty) artist = info.artist;

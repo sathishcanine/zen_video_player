@@ -6,6 +6,7 @@ import 'package:photo_manager/photo_manager.dart';
 import '../models/duplicate_group.dart';
 import '../models/duplicate_media_item.dart';
 import '../models/duplicate_media_kind.dart';
+import 'media_asset_channel.dart';
 import 'media_asset_filter.dart';
 import 'media_permission_service.dart';
 
@@ -196,6 +197,8 @@ class DuplicateFinderService {
 
   static Future<int> _readFileSize(AssetEntity asset) async {
     try {
+      final fromStore = await MediaAssetChannel.getSizeBytes(asset);
+      if (fromStore > 0) return fromStore;
       final file = await asset.file.timeout(_fileTimeout);
       if (file == null) return 0;
       return await file.length().timeout(const Duration(seconds: 3));

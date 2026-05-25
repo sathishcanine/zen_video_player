@@ -13,6 +13,7 @@ class MainActivity : FlutterActivity() {
 
     private var inMobiBridge: InMobiBridge? = null
     private var audioMetadataBridge: AudioMetadataBridge? = null
+    private var mediaAssetBridge: MediaAssetBridge? = null
     private var videoOrientationBridge: VideoOrientationBridge? = null
 
     /** When true, pre-Android-12 devices may enter PiP from [onUserLeaveHint]. */
@@ -73,7 +74,8 @@ class MainActivity : FlutterActivity() {
             activity = this,
             messenger = messenger,
         )
-        audioMetadataBridge = AudioMetadataBridge(messenger).also { it.register() }
+        audioMetadataBridge = AudioMetadataBridge(this, messenger).also { it.register() }
+        mediaAssetBridge = MediaAssetBridge(this, messenger).also { it.register() }
         videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
 
         MethodChannel(

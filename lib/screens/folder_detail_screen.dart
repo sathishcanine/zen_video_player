@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:zen_video_player/utils/format_bytes.dart';
-
 import '../models/media_folder.dart';
 import '../services/local_media_service.dart';
 import '../services/video_media_actions.dart';
@@ -60,15 +58,11 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
     );
   }
 
-  Future<String> _subtitle(AssetEntity asset) async {
-    try {
-      final file = await asset.file;
-      if (file != null) {
-        final len = await file.length();
-        return '${formatBytes(len)} · ${asset.width}×${asset.height}';
-      }
-    } catch (_) {}
-    return '${asset.width}×${asset.height}';
+  String _subtitle(AssetEntity asset) {
+    if (asset.width > 0 && asset.height > 0) {
+      return '${asset.width}×${asset.height}';
+    }
+    return '';
   }
 
   @override
@@ -99,13 +93,10 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                         final asset = _assets[index];
                         final name =
                             asset.title ?? asset.relativePath ?? 'Video ${index + 1}';
-                        return FutureBuilder<String>(
-                          future: _subtitle(asset),
-                          builder: (context, snap) {
-                            return VideoAssetTile(
+                        return VideoAssetTile(
                               asset: asset,
                               title: name,
-                              subtitle: snap.data ?? '',
+                              subtitle: _subtitle(asset),
                               onTap: () => VideoMediaActions.handleAsset(
                                 context,
                                 asset: asset,
@@ -113,8 +104,6 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                               ),
                               onMenu: () => _openMenu(asset),
                             );
-                          },
-                        );
                       },
                     ),
         ),

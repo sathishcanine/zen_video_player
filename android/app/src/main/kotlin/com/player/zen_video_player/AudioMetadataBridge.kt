@@ -1,11 +1,16 @@
 package com.player.zen_video_player
 
 import android.media.MediaMetadataRetriever
+import android.net.Uri
+import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
 
 /** Reads embedded audio tags and album art via [MediaMetadataRetriever]. */
-class AudioMetadataBridge(messenger: BinaryMessenger) {
+class AudioMetadataBridge(
+    private val activity: FlutterActivity,
+    messenger: BinaryMessenger,
+) {
 
     private val channel = MethodChannel(messenger, CHANNEL)
 
@@ -13,30 +18,56 @@ class AudioMetadataBridge(messenger: BinaryMessenger) {
         channel.setMethodCallHandler { call, result ->
             when (call.method) {
                 "getArtwork" -> {
-                    val path = call.argument<String>("path")
-                    if (path.isNullOrBlank()) {
+                    val source = readSourceArg(call.arguments)
+                    if (source.isNullOrBlank()) {
                         result.success(null)
                         return@setMethodCallHandler
                     }
-                    result.success(readArtwork(path))
+                    result.success(readArtwork(source))
                 }
                 "getMetadata" -> {
-                    val path = call.argument<String>("path")
-                    if (path.isNullOrBlank()) {
+                    val source = readSourceArg(call.arguments)
+                    if (source.isNullOrBlank()) {
                         result.success(null)
                         return@setMethodCallHandler
                     }
-                    result.success(readMetadata(path))
+                    result.success(readMetadata(source))
                 }
                 else -> result.notImplemented()
             }
         }
     }
 
-    private fun readArtwork(path: String): ByteArray? {
+    @Suppress("UNCHECKED_CAST")
+    private fun readSourceArg(arguments: Any?): String? {
+        val map = arguments as? Map<*, *> ?: return null
+        return (map["uri"] as? String)?.takeIf { it.isNotBlank() }
+            ?: (map["path"] as? String)?.takeIf { it.isNotBlank() }
+    }
+
+    private fun openRetriever(source: String): MediaMetadataRetriever? {
         val retriever = MediaMetadataRetriever()
         return try {
-            retriever.setDataSource(path)
+            if (source.startsWith("content://")) {
+                retriever.setDataSource(activity, Uri.parse(source))
+            } else {
+                val path = source.removePrefix("file://")
+                retriever.setDataSource(path)
+            }
+            retriever
+        } catch (_: Exception) {
+            try {
+                retriever.release()
+            } catch (_: Exception) {
+                // ignore
+            }
+            null
+        }
+    }
+
+    private fun readArtwork(source: String): ByteArray? {
+        val retriever = openRetriever(source) ?: return null
+        return try {
             retriever.embeddedPicture
         } catch (_: Exception) {
             null
@@ -49,10 +80,9 @@ class AudioMetadataBridge(messenger: BinaryMessenger) {
         }
     }
 
-    private fun readMetadata(path: String): Map<String, Any?> {
-        val retriever = MediaMetadataRetriever()
+    private fun readMetadata(source: String): Map<String, Any?> {
+        val retriever = openRetriever(source) ?: return emptyMetadata()
         return try {
-            retriever.setDataSource(path)
             val album =
                 retriever.extractMetadata(MediaMetadataRetriever.METADATA_KEY_ALBUM).orEmpty()
             val artist =
@@ -67,12 +97,7 @@ class AudioMetadataBridge(messenger: BinaryMessenger) {
                 "hasArtwork" to (art != null && art.isNotEmpty()),
             )
         } catch (_: Exception) {
-            mapOf(
-                "album" to "",
-                "artist" to "",
-                "title" to "",
-                "hasArtwork" to false,
-            )
+            emptyMetadata()
         } finally {
             try {
                 retriever.release()
@@ -81,6 +106,13 @@ class AudioMetadataBridge(messenger: BinaryMessenger) {
             }
         }
     }
+
+    private fun emptyMetadata(): Map<String, Any?> = mapOf(
+        "album" to "",
+        "artist" to "",
+        "title" to "",
+        "hasArtwork" to false,
+    )
 
     companion object {
         private const val CHANNEL = "zen.audio/metadata"

@@ -9,6 +9,7 @@ import '../utils/video_navigation.dart';
 import '../widgets/add_to_playlist_sheet.dart';
 import '../widgets/media_details_dialog.dart';
 import '../widgets/media_options_sheet.dart';
+import 'asset_playback_resolver.dart';
 import 'hidden_folders_service.dart';
 import 'local_media_service.dart';
 import 'media_share_service.dart';
@@ -272,9 +273,9 @@ class VideoMediaActions {
   }
 
   static Future<void> _openAsset(BuildContext context, AssetEntity asset) async {
-    final file = await asset.file;
+    final target = await AssetPlaybackResolver.resolve(asset);
     if (!context.mounted) return;
-    if (file == null) {
+    if (target == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(AppLocalizations.of(context)!.noVideosFound)),
       );
@@ -282,8 +283,9 @@ class VideoMediaActions {
     }
     VideoNavigation.openPlayer(
       context: context,
-      videoSource: file.path,
-      isLocal: true,
+      videoSource: target.videoSource,
+      isLocal: target.isLocal,
+      useContentUri: target.useContentUri,
     );
   }
 

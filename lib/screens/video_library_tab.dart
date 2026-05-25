@@ -105,13 +105,6 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
         _applyFilter();
         _loading = false;
       });
-      LocalMediaService.fillFolderSizes(_folders).then((_) {
-        if (!mounted) return;
-        setState(() {
-          _folders = _localizedFolders(_folders);
-          _applyFilter();
-        });
-      });
     } else {
       if (!mounted) return;
       setState(() {

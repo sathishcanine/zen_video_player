@@ -22,12 +22,7 @@ class AudioArtworkCache {
 
   Future<Uint8List?> _load(AssetEntity asset) async {
     try {
-      final file = await asset.file;
-      if (file == null) {
-        _bytes[asset.id] = null;
-        return null;
-      }
-      final bytes = await AudioMetadataChannel.getArtwork(file.path);
+      final bytes = await AudioMetadataChannel.getArtworkForAsset(asset);
       if (bytes != null && bytes.isNotEmpty) {
         _bytes[asset.id] = bytes;
         return bytes;

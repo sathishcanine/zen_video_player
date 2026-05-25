@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
 import '../models/audio_track.dart';
+import 'asset_playback_resolver.dart';
 
 /// Global audio queue + playback (mini-player and now-playing UI).
 class AudioPlayerService extends ChangeNotifier {
@@ -78,9 +79,16 @@ class AudioPlayerService extends ChangeNotifier {
     final track = currentTrack;
     if (track == null) return;
     try {
-      final file = await track.asset.file;
-      if (file == null) return;
-      await _player.setFilePath(file.path);
+      final target = await AssetPlaybackResolver.resolve(track.asset);
+      if (target == null) return;
+      final source = target.videoSource;
+      if (target.useContentUri || source.startsWith('content://')) {
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(source)));
+      } else if (source.startsWith('file://')) {
+        await _player.setAudioSource(AudioSource.uri(Uri.parse(source)));
+      } else {
+        await _player.setFilePath(source);
+      }
       _duration = Duration(seconds: track.asset.duration);
       await _player.play();
       notifyListeners();
