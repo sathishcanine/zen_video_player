@@ -7,6 +7,7 @@ import 'package:firebase_crashlytics/firebase_crashlytics.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
+import '../app_update/force_update_remote_config.dart';
 import '../firebase_options.dart';
 
 /// Firebase Analytics + Crashlytics bootstrap and safe no-op fallbacks.
@@ -37,6 +38,8 @@ class Telemetry {
         _crashlytics?.recordError(error, stack, fatal: true);
         return true;
       };
+
+      unawaited(ForceUpdateRemoteConfig.prefetch());
     } catch (e, st) {
       debugPrint('Telemetry: Firebase init failed — add native config and run '
           'flutterfire configure. ($e)\n$st');

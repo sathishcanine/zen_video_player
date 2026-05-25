@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../ads/home_banner_ad.dart';
+import '../app_update/force_update_dialog.dart';
 import '../navigation/library_shell_scope.dart';
 import '../navigation/library_tab_index.dart';
 import '../navigation/mini_player_visibility_observer.dart';
@@ -32,6 +35,9 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
       if (_showMiniPlayer != visible && mounted) {
         setState(() => _showMiniPlayer = visible);
       }
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(showForceUpdateDialogIfNeeded(context));
     });
   }
 
