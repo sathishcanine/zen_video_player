@@ -121,7 +121,7 @@ abstract class AppLocalizations {
   /// No description provided for @appName.
   ///
   /// In en, this message translates to:
-  /// **'Zen'**
+  /// **'Zen Player'**
   String get appName;
 
   /// No description provided for @appNameFull.
@@ -915,6 +915,12 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Choose your accent color'**
   String get settingsPrimaryColorSubtitle;
+
+  /// No description provided for @settingsVersion.
+  ///
+  /// In en, this message translates to:
+  /// **'Version'**
+  String get settingsVersion;
 
   /// No description provided for @duplicateChooseTitle.
   ///

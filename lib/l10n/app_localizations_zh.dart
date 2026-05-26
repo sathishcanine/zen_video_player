@@ -9,7 +9,7 @@ class AppLocalizationsZh extends AppLocalizations {
   AppLocalizationsZh([String locale = 'zh']) : super(locale);
 
   @override
-  String get appName => 'Zen';
+  String get appName => 'Zen Player';
 
   @override
   String get appNameFull => 'Zen 视频播放器';
@@ -452,6 +452,9 @@ class AppLocalizationsZh extends AppLocalizations {
 
   @override
   String get settingsPrimaryColorSubtitle => 'Choose your accent color';
+
+  @override
+  String get settingsVersion => 'Version';
 
   @override
   String get duplicateChooseTitle => 'Choose';

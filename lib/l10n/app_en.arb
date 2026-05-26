@@ -1,6 +1,6 @@
 {
   "@@locale": "en",
-  "appName": "Zen",
+  "appName": "Zen Player",
   "appNameFull": "Zen Video Player",
   "accessYourMedia": "Access Your Media",
   "mediaAccessDescription": "{appName} needs access to your media files to find and play videos and music stored on your device.",
@@ -184,6 +184,7 @@
   "settingsDarkThemeSubtitle": "Switch between light and dark appearance",
   "settingsPrimaryColor": "Primary color",
   "settingsPrimaryColorSubtitle": "Choose your accent color",
+  "settingsVersion": "Version",
   "duplicateChooseTitle": "Choose",
   "duplicateChooseCancel": "CANCEL",
   "duplicateScanning": "Scanning storage",

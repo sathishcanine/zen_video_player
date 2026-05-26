@@ -11,8 +11,9 @@ class ZenBrandTitle extends StatelessWidget {
   Widget build(BuildContext context) {
     final name = AppLocalizations.of(context)!.appName;
     if (name.isEmpty) return const SizedBox.shrink();
-    final first = name.substring(0, 1);
-    final rest = name.length > 1 ? name.substring(1) : '';
+    final space = name.indexOf(' ');
+    final brand = space > 0 ? name.substring(0, space) : name;
+    final rest = space > 0 ? name.substring(space) : '';
 
     final onSurface = Theme.of(context).colorScheme.onSurface;
     final accent = Theme.of(context).colorScheme.primary;
@@ -25,7 +26,7 @@ class ZenBrandTitle extends StatelessWidget {
           color: onSurface,
         ),
         children: [
-          TextSpan(text: first, style: TextStyle(color: accent)),
+          TextSpan(text: brand, style: TextStyle(color: accent)),
           TextSpan(text: rest),
         ],
       ),

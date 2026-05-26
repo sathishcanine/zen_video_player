@@ -1,6 +1,6 @@
 {
   "@@locale": "ar",
-  "appName": "Zen",
+  "appName": "Zen Player",
   "appNameFull": "Zen مشغل الفيديو",
   "accessYourMedia": "الوصول إلى الوسائط",
   "mediaAccessDescription": "يحتاج {appName} إلى الوصول إلى ملفات الوسائط للعثور على مقاطع الفيديو والموسيقى وتشغيلها على جهازك.",

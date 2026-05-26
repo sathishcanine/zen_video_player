@@ -1,6 +1,6 @@
 {
   "@@locale": "es",
-  "appName": "Zen",
+  "appName": "Zen Player",
   "appNameFull": "Zen Reproductor de Video",
   "accessYourMedia": "Accede a tus medios",
   "mediaAccessDescription": "{appName} necesita acceso a tus archivos multimedia para encontrar y reproducir videos y música en tu dispositivo.",

@@ -1,6 +1,6 @@
 {
   "@@locale": "zh",
-  "appName": "Zen",
+  "appName": "Zen Player",
   "appNameFull": "Zen 视频播放器",
   "accessYourMedia": "访问您的媒体",
   "mediaAccessDescription": "{appName} 需要访问您的媒体文件，以便查找并播放设备上存储的视频和音乐。",

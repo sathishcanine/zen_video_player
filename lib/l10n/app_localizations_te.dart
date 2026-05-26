@@ -9,7 +9,7 @@ class AppLocalizationsTe extends AppLocalizations {
   AppLocalizationsTe([String locale = 'te']) : super(locale);
 
   @override
-  String get appName => 'Zen';
+  String get appName => 'Zen Player';
 
   @override
   String get appNameFull => 'Zen వీడియో ప్లేయర్';
@@ -462,6 +462,9 @@ class AppLocalizationsTe extends AppLocalizations {
 
   @override
   String get settingsPrimaryColorSubtitle => 'Choose your accent color';
+
+  @override
+  String get settingsVersion => 'Version';
 
   @override
   String get duplicateChooseTitle => 'Choose';

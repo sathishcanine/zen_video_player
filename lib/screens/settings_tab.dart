@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../services/app_settings_service.dart';
@@ -161,10 +162,40 @@ class SettingsTab extends StatelessWidget {
                       onUnlocked: () => showPrimaryColorPickerSheet(context),
                     ),
                   ),
+                  _AppVersionTile(subtitleStyle: subtitleStyle),
                 ],
               ),
             ),
           ],
+        );
+      },
+    );
+  }
+}
+
+class _AppVersionTile extends StatelessWidget {
+  const _AppVersionTile({required this.subtitleStyle});
+
+  final TextStyle? subtitleStyle;
+
+  static final Future<PackageInfo> _packageInfo = PackageInfo.fromPlatform();
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    return FutureBuilder<PackageInfo>(
+      future: _packageInfo,
+      builder: (context, snapshot) {
+        final info = snapshot.data;
+        final version = info?.version ?? '—';
+        final build = info?.buildNumber ?? '—';
+        return ListTile(
+          leading: const Icon(Icons.info_outline),
+          title: Text(
+            l10n.settingsVersion,
+            style: const TextStyle(fontWeight: FontWeight.w500),
+          ),
+          subtitle: Text('$version ($build)', style: subtitleStyle),
         );
       },
     );
