@@ -19,8 +19,10 @@ import 'services/app_settings_service.dart';
 import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
 import 'services/locale_service.dart';
+import 'services/play_store_rating_service.dart';
 import 'theme/zen_theme.dart';
 import 'video_player_screen.dart';
+import 'widgets/play_store_rating_coordinator.dart';
 
 bool _isOpenWithVideoUri(Uri? uri) {
   if (uri == null) return false;
@@ -55,6 +57,7 @@ Future<void> main() async {
           unawaited(CastService.instance.init());
         }
         unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
+        unawaited(PlayStoreRatingService.scheduleHomePrompt());
       });
     },
     (error, stack) => Telemetry.recordZoneError(error, stack),
@@ -242,6 +245,9 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
         return MaterialApp(
           navigatorKey: rootNavigatorKey,
           debugShowCheckedModeBanner: false,
+          builder: (context, child) => PlayStoreRatingCoordinator(
+            child: child ?? const SizedBox.shrink(),
+          ),
           theme: appTheme,
           locale: saved,
           localeResolutionCallback: (locale, supported) {

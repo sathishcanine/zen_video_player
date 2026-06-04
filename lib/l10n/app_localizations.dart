@@ -1269,6 +1269,30 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Ad not available. Please try again in a moment.'**
   String get proUnlockAdFailed;
+
+  /// No description provided for @playStoreRatingTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Help us to Grow'**
+  String get playStoreRatingTitle;
+
+  /// No description provided for @playStoreRatingBody.
+  ///
+  /// In en, this message translates to:
+  /// **'A quick rating on Google Play helps us grow and keep Zen free for everyone.'**
+  String get playStoreRatingBody;
+
+  /// No description provided for @playStoreRatingRateNow.
+  ///
+  /// In en, this message translates to:
+  /// **'Rate now'**
+  String get playStoreRatingRateNow;
+
+  /// No description provided for @playStoreRatingMaybe.
+  ///
+  /// In en, this message translates to:
+  /// **'Maybe'**
+  String get playStoreRatingMaybe;
 }
 
 class _AppLocalizationsDelegate

@@ -304,5 +304,9 @@
       "feature": {"type": "String"}
     }
   },
-  "proUnlockAdFailed": "Ad not available. Please try again in a moment."
+  "proUnlockAdFailed": "Ad not available. Please try again in a moment.",
+  "playStoreRatingTitle": "Help us to Grow",
+  "playStoreRatingBody": "A quick rating on Google Play helps us grow and keep Zen free for everyone.",
+  "playStoreRatingRateNow": "Rate now",
+  "playStoreRatingMaybe": "Maybe"
 }

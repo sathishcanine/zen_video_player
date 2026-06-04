@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'ads/ads_orchestrator.dart';
 import 'ads/rewarded_loading_overlay.dart';
 import 'download_service.dart';
+import 'services/play_store_rating_service.dart';
 import 'utils/video_navigation.dart';
 
 /// Backwards-compat facade. The real logic lives in [AdsOrchestrator];
@@ -133,6 +134,7 @@ class AdManager {
             backgroundColor: Colors.green,
           ),
         );
+        await PlayStoreRatingService.markDownloadStarted();
       } catch (e) {
         if (!context.mounted) return;
         messenger.hideCurrentSnackBar();

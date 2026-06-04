@@ -23,6 +23,7 @@ import 'playlist_list_screen.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
 import '../utils/video_navigation.dart';
+import '../widgets/play_store_rating_home_prompt.dart';
 
 class VideoLibraryTab extends StatefulWidget {
   const VideoLibraryTab({super.key});
@@ -48,7 +49,15 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     WidgetsBinding.instance.addObserver(this);
     LocaleService.instance.addListener(_onLocaleChanged);
     _refresh();
-    WidgetsBinding.instance.addPostFrameCallback((_) => _maybeShowLanguageTutorial());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _maybeShowLanguageTutorial();
+      unawaited(_maybeShowPlayStoreRating());
+    });
+  }
+
+  Future<void> _maybeShowPlayStoreRating() async {
+    if (!mounted || _loading) return;
+    await PlayStoreRatingHomePrompt.maybeShow(context);
   }
 
   void _onLocaleChanged() {
@@ -105,6 +114,11 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
         _applyFilter();
         _loading = false;
       });
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_maybeShowPlayStoreRating());
+        });
+      }
     } else {
       if (!mounted) return;
       setState(() {
@@ -113,6 +127,11 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
         _hasFullAccess = false;
         _loading = false;
       });
+      if (mounted) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_maybeShowPlayStoreRating());
+        });
+      }
     }
   }
 

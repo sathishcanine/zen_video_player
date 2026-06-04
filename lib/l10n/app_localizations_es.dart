@@ -675,4 +675,17 @@ class AppLocalizationsEs extends AppLocalizations {
   @override
   String get proUnlockAdFailed =>
       'Ad not available. Please try again in a moment.';
+
+  @override
+  String get playStoreRatingTitle => 'Help us to Grow';
+
+  @override
+  String get playStoreRatingBody =>
+      'A quick rating on Google Play helps us grow and keep Zen free for everyone.';
+
+  @override
+  String get playStoreRatingRateNow => 'Rate now';
+
+  @override
+  String get playStoreRatingMaybe => 'Maybe';
 }
