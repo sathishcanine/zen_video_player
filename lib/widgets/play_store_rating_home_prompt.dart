@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/services/play_store_rating_service.dart';
 import 'package:zen_video_player/widgets/play_store_rating_dialog.dart';
 
-/// Shows the Play Store rating dialog on the video folder list.
+/// Shows the Play Store rating dialog on the folder list (day 2+; Maybe → next day).
 class PlayStoreRatingHomePrompt {
   PlayStoreRatingHomePrompt._();
 

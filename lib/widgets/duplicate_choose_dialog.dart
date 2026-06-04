@@ -3,7 +3,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:zen_video_player/theme/zen_palette.dart';
 
 import '../models/duplicate_media_kind.dart';
-import '../navigation/library_shell_scope.dart';
+import '../navigation/library_navigation.dart';
 import '../screens/duplicate_scan_screen.dart';
 import '../services/media_permission_service.dart';
 
@@ -64,10 +64,5 @@ Future<void> showDuplicateChooseDialog(BuildContext context) async {
   }
 
   if (!context.mounted) return;
-  final nav = LibraryShellScope.navigatorOf(context) ?? Navigator.of(context);
-  nav.push(
-    MaterialPageRoute<void>(
-      builder: (_) => DuplicateScanScreen(kind: kind),
-    ),
-  );
+  LibraryNavigation.push(context, DuplicateScanScreen(kind: kind));
 }

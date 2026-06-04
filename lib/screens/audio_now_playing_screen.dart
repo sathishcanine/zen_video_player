@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
+import '../navigation/library_navigation.dart';
 import '../services/audio_player_service.dart';
 import '../theme/zen_theme.dart';
 import '../widgets/cast_device_picker_sheet.dart';
@@ -14,13 +15,14 @@ class AudioNowPlayingScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return LibraryRoutePage(
+      child: Scaffold(
       backgroundColor: const Color(0xFF121218),
       appBar: AppBar(
         backgroundColor: Colors.transparent,
         leading: IconButton(
           icon: const Icon(Icons.arrow_back),
-          onPressed: () => Navigator.pop(context),
+          onPressed: () => LibraryNavigation.pop(context),
         ),
         title: ListenableBuilder(
           listenable: AudioPlayerService.instance,
@@ -224,6 +226,7 @@ class AudioNowPlayingScreen extends StatelessWidget {
             ),
           );
         },
+      ),
       ),
     );
   }

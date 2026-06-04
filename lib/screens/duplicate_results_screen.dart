@@ -11,6 +11,7 @@ import 'package:zen_video_player/utils/format_bytes.dart';
 import '../models/duplicate_group.dart';
 import '../models/duplicate_media_item.dart';
 import '../models/duplicate_media_kind.dart';
+import '../navigation/library_navigation.dart';
 import '../services/duplicate_finder_service.dart';
 
 /// Lists duplicate groups and lets the user delete extra copies.
@@ -130,10 +131,14 @@ class _DuplicateResultsScreenState extends State<DuplicateResultsScreen> {
     final l10n = AppLocalizations.of(context)!;
     final zen = context.zen;
 
-    return Scaffold(
+    return LibraryRoutePage(
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        leading: BackButton(
+          onPressed: () => LibraryNavigation.pop(context),
+        ),
         title: Text(l10n.duplicateResultsTitle),
         actions: [
           if (_deletableCount > 0)
@@ -195,6 +200,7 @@ class _DuplicateResultsScreenState extends State<DuplicateResultsScreen> {
                   },
                 ),
         ),
+      ),
       ),
     );
   }

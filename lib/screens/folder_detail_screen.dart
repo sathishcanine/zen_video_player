@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:photo_manager/photo_manager.dart';
 import '../models/media_folder.dart';
+import '../navigation/library_navigation.dart';
 import '../services/local_media_service.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
@@ -69,43 +70,50 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
-      backgroundColor: Colors.transparent,
-      extendBodyBehindAppBar: true,
-      appBar: AppBar(
-        title: Text(l10n.videosInFolder(_title(l10n))),
-      ),
-      body: ZenGradientBackground(
-        child: SafeArea(
-          child: _loading
-              ? const Center(child: CircularProgressIndicator())
-              : _assets.isEmpty
-                  ? Center(
-                      child: Text(
-                        l10n.noVideosFound,
-                        style: const TextStyle(color: ZenTheme.textSecondary),
-                      ),
-                    )
-                  : ListView.builder(
-                      padding: const EdgeInsets.symmetric(vertical: 8),
-                      itemCount: _assets.length,
-                      itemBuilder: (context, index) {
-                        final asset = _assets[index];
-                        final name =
-                            asset.title ?? asset.relativePath ?? 'Video ${index + 1}';
-                        return VideoAssetTile(
+    return LibraryRoutePage(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        extendBodyBehindAppBar: true,
+        appBar: AppBar(
+          leading: BackButton(
+            onPressed: () => LibraryNavigation.pop(context),
+          ),
+          title: Text(l10n.videosInFolder(_title(l10n))),
+        ),
+        body: ZenGradientBackground(
+          child: SafeArea(
+            child: _loading
+                ? const Center(child: CircularProgressIndicator())
+                : _assets.isEmpty
+                    ? Center(
+                        child: Text(
+                          l10n.noVideosFound,
+                          style:
+                              const TextStyle(color: ZenTheme.textSecondary),
+                        ),
+                      )
+                    : ListView.builder(
+                        padding: const EdgeInsets.symmetric(vertical: 8),
+                        itemCount: _assets.length,
+                        itemBuilder: (context, index) {
+                          final asset = _assets[index];
+                          final name = asset.title ??
+                              asset.relativePath ??
+                              'Video ${index + 1}';
+                          return VideoAssetTile(
+                            asset: asset,
+                            title: name,
+                            subtitle: _subtitle(asset),
+                            onTap: () => VideoMediaActions.handleAsset(
+                              context,
                               asset: asset,
-                              title: name,
-                              subtitle: _subtitle(asset),
-                              onTap: () => VideoMediaActions.handleAsset(
-                                context,
-                                asset: asset,
-                                action: MediaOptionAction.play,
-                              ),
-                              onMenu: () => _openMenu(asset),
-                            );
-                      },
-                    ),
+                              action: MediaOptionAction.play,
+                            ),
+                            onMenu: () => _openMenu(asset),
+                          );
+                        },
+                      ),
+          ),
         ),
       ),
     );

@@ -4,6 +4,7 @@ import 'package:zen_video_player/theme/zen_palette.dart';
 import 'package:zen_video_player/theme/zen_theme.dart';
 
 import '../models/video_playlist.dart';
+import '../navigation/library_navigation.dart';
 import '../services/playlist_service.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
@@ -100,10 +101,14 @@ class _PlaylistListScreenState extends State<PlaylistListScreen> {
     final l10n = AppLocalizations.of(context)!;
     final zen = context.zen;
 
-    return Scaffold(
+    return LibraryRoutePage(
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        leading: BackButton(
+          onPressed: () => LibraryNavigation.pop(context),
+        ),
         title: Text(l10n.pillPlaylist),
       ),
       body: ZenGradientBackground(
@@ -180,12 +185,10 @@ class _PlaylistListScreenState extends State<PlaylistListScreen> {
                                     onPressed: () => _openMenu(p),
                                   ),
                                   onTap: () async {
-                                    await Navigator.push<void>(
+                                    await LibraryNavigation.push<void>(
                                       context,
-                                      MaterialPageRoute<void>(
-                                        builder: (_) => PlaylistDetailScreen(
-                                          playlistId: p.id,
-                                        ),
+                                      PlaylistDetailScreen(
+                                        playlistId: p.id,
                                       ),
                                     );
                                     await _load();
@@ -197,6 +200,7 @@ class _PlaylistListScreenState extends State<PlaylistListScreen> {
                   ],
                 ),
         ),
+      ),
       ),
     );
   }

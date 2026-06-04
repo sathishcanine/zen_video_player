@@ -3,6 +3,7 @@ import 'package:photo_manager/photo_manager.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:zen_video_player/theme/zen_theme.dart';
 import '../models/video_playlist.dart';
+import '../navigation/library_navigation.dart';
 import '../services/playlist_service.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
@@ -76,10 +77,14 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
     final l10n = AppLocalizations.of(context)!;
     final playlist = _playlist;
 
-    return Scaffold(
+    return LibraryRoutePage(
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
+        leading: BackButton(
+          onPressed: () => LibraryNavigation.pop(context),
+        ),
         title: Text(playlist?.name ?? l10n.pillPlaylist),
       ),
       body: ZenGradientBackground(
@@ -128,6 +133,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                       },
                     ),
         ),
+      ),
       ),
     );
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../ads/home_banner_ad.dart';
@@ -41,6 +42,19 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
     });
   }
 
+  void _handleShellBack() {
+    final nav = _stackNavigatorKey.currentState;
+    if (nav != null && nav.canPop()) {
+      nav.pop();
+      return;
+    }
+    if (_index != 0) {
+      setState(() => _index = 0);
+      return;
+    }
+    SystemNavigator.pop();
+  }
+
   @override
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
@@ -50,7 +64,13 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
       const SettingsTab(),
     ];
 
-    return LibraryShellScope(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        _handleShellBack();
+      },
+      child: LibraryShellScope(
       stackNavigatorKey: _stackNavigatorKey,
       child: LibraryTabIndex(
         index: _index,
@@ -104,6 +124,7 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

@@ -7,6 +7,7 @@ import 'package:zen_video_player/theme/zen_palette.dart';
 import 'package:zen_video_player/theme/zen_theme.dart';
 
 import '../models/duplicate_media_kind.dart';
+import '../navigation/library_navigation.dart';
 import '../navigation/library_shell_scope.dart';
 import '../services/duplicate_finder_service.dart';
 import '../services/media_permission_service.dart';
@@ -123,7 +124,8 @@ class _DuplicateScanScreenState extends State<DuplicateScanScreen> {
     final current = _progress.currentFileName;
     final loading = _progress.isLoadingLibrary;
 
-    return Scaffold(
+    return LibraryRoutePage(
+      child: Scaffold(
       backgroundColor: Colors.transparent,
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -131,7 +133,7 @@ class _DuplicateScanScreenState extends State<DuplicateScanScreen> {
           icon: const Icon(Icons.close),
           onPressed: () {
             _cancelled = true;
-            Navigator.pop(context);
+            LibraryNavigation.pop(context);
           },
         ),
       ),
@@ -219,6 +221,7 @@ class _DuplicateScanScreenState extends State<DuplicateScanScreen> {
             ),
           ),
         ),
+      ),
       ),
     );
   }

@@ -1,8 +1,10 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../navigation/audio_routes.dart';
-import '../navigation/library_shell_scope.dart';
+import '../navigation/library_navigation.dart';
 import '../services/audio_player_service.dart';
 import '../theme/zen_palette.dart';
 import 'audio_artwork.dart';
@@ -30,13 +32,12 @@ class AudioMiniPlayer extends StatelessWidget {
           color: isDark ? const Color(0xFF1A1A22) : zen.surfaceCard,
           child: InkWell(
             onTap: () {
-              final route = AudioRoutes.nowPlayingRoute();
-              final shellNav = LibraryShellScope.navigatorOf(context);
-              if (shellNav != null) {
-                shellNav.push(route);
-              } else {
-                Navigator.push<void>(context, route);
-              }
+              unawaited(
+                LibraryNavigation.pushRoute(
+                  context,
+                  AudioRoutes.nowPlayingRoute(),
+                ),
+              );
             },
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 6),

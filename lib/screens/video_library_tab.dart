@@ -22,6 +22,7 @@ import 'folder_detail_screen.dart';
 import 'playlist_list_screen.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
+import '../navigation/library_navigation.dart';
 import '../utils/video_navigation.dart';
 import '../widgets/play_store_rating_home_prompt.dart';
 
@@ -213,11 +214,8 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
   }
 
   void _openPlaylists() {
-    Navigator.push(
-      context,
-      MaterialPageRoute<void>(
-        builder: (_) => const PlaylistListScreen(),
-      ),
+    unawaited(
+      LibraryNavigation.push(context, const PlaylistListScreen()),
     );
   }
 
@@ -357,12 +355,9 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
                               final folder = _filtered[index];
                               return _FolderTile(
                                 folder: folder,
-                                onTap: () => Navigator.push(
+                                onTap: () => LibraryNavigation.push(
                                   context,
-                                  MaterialPageRoute<void>(
-                                    builder: (_) =>
-                                        FolderDetailScreen(folder: folder),
-                                  ),
+                                  FolderDetailScreen(folder: folder),
                                 ),
                                 onMenu: () => _openFolderMenu(folder),
                               );

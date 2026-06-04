@@ -57,7 +57,7 @@ Future<void> main() async {
           unawaited(CastService.instance.init());
         }
         unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
-        unawaited(PlayStoreRatingService.scheduleHomePrompt());
+        unawaited(PlayStoreRatingService.recordCalendarDay());
       });
     },
     (error, stack) => Telemetry.recordZoneError(error, stack),

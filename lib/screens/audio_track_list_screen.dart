@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../models/audio_track.dart';
+import '../navigation/library_navigation.dart';
 import '../services/audio_player_service.dart';
 import '../theme/zen_theme.dart';
 import '../utils/audio_playback_launcher.dart';
@@ -21,9 +22,15 @@ class AudioTrackListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final l10n = AppLocalizations.of(context)!;
 
-    return Scaffold(
+    return LibraryRoutePage(
+      child: Scaffold(
       backgroundColor: Colors.transparent,
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        leading: BackButton(
+          onPressed: () => LibraryNavigation.pop(context),
+        ),
+        title: Text(title),
+      ),
       body: ZenGradientBackground(
         child: tracks.isEmpty
             ? Center(child: Text(l10n.noAudioFound))
@@ -74,6 +81,7 @@ class AudioTrackListScreen extends StatelessWidget {
                   );
                 },
               ),
+      ),
       ),
     );
   }

@@ -19,6 +19,7 @@ import '../widgets/search_filter_bar.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/limited_media_access_prompt.dart';
 import '../widgets/zen_brand_title.dart';
+import '../navigation/library_navigation.dart';
 import '../utils/audio_playback_launcher.dart';
 import 'audio_track_list_screen.dart';
 import 'playlist_list_screen.dart';
@@ -299,13 +300,11 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
           return _AlbumCard(
             album: album,
             unknownArtist: l10n.unknownArtist,
-            onTap: () => Navigator.push(
+            onTap: () => LibraryNavigation.push(
               context,
-              MaterialPageRoute<void>(
-                builder: (_) => AudioTrackListScreen(
-                  title: album.title,
-                  tracks: album.tracks,
-                ),
+              AudioTrackListScreen(
+                title: album.title,
+                tracks: album.tracks,
               ),
             ),
           );
@@ -408,13 +407,11 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
               l10n.songCount(a.trackCount),
               style: TextStyle(color: context.zen.textSecondary),
             ),
-            onTap: () => Navigator.push(
+            onTap: () => LibraryNavigation.push(
               context,
-              MaterialPageRoute<void>(
-                builder: (_) => AudioTrackListScreen(
-                  title: a.name,
-                  tracks: a.tracks,
-                ),
+              AudioTrackListScreen(
+                title: a.name,
+                tracks: a.tracks,
               ),
             ),
           );
@@ -442,13 +439,11 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
             onTap: () async {
               final tracks = await LocalAudioService.loadTracksInFolder(folder);
               if (!mounted) return;
-              Navigator.push(
+              LibraryNavigation.push(
                 context,
-                MaterialPageRoute<void>(
-                  builder: (_) => AudioTrackListScreen(
-                    title: folder.displayName,
-                    tracks: tracks,
-                  ),
+                AudioTrackListScreen(
+                  title: folder.displayName,
+                  tracks: tracks,
                 ),
               );
             },
@@ -690,11 +685,9 @@ class _VideoPlaylistEntry extends StatelessWidget {
             const SizedBox(height: 20),
             FilledButton.icon(
               onPressed: () {
-                Navigator.push(
+                LibraryNavigation.push(
                   context,
-                  MaterialPageRoute<void>(
-                    builder: (_) => const PlaylistListScreen(),
-                  ),
+                  const PlaylistListScreen(),
                 );
               },
               icon: const Icon(Icons.open_in_new),
