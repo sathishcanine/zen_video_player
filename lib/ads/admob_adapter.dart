@@ -269,7 +269,7 @@ class AdmobAdapter implements AdNetwork {
   @override
   Widget? buildBanner() => buildBannerWithUnitId(bannerUnitId);
 
-  /// Banner with an explicit AdMob unit (e.g. full vs limited home placement).
+  /// Banner with an explicit AdMob unit.
   Widget? buildBannerWithUnitId(String unitId) {
     if (!_initialized) return null;
     return _AdmobBanner(key: ValueKey<String>(unitId), unitId: unitId);

@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
-import '../ads/home_banner_ad.dart';
 import '../app_update/force_update_dialog.dart';
 import '../navigation/library_shell_scope.dart';
 import '../navigation/library_tab_index.dart';
@@ -120,7 +119,6 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
                   ),
                 ],
               ),
-              const HomeBannerAd(),
             ],
           ),
         ),

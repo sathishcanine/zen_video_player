@@ -32,21 +32,16 @@ const String _adMobProdAppId = kAdMobProdApplicationId;
 // Live ad units (names from AdMob console):
 //   rewarded              → general playback rewarded
 //   Pro-User-Rewarded     → pro settings unlock
-//   v3-Home-Banner        → library home banner (full video access)
-//   limited-home-banner   → library home banner (partial / no full access)
 //   Native-ad             → video preview native
 //   v3-Pause-Native-Ad    → player pause / end native (network stream)
 //   pause-native-local    → player pause / end native (local / content URI)
-const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/7234751166';
+const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/9098430274';
 const String _adMobProdRewardedInterstitialUnit =
     'ca-app-pub-8723888126390754/5103877770';
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
-const String _adMobProdBannerUnit = 'ca-app-pub-8723888126390754/4197348615';
-const String _adMobProdLimitedBannerUnit =
-    'ca-app-pub-8723888126390754/7727351312';
 const String _adMobProdNativeAdvancedUnit =
-    'ca-app-pub-8723888126390754/5486908814';
+    'ca-app-pub-8723888126390754/9829892165';
 const String _adMobProdPauseNativeNetworkUnit =
     'ca-app-pub-8723888126390754/7649508461';
 const String _adMobProdPauseNativeLocalUnit =
@@ -93,20 +88,7 @@ String get adMobRewardedInterstitialUnitId => kUseTestAdIds
 
 String get adMobProUnlockRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdUnlockRewardedUnit;
-String get adMobBannerUnitId =>
-    kUseTestAdIds ? _adMobTestBannerUnit : _adMobProdBannerUnit;
-
-/// Home bottom banner when the user granted **Allow all** videos.
-String get adMobFullAccessBannerUnitId => adMobBannerUnitId;
-
-/// Home bottom banner when access is limited or not fully granted.
-String get adMobLimitedAccessBannerUnitId =>
-    kUseTestAdIds ? _adMobTestBannerUnit : _adMobProdLimitedBannerUnit;
-
-String homeBannerUnitId({required bool hasFullVideoAccess}) =>
-    hasFullVideoAccess
-        ? adMobFullAccessBannerUnitId
-        : adMobLimitedAccessBannerUnitId;
+String get adMobBannerUnitId => _adMobTestBannerUnit;
 
 String get adMobNativeAdvancedUnitId =>
     kUseTestAdIds ? _adMobTestNativeAdvancedUnit : _adMobProdNativeAdvancedUnit;
