@@ -6,8 +6,6 @@ import 'ad_ids.dart' show homeBannerUnitId;
 import 'ad_network.dart';
 import 'ad_throttle.dart';
 import 'admob_adapter.dart';
-import 'inmobi_adapter.dart';
-import 'unity_adapter.dart';
 
 /// Single entry point all UI code should use to request ads.
 ///
@@ -33,15 +31,12 @@ class AdsOrchestrator {
 
   static final List<AdNetwork> _registry = [
     AdmobAdapter(),
-    UnityAdapter(),
-    InMobiAdapter(),
   ];
 
   static bool _booted = false;
 
   /// Initialize the orchestrator. Loads persisted config, optionally merges
-  /// [coldStartUri] before any SDK runs so e.g. `ads=admob` avoids initializing
-  /// Unity/InMobi on the same cold start.
+  /// [coldStartUri] before any SDK runs so deeplink ad config is applied early.
   static Future<void> init({Uri? coldStartUri}) async {
     if (_booted) return;
     _booted = true;

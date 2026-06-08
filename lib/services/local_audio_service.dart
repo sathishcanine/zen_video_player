@@ -65,6 +65,8 @@ class LocalAudioService {
     return tracks;
   }
 
+  static AudioTrack trackFromAsset(AssetEntity asset) => _trackFromAsset(asset);
+
   static AudioTrack _trackFromAsset(AssetEntity asset) {
     final title = _clean(asset.title ?? asset.relativePath ?? 'Track');
     final folder = _folderFromPath(asset.relativePath);

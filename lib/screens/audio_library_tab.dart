@@ -20,9 +20,10 @@ import '../widgets/language_picker_sheet.dart';
 import '../widgets/limited_media_access_prompt.dart';
 import '../widgets/zen_brand_title.dart';
 import '../navigation/library_navigation.dart';
+import '../services/audio_media_actions.dart';
 import '../utils/audio_playback_launcher.dart';
+import 'audio_playlist_list_screen.dart';
 import 'audio_track_list_screen.dart';
-import 'playlist_list_screen.dart';
 
 enum _AudioSection { album, songs, artist, folder, playlist }
 
@@ -274,7 +275,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
         _buildSongsList(l10n),
         _buildArtistList(l10n),
         _buildFolderList(l10n),
-        const _VideoPlaylistEntry(),
+        const AudioPlaylistListScreen(embedded: true),
       ],
     );
   }
@@ -306,6 +307,10 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
                 title: album.title,
                 tracks: album.tracks,
               ),
+            ),
+            onMenu: () => AudioMediaActions.openAlbumMenu(
+              context,
+              album: album,
             ),
           );
         },
@@ -353,7 +358,12 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
                     ),
                     IconButton(
                       icon: const Icon(Icons.more_vert, size: 20),
-                      onPressed: () {},
+                      onPressed: () => AudioMediaActions.openTrackMenu(
+                        context,
+                        track: t,
+                        queue: tracks,
+                        onListChanged: _refresh,
+                      ),
                     ),
                   ],
                 ),
@@ -435,6 +445,13 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
             subtitle: Text(
               l10n.songCount(folder.videoCount),
               style: TextStyle(color: context.zen.textSecondary),
+            ),
+            trailing: IconButton(
+              icon: const Icon(Icons.more_vert, size: 20),
+              onPressed: () => AudioMediaActions.openFolderMenu(
+                context,
+                folder: folder,
+              ),
             ),
             onTap: () async {
               final tracks = await LocalAudioService.loadTracksInFolder(folder);
@@ -555,11 +572,13 @@ class _AlbumCard extends StatelessWidget {
     required this.album,
     required this.unknownArtist,
     required this.onTap,
+    required this.onMenu,
   });
 
   final AudioAlbum album;
   final String unknownArtist;
   final VoidCallback onTap;
+  final VoidCallback onMenu;
 
   @override
   Widget build(BuildContext context) {
@@ -615,7 +634,7 @@ class _AlbumCard extends StatelessWidget {
                   IconButton(
                     icon: const Icon(Icons.more_vert, size: 20),
                     color: zen.textSecondary,
-                    onPressed: () {},
+                    onPressed: onMenu,
                   ),
                 ],
               ),
@@ -655,47 +674,3 @@ class _NoAccessAudio extends StatelessWidget {
   }
 }
 
-class _VideoPlaylistEntry extends StatelessWidget {
-  const _VideoPlaylistEntry();
-
-  @override
-  Widget build(BuildContext context) {
-    final l10n = AppLocalizations.of(context)!;
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.queue_music,
-              size: 48,
-              color: context.zen.textSecondary.withValues(alpha: 0.5),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              l10n.playlistEmpty,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w700,
-                color: context.zen.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 20),
-            FilledButton.icon(
-              onPressed: () {
-                LibraryNavigation.push(
-                  context,
-                  const PlaylistListScreen(),
-                );
-              },
-              icon: const Icon(Icons.open_in_new),
-              label: Text(l10n.pillPlaylist),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-}

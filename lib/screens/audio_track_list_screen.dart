@@ -3,6 +3,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../models/audio_track.dart';
 import '../navigation/library_navigation.dart';
+import '../services/audio_media_actions.dart';
 import '../services/audio_player_service.dart';
 import '../theme/zen_theme.dart';
 import '../utils/audio_playback_launcher.dart';
@@ -69,7 +70,11 @@ class AudioTrackListScreen extends StatelessWidget {
                         ),
                         IconButton(
                           icon: const Icon(Icons.more_vert, size: 20),
-                          onPressed: () {},
+                          onPressed: () => AudioMediaActions.openTrackMenu(
+                            context,
+                            track: track,
+                            queue: tracks,
+                          ),
                         ),
                       ],
                     ),

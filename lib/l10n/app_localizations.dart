@@ -790,6 +790,96 @@ abstract class AppLocalizations {
   /// **'SHUFFLE ALL'**
   String get shuffleAll;
 
+  /// No description provided for @equalizerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Equalizer'**
+  String get equalizerTitle;
+
+  /// No description provided for @eqEnabled.
+  ///
+  /// In en, this message translates to:
+  /// **'Enable equalizer'**
+  String get eqEnabled;
+
+  /// No description provided for @eqReset.
+  ///
+  /// In en, this message translates to:
+  /// **'Reset'**
+  String get eqReset;
+
+  /// No description provided for @eqBassBoost.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass boost'**
+  String get eqBassBoost;
+
+  /// No description provided for @eqUnsupported.
+  ///
+  /// In en, this message translates to:
+  /// **'System equalizer is available on Android. Presets are saved for when you use an Android device.'**
+  String get eqUnsupported;
+
+  /// No description provided for @eqPresetNormal.
+  ///
+  /// In en, this message translates to:
+  /// **'Normal'**
+  String get eqPresetNormal;
+
+  /// No description provided for @eqPresetRock.
+  ///
+  /// In en, this message translates to:
+  /// **'Rock'**
+  String get eqPresetRock;
+
+  /// No description provided for @eqPresetPop.
+  ///
+  /// In en, this message translates to:
+  /// **'Pop'**
+  String get eqPresetPop;
+
+  /// No description provided for @eqPresetJazz.
+  ///
+  /// In en, this message translates to:
+  /// **'Jazz'**
+  String get eqPresetJazz;
+
+  /// No description provided for @eqPresetClassical.
+  ///
+  /// In en, this message translates to:
+  /// **'Classical'**
+  String get eqPresetClassical;
+
+  /// No description provided for @eqPresetBass.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass'**
+  String get eqPresetBass;
+
+  /// No description provided for @eqPresetTreble.
+  ///
+  /// In en, this message translates to:
+  /// **'Treble'**
+  String get eqPresetTreble;
+
+  /// No description provided for @eqPresetVocal.
+  ///
+  /// In en, this message translates to:
+  /// **'Vocal'**
+  String get eqPresetVocal;
+
+  /// No description provided for @eqPresetElectronic.
+  ///
+  /// In en, this message translates to:
+  /// **'EDM'**
+  String get eqPresetElectronic;
+
+  /// No description provided for @eqPresetCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom'**
+  String get eqPresetCustom;
+
   /// No description provided for @castSelectDevice.
   ///
   /// In en, this message translates to:

@@ -1,5 +1,5 @@
-/// Ad network IDs — [kUseTestAdIds] switches Google sample AdMob units + Unity
-/// test mode + InMobi "test" slots vs **live** dashboard values.
+/// Ad network IDs — [kUseTestAdIds] switches Google sample AdMob units vs
+/// **live** dashboard values.
 ///
 /// **Production:** set [kUseTestAdIds] to `false` and set native **AdMob app id**
 /// (`AndroidManifest` / `Info.plist` `GADApplicationIdentifier`) to the same
@@ -15,6 +15,8 @@ const bool kUseTestAdIds = false;
 // See: https://developers.google.com/admob/android/test-ads#sample_ad_units
 const String _adMobTestAppId = 'ca-app-pub-3940256099942544~3347511713';
 const String _adMobTestRewardedUnit = 'ca-app-pub-3940256099942544/5224354917';
+const String _adMobTestRewardedInterstitialUnit =
+    'ca-app-pub-3940256099942544/5354046379';
 const String _adMobTestBannerUnit = 'ca-app-pub-3940256099942544/6300978111';
 /// Native Advanced — Google sample unit (see AdMob test ads doc).
 const String _adMobTestNativeAdvancedUnit =
@@ -36,6 +38,8 @@ const String _adMobProdAppId = kAdMobProdApplicationId;
 //   v3-Pause-Native-Ad    → player pause / end native (network stream)
 //   pause-native-local    → player pause / end native (local / content URI)
 const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/7234751166';
+const String _adMobProdRewardedInterstitialUnit =
+    'ca-app-pub-8723888126390754/5103877770';
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
 const String _adMobProdBannerUnit = 'ca-app-pub-8723888126390754/4197348615';
@@ -82,6 +86,10 @@ String get adMobAppId => kUseTestAdIds ? _adMobTestAppId : _adMobProdAppId;
 
 String get adMobRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdRewardedUnit;
+
+String get adMobRewardedInterstitialUnitId => kUseTestAdIds
+    ? _adMobTestRewardedInterstitialUnit
+    : _adMobProdRewardedInterstitialUnit;
 
 String get adMobProUnlockRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdUnlockRewardedUnit;

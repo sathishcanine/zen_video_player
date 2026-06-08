@@ -76,6 +76,40 @@ Future<void> showPlaylistDetailsDialog(
   );
 }
 
+Future<void> showAudioPlaylistDetailsDialog(
+  BuildContext context, {
+  required String name,
+  required int trackCount,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  return _show(
+    context,
+    l10n.detailsTitle,
+    [
+      _DetailRow(l10n.detailsName, name),
+      _DetailRow(l10n.detailsCount, l10n.songCount(trackCount)),
+    ],
+  );
+}
+
+Future<void> showAudioAlbumDetailsDialog(
+  BuildContext context, {
+  required String title,
+  required String artist,
+  required int trackCount,
+}) {
+  final l10n = AppLocalizations.of(context)!;
+  return _show(
+    context,
+    l10n.detailsTitle,
+    [
+      _DetailRow(l10n.detailsName, title),
+      if (artist.isNotEmpty) _DetailRow(l10n.audioSubArtist, artist),
+      _DetailRow(l10n.detailsCount, l10n.songCount(trackCount)),
+    ],
+  );
+}
+
 Future<void> _show(
   BuildContext context,
   String title,

@@ -6,6 +6,7 @@ import '../services/audio_player_service.dart';
 import '../theme/zen_theme.dart';
 import '../widgets/cast_device_picker_sheet.dart';
 import '../widgets/audio_artwork.dart';
+import '../widgets/audio_equalizer_sheet.dart';
 import '../widgets/audio_queue_sheet.dart';
 
 class AudioNowPlayingScreen extends StatelessWidget {
@@ -41,7 +42,11 @@ class AudioNowPlayingScreen extends StatelessWidget {
             icon: const Icon(Icons.cast_outlined),
             onPressed: () => showCastDevicePicker(context),
           ),
-          IconButton(icon: const Icon(Icons.bar_chart), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.graphic_eq),
+            tooltip: l10n.equalizerTitle,
+            onPressed: () => showAudioEqualizerSheet(context),
+          ),
           IconButton(icon: const Icon(Icons.more_vert), onPressed: () {}),
         ],
       ),

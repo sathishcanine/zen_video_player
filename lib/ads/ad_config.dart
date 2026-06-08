@@ -16,24 +16,19 @@ import 'package:shared_preferences/shared_preferences.dart';
 ///
 ///   zenvideoplayer://play?url=<videoUrl>
 ///       &latest_version=11              // optional: if app build < 11, force Play update
-///       &ads=unity,admob,inmobi         // priority order (left = primary)
+///       &ads=admob                       // AdMob only (rewarded → rewarded interstitial)
 ///       &banner=1                       // 0/1 enable banner
 ///       &rew=1                          // 0/1 enable rewarded
 ///       &cap=30                         // max ad requests per hour per device
 class AdConfig {
   /// Networks in fallback order. First entry = primary.
-  /// Allowed values: "admob", "unity", "inmobi".
+  /// Allowed values: "admob".
   final List<String> adOrder;
 
-  /// When true, [adOrder] is treated as a one-shot random shuffle that
-  /// gets regenerated on every cold start (see [AdConfig.load]). This is
-  /// the default behaviour so that manual launches don't get stuck on a
-  /// single under-performing network — if AdMob is ad-limited today,
-  /// some sessions will start with Unity or InMobi instead.
+  /// When true, [adOrder] is shuffled on cold start (see [AdConfig.load]).
+  /// With a single network this has no effect; kept for deeplink compat.
   ///
-  /// Explicit deeplink orders (e.g. `ads=unity,admob`) flip this to
-  /// false and the persisted order is then respected verbatim across
-  /// launches until another deeplink changes it.
+  /// Explicit deeplink orders (e.g. `ads=admob`) flip this to false.
   final bool randomOrder;
 
   final bool bannerEnabled;
@@ -52,12 +47,10 @@ class AdConfig {
   });
 
   /// Default config used on first install or when no deeplink config
-  /// has been persisted yet. Boots in "random" mode so the fallback
-  /// chain rotates across launches instead of always hitting the same
-  /// network first.
+  /// has been persisted yet.
   factory AdConfig.defaults() => AdConfig(
-        adOrder: _shuffledKnownNetworks(),
-        randomOrder: true,
+        adOrder: const ['admob'],
+        randomOrder: false,
       );
 
   /// Generates a fresh random ordering of every known network.
@@ -69,8 +62,6 @@ class AdConfig {
   /// deeplink is silently dropped to avoid arbitrary input.
   static const Set<String> _knownNetworks = {
     'admob',
-    'unity',
-    'inmobi',
   };
 
   /// Keeps first occurrence only (e.g. `ads=inmobi,admob,inmobi` → inmobi, admob).

@@ -9,23 +9,28 @@ import 'ad_throttle.dart';
 
 /// Google AdMob adapter.
 ///
-/// Soft circuit breaker:
+/// Rewarded waterfall (single network):
+///   1. Standard rewarded ad
+///   2. Rewarded interstitial when rewarded fails to fill
+///
+/// Soft circuit breaker on the rewarded slot:
 ///   When an AdMob account is under "ad serving limit", every load
-///   returns ERROR_CODE_NO_FILL (3). Hammering the network unit on
-///   every request wastes the global hourly budget that the orchestrator
-///   shares across all adapters and slows the fallback to Unity/InMobi.
-///   After [_maxConsecutiveNoFills] consecutive failures (no-fill or
-///   otherwise) for the rewarded slot, AdMob rewarded is skipped for
-///   [_circuitCooldown].
+///   returns ERROR_CODE_NO_FILL (3). After [_maxConsecutiveNoFills]
+///   consecutive failures, rewarded is skipped for [_circuitCooldown]
+///   and the adapter tries rewarded interstitial instead.
 class AdmobAdapter implements AdNetwork {
   final String rewardedUnitId;
+  final String rewardedInterstitialUnitId;
   final String bannerUnitId;
 
   /// Defaults come from [ad_ids] (`kUseTestAdIds` / Google sample units).
   AdmobAdapter({
     String? rewardedUnitId,
+    String? rewardedInterstitialUnitId,
     String? bannerUnitId,
   })  : rewardedUnitId = rewardedUnitId ?? adMobRewardedUnitId,
+        rewardedInterstitialUnitId =
+            rewardedInterstitialUnitId ?? adMobRewardedInterstitialUnitId,
         bannerUnitId = bannerUnitId ?? adMobBannerUnitId;
 
   @override
@@ -43,6 +48,11 @@ class AdmobAdapter implements AdNetwork {
   bool _rewardedLoading = false;
   int _rewardedFailures = 0;
   DateTime? _rewardedBreakerOpenedAt;
+
+  RewardedInterstitialAd? _rewardedInterstitial;
+  bool _rewardedInterstitialLoading = false;
+  int _rewardedInterstitialFailures = 0;
+  DateTime? _rewardedInterstitialBreakerOpenedAt;
 
   bool _circuitOpen(DateTime? openedAt, void Function() reset) {
     if (openedAt == null) return false;
@@ -64,44 +74,108 @@ class AdmobAdapter implements AdNetwork {
     }
   }
 
+  bool get _rewardedCircuitOpen => _circuitOpen(_rewardedBreakerOpenedAt, () {
+        _rewardedBreakerOpenedAt = null;
+        _rewardedFailures = 0;
+        debugPrint('[admob] rewarded circuit reset');
+      });
+
+  bool get _rewardedInterstitialCircuitOpen =>
+      _circuitOpen(_rewardedInterstitialBreakerOpenedAt, () {
+        _rewardedInterstitialBreakerOpenedAt = null;
+        _rewardedInterstitialFailures = 0;
+        debugPrint('[admob] rewarded interstitial circuit reset');
+      });
+
+  /// True once rewarded has failed or its circuit is open — interstitial may load.
+  bool get _shouldTryRewardedInterstitial =>
+      _rewarded == null &&
+      !_rewardedLoading &&
+      (_rewardedFailures > 0 || _rewardedCircuitOpen);
+
   @override
   void preloadRewarded() {
-    if (!_initialized || _rewarded != null || _rewardedLoading) return;
-    if (_circuitOpen(_rewardedBreakerOpenedAt, () {
-      _rewardedBreakerOpenedAt = null;
-      _rewardedFailures = 0;
-      debugPrint('[admob] rewarded circuit reset');
-    })) {
+    if (!_initialized) return;
+
+    if (_rewarded == null &&
+        !_rewardedLoading &&
+        !_rewardedCircuitOpen) {
+      _rewardedLoading = true;
+      AdThrottle.recordRequest();
+      RewardedAd.load(
+        adUnitId: rewardedUnitId,
+        request: const AdRequest(),
+        rewardedAdLoadCallback: RewardedAdLoadCallback(
+          onAdLoaded: (ad) {
+            _rewarded = ad;
+            _rewardedLoading = false;
+            _rewardedFailures = 0;
+            _rewardedBreakerOpenedAt = null;
+          },
+          onAdFailedToLoad: (err) {
+            _rewarded = null;
+            _rewardedLoading = false;
+            _rewardedFailures += 1;
+            debugPrint(
+              '[admob] rewarded failed (#$_rewardedFailures): '
+              '${err.code} ${err.message}',
+            );
+            if (_rewardedFailures >= _maxConsecutiveNoFills &&
+                _rewardedBreakerOpenedAt == null) {
+              _rewardedBreakerOpenedAt = DateTime.now();
+              debugPrint(
+                '[admob] rewarded circuit tripped after '
+                '$_rewardedFailures consecutive failures. Skipping for '
+                '${_circuitCooldown.inMinutes} min. '
+                '${err.code == _adMobErrorNoFill ? "(ERROR_CODE_NO_FILL — typically AdMob ad serving limit on this account)" : ""}',
+              );
+            }
+            _preloadRewardedInterstitial();
+          },
+        ),
+      );
+    }
+
+    if (_shouldTryRewardedInterstitial) {
+      _preloadRewardedInterstitial();
+    }
+  }
+
+  void _preloadRewardedInterstitial() {
+    if (!_initialized ||
+        _rewardedInterstitial != null ||
+        _rewardedInterstitialLoading ||
+        _rewardedInterstitialCircuitOpen) {
       return;
     }
-    _rewardedLoading = true;
+    _rewardedInterstitialLoading = true;
     AdThrottle.recordRequest();
-    RewardedAd.load(
-      adUnitId: rewardedUnitId,
+    RewardedInterstitialAd.load(
+      adUnitId: rewardedInterstitialUnitId,
       request: const AdRequest(),
-      rewardedAdLoadCallback: RewardedAdLoadCallback(
+      rewardedInterstitialAdLoadCallback: RewardedInterstitialAdLoadCallback(
         onAdLoaded: (ad) {
-          _rewarded = ad;
-          _rewardedLoading = false;
-          _rewardedFailures = 0;
-          _rewardedBreakerOpenedAt = null;
+          _rewardedInterstitial = ad;
+          _rewardedInterstitialLoading = false;
+          _rewardedInterstitialFailures = 0;
+          _rewardedInterstitialBreakerOpenedAt = null;
+          debugPrint('[admob] rewarded interstitial loaded');
         },
         onAdFailedToLoad: (err) {
-          _rewarded = null;
-          _rewardedLoading = false;
-          _rewardedFailures += 1;
+          _rewardedInterstitial = null;
+          _rewardedInterstitialLoading = false;
+          _rewardedInterstitialFailures += 1;
           debugPrint(
-            '[admob] rewarded failed (#$_rewardedFailures): '
-            '${err.code} ${err.message}',
+            '[admob] rewarded interstitial failed '
+            '(#$_rewardedInterstitialFailures): ${err.code} ${err.message}',
           );
-          if (_rewardedFailures >= _maxConsecutiveNoFills &&
-              _rewardedBreakerOpenedAt == null) {
-            _rewardedBreakerOpenedAt = DateTime.now();
+          if (_rewardedInterstitialFailures >= _maxConsecutiveNoFills &&
+              _rewardedInterstitialBreakerOpenedAt == null) {
+            _rewardedInterstitialBreakerOpenedAt = DateTime.now();
             debugPrint(
-              '[admob] rewarded circuit tripped after '
-              '$_rewardedFailures consecutive failures. Skipping for '
-              '${_circuitCooldown.inMinutes} min. '
-              '${err.code == _adMobErrorNoFill ? "(ERROR_CODE_NO_FILL — typically AdMob ad serving limit on this account)" : ""}',
+              '[admob] rewarded interstitial circuit tripped after '
+              '$_rewardedInterstitialFailures consecutive failures. '
+              'Skipping for ${_circuitCooldown.inMinutes} min.',
             );
           }
         },
@@ -114,11 +188,30 @@ class AdmobAdapter implements AdNetwork {
     required VoidCallback onReward,
     VoidCallback? onAdOpening,
   }) async {
-    final ad = _rewarded;
-    if (ad == null) {
-      preloadRewarded();
-      return false;
+    final rewarded = _rewarded;
+    if (rewarded != null) {
+      return _showLoadedRewarded(rewarded, onReward, onAdOpening);
     }
+
+    final interstitial = _rewardedInterstitial;
+    if (interstitial != null) {
+      debugPrint('[admob] showing rewarded interstitial fallback');
+      return _showLoadedRewardedInterstitial(
+        interstitial,
+        onReward,
+        onAdOpening,
+      );
+    }
+
+    preloadRewarded();
+    return false;
+  }
+
+  Future<bool> _showLoadedRewarded(
+    RewardedAd ad,
+    VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  ) async {
     bool earned = false;
     final completer = Completer<bool>();
     ad.fullScreenContentCallback = FullScreenContentCallback(
@@ -133,6 +226,36 @@ class AdmobAdapter implements AdNetwork {
       onAdFailedToShowFullScreenContent: (a, _) {
         a.dispose();
         _rewarded = null;
+        if (!completer.isCompleted) completer.complete(false);
+        _preloadRewardedInterstitial();
+        preloadRewarded();
+      },
+    );
+    ad.show(onUserEarnedReward: (_, __) {
+      earned = true;
+    });
+    return completer.future;
+  }
+
+  Future<bool> _showLoadedRewardedInterstitial(
+    RewardedInterstitialAd ad,
+    VoidCallback onReward,
+    VoidCallback? onAdOpening,
+  ) async {
+    bool earned = false;
+    final completer = Completer<bool>();
+    ad.fullScreenContentCallback = FullScreenContentCallback(
+      onAdShowedFullScreenContent: (_) => onAdOpening?.call(),
+      onAdDismissedFullScreenContent: (a) {
+        a.dispose();
+        _rewardedInterstitial = null;
+        if (earned) onReward();
+        if (!completer.isCompleted) completer.complete(true);
+        preloadRewarded();
+      },
+      onAdFailedToShowFullScreenContent: (a, _) {
+        a.dispose();
+        _rewardedInterstitial = null;
         if (!completer.isCompleted) completer.complete(false);
         preloadRewarded();
       },

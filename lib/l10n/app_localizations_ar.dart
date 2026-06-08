@@ -388,6 +388,52 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shuffleAll => 'خلط الكل';
 
   @override
+  String get equalizerTitle => 'Equalizer';
+
+  @override
+  String get eqEnabled => 'Enable equalizer';
+
+  @override
+  String get eqReset => 'Reset';
+
+  @override
+  String get eqBassBoost => 'Bass boost';
+
+  @override
+  String get eqUnsupported =>
+      'System equalizer is available on Android. Presets are saved for when you use an Android device.';
+
+  @override
+  String get eqPresetNormal => 'Normal';
+
+  @override
+  String get eqPresetRock => 'Rock';
+
+  @override
+  String get eqPresetPop => 'Pop';
+
+  @override
+  String get eqPresetJazz => 'Jazz';
+
+  @override
+  String get eqPresetClassical => 'Classical';
+
+  @override
+  String get eqPresetBass => 'Bass';
+
+  @override
+  String get eqPresetTreble => 'Treble';
+
+  @override
+  String get eqPresetVocal => 'Vocal';
+
+  @override
+  String get eqPresetElectronic => 'EDM';
+
+  @override
+  String get eqPresetCustom => 'Custom';
+
+  @override
   String get castSelectDevice => 'Cast to device';
 
   @override

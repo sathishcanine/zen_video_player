@@ -6,10 +6,12 @@ import 'package:just_audio/just_audio.dart';
 
 import '../models/audio_track.dart';
 import 'asset_playback_resolver.dart';
+import 'audio_equalizer_service.dart';
 
 /// Global audio queue + playback (mini-player and now-playing UI).
 class AudioPlayerService extends ChangeNotifier {
   AudioPlayerService._() {
+    unawaited(_eq.ensureLoaded());
     _positionSub = _player.positionStream.listen((p) {
       _position = p;
       notifyListeners();
@@ -31,7 +33,8 @@ class AudioPlayerService extends ChangeNotifier {
 
   static final AudioPlayerService instance = AudioPlayerService._();
 
-  final AudioPlayer _player = AudioPlayer();
+  final _eq = AudioEqualizerService.instance;
+  late final AudioPlayer _player = AudioPlayer(audioPipeline: _eq.pipeline);
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<PlayerState>? _stateSub;
@@ -91,6 +94,7 @@ class AudioPlayerService extends ChangeNotifier {
       }
       _duration = Duration(seconds: track.asset.duration);
       await _player.play();
+      unawaited(_eq.reapplyAfterPlayback());
       notifyListeners();
     } catch (e, st) {
       debugPrint('[audio] play failed: $e\n$st');
