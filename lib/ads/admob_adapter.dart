@@ -67,7 +67,12 @@ class AdmobAdapter implements AdNetwork {
   Future<void> init() async {
     if (_initialized) return;
     try {
-      await MobileAds.instance.initialize();
+      final status = await MobileAds.instance.initialize();
+      for (final entry in status.adapterStatuses.entries) {
+        debugPrint(
+          '[admob] mediation adapter ${entry.key}: ${entry.value.description}',
+        );
+      }
       _initialized = true;
     } catch (e) {
       debugPrint('[admob] init failed: $e');

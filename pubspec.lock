@@ -341,6 +341,30 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.7.3"
+  gma_mediation_inmobi:
+    dependency: "direct main"
+    description:
+      name: gma_mediation_inmobi
+      sha256: "1393431fa5f90dfe3d62a0597f3e67e22825fa63ac4071d87b16fc9f87d6e2f3"
+      url: "https://pub.dev"
+    source: hosted
+    version: "2.1.0"
+  gma_mediation_meta:
+    dependency: "direct main"
+    description:
+      name: gma_mediation_meta
+      sha256: d65dd79c51f6161aaac8c9b07f9a921f73a560d275a15106f440be2016c766bc
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.5.2"
+  gma_mediation_unity:
+    dependency: "direct main"
+    description:
+      name: gma_mediation_unity
+      sha256: f2326489fa598d4ff0744509df303664f87a6f5f46ab8dfbed81b4c823100df2
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.8.0"
   google_mobile_ads:
     dependency: "direct main"
     description:
@@ -882,14 +906,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "1.4.0"
-  unity_ads_plugin:
-    dependency: "direct main"
-    description:
-      name: unity_ads_plugin
-      sha256: "4ef07e4ccc0cd6a0b9291a5e1b98601931e8e5589abd97c9b1a602648ce0c79e"
-      url: "https://pub.dev"
-    source: hosted
-    version: "0.3.30"
   url_launcher:
     dependency: "direct main"
     description:

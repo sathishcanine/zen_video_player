@@ -1,6 +1,10 @@
 /// Ad network IDs — [kUseTestAdIds] switches Google sample AdMob units vs
 /// **live** dashboard values.
 ///
+/// Meta (native), Unity (rewarded), and InMobi (native + rewarded) are
+/// mediated inside AdMob — map account/placement IDs in the AdMob console only.
+/// InMobi app-ads.txt lines: InMobi dashboard → Inventory → App-ads.txt.
+///
 /// **Production:** set [kUseTestAdIds] to `false` and set native **AdMob app id**
 /// (`AndroidManifest` / `Info.plist` `GADApplicationIdentifier`) to the same
 /// value as [adMobAppId] (your live `~` string).
@@ -61,17 +65,6 @@ const String _unityTestIosGameId = '6100150';
 const String _unityProdAndroidGameId = '6100151';
 const String _unityProdIosGameId = '6100150';
 
-// --- InMobi: placement IDs are always from your InMobi account. Edit the
-// "prod" consts to your live placements; for testing, use separate test
-// placements in the dashboard and register the device (GAID / IDFA) as a
-// test device, or use the same IDs with a test / staging app in the console.
-const String _inMobiTestAccountId = '10000195071';
-const String _inMobiTestRewardedPlacement = '10000672165';
-const String _inMobiTestBannerPlacement = '10000672163';
-const String _inMobiProdAccountId = '10000195071';
-const String _inMobiProdRewardedPlacement = '10000672165';
-const String _inMobiProdBannerPlacement = '10000672163';
-
 // ---------------------------------------------------------------------------
 // Resolved values — used by adapters
 
@@ -109,9 +102,3 @@ String get unityAndroidGameId =>
     kUseTestAdIds ? _unityTestAndroidGameId : _unityProdAndroidGameId;
 String get unityIosGameId =>
     kUseTestAdIds ? _unityTestIosGameId : _unityProdIosGameId;
-
-String get inMobiAccountId => kUseTestAdIds ? _inMobiTestAccountId : _inMobiProdAccountId;
-String get inMobiRewardedPlacementId =>
-    kUseTestAdIds ? _inMobiTestRewardedPlacement : _inMobiProdRewardedPlacement;
-String get inMobiBannerPlacementId =>
-    kUseTestAdIds ? _inMobiTestBannerPlacement : _inMobiProdBannerPlacement;

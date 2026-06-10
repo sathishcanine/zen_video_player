@@ -33,10 +33,6 @@ target 'Runner' do
 
   flutter_install_all_ios_pods File.dirname(File.realpath(__FILE__))
 
-  # InMobi iOS SDK – consumed by Runner/InMobiBridge.swift through the
-  # `zen.ads/inmobi` FlutterMethodChannel.
-  pod 'InMobiSDK', '10.7.7'
-
   target 'RunnerTests' do
     inherit! :search_paths
   end

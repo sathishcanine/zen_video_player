@@ -11,7 +11,6 @@ import io.flutter.plugin.common.MethodChannel
 
 class MainActivity : FlutterActivity() {
 
-    private var inMobiBridge: InMobiBridge? = null
     private var audioMetadataBridge: AudioMetadataBridge? = null
     private var mediaAssetBridge: MediaAssetBridge? = null
     private var videoOrientationBridge: VideoOrientationBridge? = null
@@ -70,10 +69,6 @@ class MainActivity : FlutterActivity() {
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
-        inMobiBridge = InMobiBridge(
-            activity = this,
-            messenger = messenger,
-        )
         audioMetadataBridge = AudioMetadataBridge(this, messenger).also { it.register() }
         mediaAssetBridge = MediaAssetBridge(this, messenger).also { it.register() }
         videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
@@ -213,9 +208,4 @@ class MainActivity : FlutterActivity() {
         return Rational(w.coerceAtLeast(1), h.coerceAtLeast(1))
     }
 
-    override fun onDestroy() {
-        inMobiBridge?.dispose()
-        inMobiBridge = null
-        super.onDestroy()
-    }
 }
