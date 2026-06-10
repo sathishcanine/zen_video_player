@@ -796,6 +796,18 @@ abstract class AppLocalizations {
   /// **'Equalizer'**
   String get equalizerTitle;
 
+  /// No description provided for @eqZenPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Zen Player'**
+  String get eqZenPlayer;
+
+  /// No description provided for @eqAudioSpectrum.
+  ///
+  /// In en, this message translates to:
+  /// **'Audio Spectrum'**
+  String get eqAudioSpectrum;
+
   /// No description provided for @eqEnabled.
   ///
   /// In en, this message translates to:
@@ -808,11 +820,47 @@ abstract class AppLocalizations {
   /// **'Reset'**
   String get eqReset;
 
+  /// No description provided for @eqApply.
+  ///
+  /// In en, this message translates to:
+  /// **'Apply'**
+  String get eqApply;
+
+  /// No description provided for @eqApplied.
+  ///
+  /// In en, this message translates to:
+  /// **'Applied'**
+  String get eqApplied;
+
+  /// No description provided for @eqOff.
+  ///
+  /// In en, this message translates to:
+  /// **'EQ Off'**
+  String get eqOff;
+
   /// No description provided for @eqBassBoost.
   ///
   /// In en, this message translates to:
-  /// **'Bass boost'**
+  /// **'Bass Boost'**
   String get eqBassBoost;
+
+  /// No description provided for @eqPresets.
+  ///
+  /// In en, this message translates to:
+  /// **'Presets'**
+  String get eqPresets;
+
+  /// No description provided for @eq3dSurround.
+  ///
+  /// In en, this message translates to:
+  /// **'3D Surround'**
+  String get eq3dSurround;
+
+  /// No description provided for @eqLoudness.
+  ///
+  /// In en, this message translates to:
+  /// **'Loudness'**
+  String get eqLoudness;
 
   /// No description provided for @eqUnsupported.
   ///
@@ -823,7 +871,7 @@ abstract class AppLocalizations {
   /// No description provided for @eqPresetNormal.
   ///
   /// In en, this message translates to:
-  /// **'Normal'**
+  /// **'Flat'**
   String get eqPresetNormal;
 
   /// No description provided for @eqPresetRock.
@@ -856,6 +904,12 @@ abstract class AppLocalizations {
   /// **'Bass'**
   String get eqPresetBass;
 
+  /// No description provided for @eqPresetBassTreble.
+  ///
+  /// In en, this message translates to:
+  /// **'Bass+Treble'**
+  String get eqPresetBassTreble;
+
   /// No description provided for @eqPresetTreble.
   ///
   /// In en, this message translates to:
@@ -868,11 +922,23 @@ abstract class AppLocalizations {
   /// **'Vocal'**
   String get eqPresetVocal;
 
+  /// No description provided for @eqPresetHipHop.
+  ///
+  /// In en, this message translates to:
+  /// **'Hip-Hop'**
+  String get eqPresetHipHop;
+
   /// No description provided for @eqPresetElectronic.
   ///
   /// In en, this message translates to:
-  /// **'EDM'**
+  /// **'Electronic'**
   String get eqPresetElectronic;
+
+  /// No description provided for @eqPresetNightMode.
+  ///
+  /// In en, this message translates to:
+  /// **'Night Mode'**
+  String get eqPresetNightMode;
 
   /// No description provided for @eqPresetCustom.
   ///
@@ -1179,6 +1245,42 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'{count, plural, =1{1 Video} other{{count} Videos}}'**
   String playlistVideoCount(int count);
+
+  /// No description provided for @playlistAddVideos.
+  ///
+  /// In en, this message translates to:
+  /// **'Add videos'**
+  String get playlistAddVideos;
+
+  /// No description provided for @playlistEmptyTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'This playlist is empty'**
+  String get playlistEmptyTitle;
+
+  /// No description provided for @playlistEmptySubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add videos from your device to get started'**
+  String get playlistEmptySubtitle;
+
+  /// No description provided for @playlistAddCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {count, plural, =1{1 video} other{{count} videos}}'**
+  String playlistAddCount(int count);
+
+  /// No description provided for @playlistVideosAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 video added} other{{count} videos added}}'**
+  String playlistVideosAdded(int count);
+
+  /// No description provided for @playlistAlreadyAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'Added'**
+  String get playlistAlreadyAdded;
 
   /// No description provided for @renamePlaylist.
   ///

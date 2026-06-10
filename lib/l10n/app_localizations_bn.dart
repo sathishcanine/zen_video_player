@@ -396,20 +396,44 @@ class AppLocalizationsBn extends AppLocalizations {
   String get equalizerTitle => 'Equalizer';
 
   @override
+  String get eqZenPlayer => 'Zen Player';
+
+  @override
+  String get eqAudioSpectrum => 'Audio Spectrum';
+
+  @override
   String get eqEnabled => 'Enable equalizer';
 
   @override
   String get eqReset => 'Reset';
 
   @override
-  String get eqBassBoost => 'Bass boost';
+  String get eqApply => 'Apply';
+
+  @override
+  String get eqApplied => 'Applied';
+
+  @override
+  String get eqOff => 'EQ Off';
+
+  @override
+  String get eqBassBoost => 'Bass Boost';
+
+  @override
+  String get eqPresets => 'Presets';
+
+  @override
+  String get eq3dSurround => '3D Surround';
+
+  @override
+  String get eqLoudness => 'Loudness';
 
   @override
   String get eqUnsupported =>
       'System equalizer is available on Android. Presets are saved for when you use an Android device.';
 
   @override
-  String get eqPresetNormal => 'Normal';
+  String get eqPresetNormal => 'Flat';
 
   @override
   String get eqPresetRock => 'Rock';
@@ -427,13 +451,22 @@ class AppLocalizationsBn extends AppLocalizations {
   String get eqPresetBass => 'Bass';
 
   @override
+  String get eqPresetBassTreble => 'Bass+Treble';
+
+  @override
   String get eqPresetTreble => 'Treble';
 
   @override
   String get eqPresetVocal => 'Vocal';
 
   @override
-  String get eqPresetElectronic => 'EDM';
+  String get eqPresetHipHop => 'Hip-Hop';
+
+  @override
+  String get eqPresetElectronic => 'Electronic';
+
+  @override
+  String get eqPresetNightMode => 'Night Mode';
 
   @override
   String get eqPresetCustom => 'Custom';
@@ -614,6 +647,41 @@ class AppLocalizationsBn extends AppLocalizations {
     );
     return '$_temp0';
   }
+
+  @override
+  String get playlistAddVideos => 'Add videos';
+
+  @override
+  String get playlistEmptyTitle => 'This playlist is empty';
+
+  @override
+  String get playlistEmptySubtitle =>
+      'Add videos from your device to get started';
+
+  @override
+  String playlistAddCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count videos',
+      one: '1 video',
+    );
+    return 'Add $_temp0';
+  }
+
+  @override
+  String playlistVideosAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count videos added',
+      one: '1 video added',
+    );
+    return '$_temp0';
+  }
+
+  @override
+  String get playlistAlreadyAdded => 'Added';
 
   @override
   String get renamePlaylist => 'Rename playlist';

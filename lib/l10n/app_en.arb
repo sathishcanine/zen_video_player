@@ -154,19 +154,30 @@
   "queue": "Queue",
   "shuffleAll": "SHUFFLE ALL",
   "equalizerTitle": "Equalizer",
+  "eqZenPlayer": "Zen Player",
+  "eqAudioSpectrum": "Audio Spectrum",
   "eqEnabled": "Enable equalizer",
   "eqReset": "Reset",
-  "eqBassBoost": "Bass boost",
+  "eqApply": "Apply",
+  "eqApplied": "Applied",
+  "eqOff": "EQ Off",
+  "eqBassBoost": "Bass Boost",
+  "eqPresets": "Presets",
+  "eq3dSurround": "3D Surround",
+  "eqLoudness": "Loudness",
   "eqUnsupported": "System equalizer is available on Android. Presets are saved for when you use an Android device.",
-  "eqPresetNormal": "Normal",
+  "eqPresetNormal": "Flat",
   "eqPresetRock": "Rock",
   "eqPresetPop": "Pop",
   "eqPresetJazz": "Jazz",
   "eqPresetClassical": "Classical",
   "eqPresetBass": "Bass",
+  "eqPresetBassTreble": "Bass+Treble",
   "eqPresetTreble": "Treble",
   "eqPresetVocal": "Vocal",
-  "eqPresetElectronic": "EDM",
+  "eqPresetHipHop": "Hip-Hop",
+  "eqPresetElectronic": "Electronic",
+  "eqPresetNightMode": "Night Mode",
   "eqPresetCustom": "Custom",
   "castSelectDevice": "Cast to device",
   "castSearching": "Looking for Cast devices…",
@@ -254,6 +265,22 @@
       "count": {"type": "int"}
     }
   },
+  "playlistAddVideos": "Add videos",
+  "playlistEmptyTitle": "This playlist is empty",
+  "playlistEmptySubtitle": "Add videos from your device to get started",
+  "playlistAddCount": "Add {count, plural, =1{1 video} other{{count} videos}}",
+  "@playlistAddCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "playlistVideosAdded": "{count, plural, =1{1 video added} other{{count} videos added}}",
+  "@playlistVideosAdded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "playlistAlreadyAdded": "Added",
   "renamePlaylist": "Rename playlist",
   "deletePlaylistTitle": "Delete playlist?",
   "deletePlaylistBody": "Remove \"{name}\"? Videos on your device are not deleted.",
