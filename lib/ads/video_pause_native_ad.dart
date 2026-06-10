@@ -49,7 +49,7 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
     super.initState();
     _wasPlaying = widget.controller.value.isPlaying;
     widget.controller.addListener(_onVideoUpdate);
-    if (!kIsWeb) {
+    if (!kIsWeb && kPauseNativeAdsEnabled) {
       _loadAd();
     }
   }
@@ -66,7 +66,7 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
       _ad = null;
       _loaded = false;
       _loadFailed = false;
-      if (!kIsWeb) {
+      if (!kIsWeb && kPauseNativeAdsEnabled) {
         unawaited(_loadAd());
       }
     }
@@ -91,6 +91,7 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
   }
 
   Future<void> _loadAd() async {
+    if (!kPauseNativeAdsEnabled) return;
     final cfg = AdsOrchestrator.config;
     if (!cfg.bannerEnabled) return;
     if (!AdThrottle.canRequest(cfg.maxRequestsPerHour)) {
@@ -169,7 +170,7 @@ class _VideoPauseNativeAdOverlayState extends State<VideoPauseNativeAdOverlay> {
   }
 
   bool get _visible {
-    if (kIsWeb || _loadFailed) return false;
+    if (!kPauseNativeAdsEnabled || kIsWeb || _loadFailed) return false;
     if (!AdsOrchestrator.config.bannerEnabled) return false;
     if (_dismissedThisPause) return false;
     if (!_loaded || _ad == null) return false;

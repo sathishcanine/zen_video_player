@@ -15,6 +15,9 @@
 /// [kUseTestAdIds] must be a compile-time constant. true == testing, false == production
 const bool kUseTestAdIds = false;
 
+/// Pause-overlay native ads (local + network units). Set false to skip load/request.
+const bool kPauseNativeAdsEnabled = false;
+
 // --- Google AdMob (official sample app + ad units) ---
 // See: https://developers.google.com/admob/android/test-ads#sample_ad_units
 const String _adMobTestAppId = 'ca-app-pub-3940256099942544~3347511713';
