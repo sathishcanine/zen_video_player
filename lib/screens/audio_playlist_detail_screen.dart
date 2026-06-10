@@ -13,6 +13,7 @@ import '../services/local_audio_service.dart';
 import '../utils/audio_playback_launcher.dart';
 import '../widgets/audio_artwork.dart';
 import '../widgets/media_options_sheet.dart';
+import 'audio_track_picker_screen.dart';
 
 class AudioPlaylistDetailScreen extends StatefulWidget {
   const AudioPlaylistDetailScreen({super.key, required this.playlistId});
@@ -58,6 +59,23 @@ class _AudioPlaylistDetailScreenState extends State<AudioPlaylistDetailScreen> {
     });
   }
 
+  Future<void> _addSongs() async {
+    final playlist = _playlist;
+    if (playlist == null) return;
+    final ids = await pickTracksForAudioPlaylist(
+      context,
+      existingIds: playlist.assetIds.toSet(),
+    );
+    if (ids == null || ids.isEmpty || !mounted) return;
+    await AudioPlaylistService.addAssets(widget.playlistId, ids);
+    await _load();
+    if (!mounted) return;
+    final l10n = AppLocalizations.of(context)!;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(l10n.playlistSongsAdded(ids.length))),
+    );
+  }
+
   Future<void> _openMenu(AudioTrack track) async {
     final action = await showMediaOptionsSheet(
       context,
@@ -88,18 +106,20 @@ class _AudioPlaylistDetailScreenState extends State<AudioPlaylistDetailScreen> {
             onPressed: () => LibraryNavigation.pop(context),
           ),
           title: Text(playlist?.name ?? l10n.pillPlaylist),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.add),
+              tooltip: l10n.playlistAddSongs,
+              onPressed: playlist == null ? null : _addSongs,
+            ),
+          ],
         ),
         body: ZenGradientBackground(
           child: SafeArea(
             child: _loading || playlist == null
                 ? const Center(child: CircularProgressIndicator())
                 : _tracks.isEmpty
-                    ? Center(
-                        child: Text(
-                          l10n.noAudioFound,
-                          style: const TextStyle(color: ZenTheme.textSecondary),
-                        ),
-                      )
+                    ? _EmptyAudioPlaylistView(onAdd: _addSongs)
                     : ReorderableListView.builder(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         itemCount: _tracks.length,
@@ -172,6 +192,83 @@ class _AudioPlaylistDetailScreenState extends State<AudioPlaylistDetailScreen> {
                         },
                       ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+class _EmptyAudioPlaylistView extends StatelessWidget {
+  const _EmptyAudioPlaylistView({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context)!;
+    final primary = Theme.of(context).colorScheme.primary;
+
+    return Center(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 32),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 96,
+              height: 96,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: primary.withValues(alpha: 0.15),
+                border: Border.all(
+                  color: primary.withValues(alpha: 0.35),
+                ),
+              ),
+              child: Icon(
+                Icons.queue_music_rounded,
+                size: 42,
+                color: primary,
+              ),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              l10n.playlistEmptyTitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: ZenTheme.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              l10n.playlistEmptyAudioSubtitle,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                color: ZenTheme.textSecondary,
+                fontSize: 14,
+              ),
+            ),
+            const SizedBox(height: 28),
+            FilledButton.icon(
+              onPressed: onAdd,
+              icon: const Icon(Icons.add),
+              label: Text(l10n.playlistAddSongs),
+              style: FilledButton.styleFrom(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 28,
+                  vertical: 14,
+                ),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(28),
+                ),
+                textStyle: const TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

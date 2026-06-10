@@ -684,6 +684,35 @@ class AppLocalizationsEn extends AppLocalizations {
   String get playlistAlreadyAdded => 'Added';
 
   @override
+  String get playlistAddSongs => 'Add songs';
+
+  @override
+  String get playlistEmptyAudioSubtitle =>
+      'Add songs from your device to get started';
+
+  @override
+  String playlistAddSongCount(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs',
+      one: '1 song',
+    );
+    return 'Add $_temp0';
+  }
+
+  @override
+  String playlistSongsAdded(int count) {
+    String _temp0 = intl.Intl.pluralLogic(
+      count,
+      locale: localeName,
+      other: '$count songs added',
+      one: '1 song added',
+    );
+    return '$_temp0';
+  }
+
+  @override
   String get renamePlaylist => 'Rename playlist';
 
   @override

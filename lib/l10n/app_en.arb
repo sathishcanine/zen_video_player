@@ -281,6 +281,20 @@
     }
   },
   "playlistAlreadyAdded": "Added",
+  "playlistAddSongs": "Add songs",
+  "playlistEmptyAudioSubtitle": "Add songs from your device to get started",
+  "playlistAddSongCount": "Add {count, plural, =1{1 song} other{{count} songs}}",
+  "@playlistAddSongCount": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
+  "playlistSongsAdded": "{count, plural, =1{1 song added} other{{count} songs added}}",
+  "@playlistSongsAdded": {
+    "placeholders": {
+      "count": {"type": "int"}
+    }
+  },
   "renamePlaylist": "Rename playlist",
   "deletePlaylistTitle": "Delete playlist?",
   "deletePlaylistBody": "Remove \"{name}\"? Videos on your device are not deleted.",

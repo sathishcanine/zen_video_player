@@ -1282,6 +1282,30 @@ abstract class AppLocalizations {
   /// **'Added'**
   String get playlistAlreadyAdded;
 
+  /// No description provided for @playlistAddSongs.
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs'**
+  String get playlistAddSongs;
+
+  /// No description provided for @playlistEmptyAudioSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Add songs from your device to get started'**
+  String get playlistEmptyAudioSubtitle;
+
+  /// No description provided for @playlistAddSongCount.
+  ///
+  /// In en, this message translates to:
+  /// **'Add {count, plural, =1{1 song} other{{count} songs}}'**
+  String playlistAddSongCount(int count);
+
+  /// No description provided for @playlistSongsAdded.
+  ///
+  /// In en, this message translates to:
+  /// **'{count, plural, =1{1 song added} other{{count} songs added}}'**
+  String playlistSongsAdded(int count);
+
   /// No description provided for @renamePlaylist.
   ///
   /// In en, this message translates to:
