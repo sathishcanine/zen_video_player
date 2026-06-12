@@ -388,6 +388,19 @@ class AppLocalizationsAr extends AppLocalizations {
   String get shuffleAll => 'خلط الكل';
 
   @override
+  String get equalizerFeatureAnnounceTitle => 'New feature';
+
+  @override
+  String get equalizerFeatureAnnounceHeadline => 'Equalizer for Audio player';
+
+  @override
+  String get equalizerFeatureAnnounceBody =>
+      'Fine-tune your music with presets, bass boost, 3D surround, and loudness — open any song and tap the equalizer icon.';
+
+  @override
+  String get equalizerFeatureAnnounceCta => 'Got it';
+
+  @override
   String get equalizerTitle => 'Equalizer';
 
   @override

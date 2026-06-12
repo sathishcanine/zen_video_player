@@ -341,14 +341,6 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "4.7.3"
-  gma_mediation_inmobi:
-    dependency: "direct main"
-    description:
-      name: gma_mediation_inmobi
-      sha256: "1393431fa5f90dfe3d62a0597f3e67e22825fa63ac4071d87b16fc9f87d6e2f3"
-      url: "https://pub.dev"
-    source: hosted
-    version: "2.1.0"
   gma_mediation_meta:
     dependency: "direct main"
     description:

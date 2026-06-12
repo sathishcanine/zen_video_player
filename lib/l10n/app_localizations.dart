@@ -790,6 +790,30 @@ abstract class AppLocalizations {
   /// **'SHUFFLE ALL'**
   String get shuffleAll;
 
+  /// No description provided for @equalizerFeatureAnnounceTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'New feature'**
+  String get equalizerFeatureAnnounceTitle;
+
+  /// No description provided for @equalizerFeatureAnnounceHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Equalizer for Audio player'**
+  String get equalizerFeatureAnnounceHeadline;
+
+  /// No description provided for @equalizerFeatureAnnounceBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Fine-tune your music with presets, bass boost, 3D surround, and loudness — open any song and tap the equalizer icon.'**
+  String get equalizerFeatureAnnounceBody;
+
+  /// No description provided for @equalizerFeatureAnnounceCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get equalizerFeatureAnnounceCta;
+
   /// No description provided for @equalizerTitle.
   ///
   /// In en, this message translates to:

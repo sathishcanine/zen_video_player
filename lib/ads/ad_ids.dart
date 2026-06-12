@@ -1,9 +1,8 @@
 /// Ad network IDs — [kUseTestAdIds] switches Google sample AdMob units vs
 /// **live** dashboard values.
 ///
-/// Meta (native), Unity (rewarded), and InMobi (native + rewarded) are
-/// mediated inside AdMob — map account/placement IDs in the AdMob console only.
-/// InMobi app-ads.txt lines: InMobi dashboard → Inventory → App-ads.txt.
+/// Meta (native) and Unity (rewarded) are mediated inside AdMob — map
+/// account/placement IDs in the AdMob console only.
 ///
 /// **Production:** set [kUseTestAdIds] to `false` and set native **AdMob app id**
 /// (`AndroidManifest` / `Info.plist` `GADApplicationIdentifier`) to the same

@@ -64,7 +64,7 @@ class AdConfig {
     'admob',
   };
 
-  /// Keeps first occurrence only (e.g. `ads=inmobi,admob,inmobi` → inmobi, admob).
+  /// Keeps first occurrence only (e.g. `ads=admob,admob` → admob).
   static List<String> _dedupeKnownOrder(List<String> names) {
     final seen = <String>{};
     final out = <String>[];

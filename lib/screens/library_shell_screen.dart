@@ -1,10 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../app_update/force_update_dialog.dart';
+import '../widgets/equalizer_feature_announce_prompt.dart';
 import '../navigation/library_shell_scope.dart';
 import '../navigation/library_tab_index.dart';
 import '../navigation/mini_player_visibility_observer.dart';
@@ -36,8 +35,10 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
         setState(() => _showMiniPlayer = visible);
       }
     });
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      unawaited(showForceUpdateDialogIfNeeded(context));
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await showForceUpdateDialogIfNeeded(context);
+      if (!mounted) return;
+      await EqualizerFeatureAnnouncePrompt.maybeShow(context);
     });
   }
 

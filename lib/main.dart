@@ -16,6 +16,7 @@ import 'app_navigator.dart';
 import 'home_screen.dart';
 import 'services/app_cache_maintenance.dart';
 import 'services/app_settings_service.dart';
+import 'services/feature_announcement_service.dart';
 import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
 import 'services/locale_service.dart';
@@ -58,6 +59,7 @@ Future<void> main() async {
         }
         unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
         unawaited(PlayStoreRatingService.recordCalendarDay());
+        unawaited(FeatureAnnouncementService.recordVersionOnColdStart());
       });
     },
     (error, stack) => Telemetry.recordZoneError(error, stack),
