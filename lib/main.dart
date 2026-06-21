@@ -18,6 +18,7 @@ import 'home_screen.dart';
 import 'services/app_cache_maintenance.dart';
 import 'services/app_settings_service.dart';
 import 'services/audio_player_service.dart';
+import 'services/active_session_tracker.dart';
 import 'services/feature_announcement_service.dart';
 import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
@@ -64,6 +65,7 @@ Future<void> main() async {
           unawaited(CastService.instance.init());
         }
         unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
+        ActiveSessionTracker.instance.start();
         unawaited(PlayStoreRatingService.recordCalendarDay());
         unawaited(FeatureAnnouncementService.recordVersionOnColdStart());
       });

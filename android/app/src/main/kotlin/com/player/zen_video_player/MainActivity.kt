@@ -15,6 +15,7 @@ import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.EventChannel
 import io.flutter.plugin.common.MethodChannel
+import java.lang.ref.WeakReference
 import kotlin.math.roundToInt
 
 class MainActivity : AudioServiceActivity() {
@@ -49,7 +50,39 @@ class MainActivity : AudioServiceActivity() {
     }
 
     private fun isPlayingFromArgs(args: Map<*, *>?): Boolean {
-        return (args?.get("isPlaying") as? Boolean) ?: true
+        return when (val v = args?.get("isPlaying")) {
+            is Boolean -> v
+            else -> true
+        }
+    }
+
+    private fun activityAlive(): Boolean = !isFinishing && !isDestroyed
+
+    private fun safePipModeEmit(inPip: Boolean) {
+        try {
+            pipModeSink?.success(inPip)
+        } catch (e: Exception) {
+            Log.w(TAG, "pipModeSink emit failed: ${e.message}")
+            pipModeSink = null
+        }
+    }
+
+    private fun safePipControlEmit(event: String) {
+        try {
+            pipControlSink?.success(event)
+        } catch (e: Exception) {
+            Log.w(TAG, "pipControlSink emit failed: ${e.message}")
+            pipControlSink = null
+        }
+    }
+
+    /** Called from [PipActionReceiver] on a background thread. */
+    internal fun deliverPipToggleToFlutter() {
+        if (!activityAlive()) return
+        runOnUiThread {
+            if (!activityAlive()) return@runOnUiThread
+            safePipControlEmit("toggle")
+        }
     }
 
     private fun readSourceRect(args: Map<*, *>?): Rect? {
@@ -64,25 +97,30 @@ class MainActivity : AudioServiceActivity() {
 
     private fun createPlayPauseAction(isPlaying: Boolean): RemoteAction? {
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
-        val iconRes =
-            if (isPlaying) android.R.drawable.ic_media_pause
-            else android.R.drawable.ic_media_play
-        val title = if (isPlaying) "Pause" else "Play"
-        val intent = Intent(ACTION_PIP_TOGGLE_PLAY_PAUSE)
-            .setClass(this, PipActionReceiver::class.java)
-        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        val pendingIntent = PendingIntent.getBroadcast(
-            this,
-            REQUEST_PIP_TOGGLE,
-            intent,
-            flags,
-        )
-        return RemoteAction(
-            Icon.createWithResource(this, iconRes),
-            title,
-            title,
-            pendingIntent,
-        )
+        return try {
+            val iconRes =
+                if (isPlaying) android.R.drawable.ic_media_pause
+                else android.R.drawable.ic_media_play
+            val title = if (isPlaying) "Pause" else "Play"
+            val intent = Intent(ACTION_PIP_TOGGLE_PLAY_PAUSE)
+                .setClass(this, PipActionReceiver::class.java)
+            val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            val pendingIntent = PendingIntent.getBroadcast(
+                this,
+                REQUEST_PIP_TOGGLE,
+                intent,
+                flags,
+            )
+            RemoteAction(
+                Icon.createWithResource(this, iconRes),
+                title,
+                title,
+                pendingIntent,
+            )
+        } catch (e: Exception) {
+            Log.w(TAG, "createPlayPauseAction failed: ${e.message}")
+            null
+        }
     }
 
     /**
@@ -160,14 +198,15 @@ class MainActivity : AudioServiceActivity() {
     }
 
     override fun onDestroy() {
-        if (onPipTogglePlayPause === pipToggleHandler) {
-            onPipTogglePlayPause = null
-        }
+        detachPipHost(this)
+        pipModeSink = null
+        pipControlSink = null
         super.onDestroy()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
         super.configureFlutterEngine(flutterEngine)
+        attachPipHost(this)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         audioMetadataBridge = AudioMetadataBridge(this, messenger).also { it.register() }
         audioVisualizerBridge = AudioVisualizerBridge(messenger).also { it.register() }
@@ -175,13 +214,11 @@ class MainActivity : AudioServiceActivity() {
         castLocalMediaBridge = CastLocalMediaBridge(this, messenger).also { it.register() }
         videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
 
-        onPipTogglePlayPause = pipToggleHandler
-
         EventChannel(messenger, "zen.video/pip_events").setStreamHandler(
             object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
                     pipModeSink = events
-                    events?.success(isInPictureInPictureMode)
+                    safePipModeEmit(isInPictureInPictureMode)
                 }
 
                 override fun onCancel(arguments: Any?) {
@@ -208,42 +245,50 @@ class MainActivity : AudioServiceActivity() {
         ).setMethodCallHandler { call, result ->
             when (call.method) {
                 "prepare" -> {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                        result.success(null)
-                        return@setMethodCallHandler
+                    try {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                            result.success(null)
+                            return@setMethodCallHandler
+                        }
+                        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+                            result.success(null)
+                            return@setMethodCallHandler
+                        }
+                        if (isInPictureInPictureMode) {
+                            result.success(null)
+                            return@setMethodCallHandler
+                        }
+                        @Suppress("UNCHECKED_CAST")
+                        val args = call.arguments as? Map<*, *>
+                        val rational = rationalFromArgs(args)
+                        val isPlaying = isPlayingFromArgs(args)
+                        val autoEnter =
+                            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) true else null
+                        storeAndApplyPipParams(
+                            rational = rational,
+                            isPlaying = isPlaying,
+                            autoEnterEnabled = autoEnter,
+                            seamlessResize = false,
+                        )
+                        pipPreparedForLeave = true
+                    } catch (e: Exception) {
+                        Log.w(TAG, "prepare failed: ${e.message}")
                     }
-                    if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
-                        result.success(null)
-                        return@setMethodCallHandler
-                    }
-                    if (isInPictureInPictureMode) {
-                        result.success(null)
-                        return@setMethodCallHandler
-                    }
-                    @Suppress("UNCHECKED_CAST")
-                    val args = call.arguments as? Map<*, *>
-                    val rational = rationalFromArgs(args)
-                    val isPlaying = isPlayingFromArgs(args)
-                    val autoEnter =
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) true else null
-                    storeAndApplyPipParams(
-                        rational = rational,
-                        isPlaying = isPlaying,
-                        autoEnterEnabled = autoEnter,
-                        seamlessResize = false,
-                    )
-                    pipPreparedForLeave = true
                     result.success(null)
                 }
                 "updateActions" -> {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
-                        result.success(null)
-                        return@setMethodCallHandler
+                    try {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                            result.success(null)
+                            return@setMethodCallHandler
+                        }
+                        @Suppress("UNCHECKED_CAST")
+                        val args = call.arguments as? Map<*, *>
+                        val isPlaying = isPlayingFromArgs(args)
+                        refreshPipPlayPauseAction(isPlaying)
+                    } catch (e: Exception) {
+                        Log.w(TAG, "updateActions failed: ${e.message}")
                     }
-                    @Suppress("UNCHECKED_CAST")
-                    val args = call.arguments as? Map<*, *>
-                    val isPlaying = isPlayingFromArgs(args)
-                    refreshPipPlayPauseAction(isPlaying)
                     result.success(null)
                 }
                 "clear" -> {
@@ -263,30 +308,29 @@ class MainActivity : AudioServiceActivity() {
                     result.success(null)
                 }
                 "enter" -> {
-                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                    try {
+                        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                            result.success(false)
+                            return@setMethodCallHandler
+                        }
+                        if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
+                            result.success(false)
+                            return@setMethodCallHandler
+                        }
+                        if (isInPictureInPictureMode) {
+                            result.success(true)
+                            return@setMethodCallHandler
+                        }
+                        @Suppress("UNCHECKED_CAST")
+                        val args = call.arguments as? Map<*, *>
+                        result.success(tryEnterPip(args))
+                    } catch (e: Exception) {
+                        Log.w(TAG, "enter failed: ${e.message}")
                         result.success(false)
-                        return@setMethodCallHandler
                     }
-                    if (!packageManager.hasSystemFeature(PackageManager.FEATURE_PICTURE_IN_PICTURE)) {
-                        result.success(false)
-                        return@setMethodCallHandler
-                    }
-                    if (isInPictureInPictureMode) {
-                        result.success(true)
-                        return@setMethodCallHandler
-                    }
-                    @Suppress("UNCHECKED_CAST")
-                    val args = call.arguments as? Map<*, *>
-                    result.success(tryEnterPip(args))
                 }
                 else -> result.notImplemented()
             }
-        }
-    }
-
-    private val pipToggleHandler: () -> Unit = {
-        runOnUiThread {
-            pipControlSink?.success("toggle")
         }
     }
 
@@ -314,9 +358,13 @@ class MainActivity : AudioServiceActivity() {
         newConfig: Configuration,
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
-        pipModeSink?.success(isInPictureInPictureMode)
+        safePipModeEmit(isInPictureInPictureMode)
         if (isInPictureInPictureMode) {
-            refreshPipPlayPauseAction(pipIsPlaying)
+            try {
+                refreshPipPlayPauseAction(pipIsPlaying)
+            } catch (e: Exception) {
+                Log.w(TAG, "refresh PiP actions failed: ${e.message}")
+            }
         } else {
             pipPreparedForLeave = false
         }
@@ -397,7 +445,12 @@ class MainActivity : AudioServiceActivity() {
             w /= g
             h /= g
         }
-        return Rational(w.coerceAtLeast(1), h.coerceAtLeast(1))
+        return try {
+            Rational(w.coerceAtLeast(1), h.coerceAtLeast(1))
+        } catch (e: Exception) {
+            Log.w(TAG, "Rational($w,$h) invalid, using 16:9: ${e.message}")
+            Rational(16, 9)
+        }
     }
 
     companion object {
@@ -406,8 +459,21 @@ class MainActivity : AudioServiceActivity() {
             "com.player.zen_video_player.PIP_TOGGLE_PLAY_PAUSE"
         private const val REQUEST_PIP_TOGGLE = 42_001
 
-        /** Set by [MainActivity]; invoked from [PipActionReceiver]. */
-        var onPipTogglePlayPause: (() -> Unit)? = null
+        private var pipHostRef: WeakReference<MainActivity> = WeakReference(null)
+
+        fun attachPipHost(activity: MainActivity) {
+            pipHostRef = WeakReference(activity)
+        }
+
+        fun detachPipHost(activity: MainActivity) {
+            if (pipHostRef.get() === activity) {
+                pipHostRef = WeakReference(null)
+            }
+        }
+
+        fun notifyPipToggleFromReceiver() {
+            pipHostRef.get()?.deliverPipToggleToFlutter()
+        }
     }
 
 }

@@ -48,19 +48,26 @@ class VideoPipHelper {
   /// Emits `true` when the activity enters PiP, `false` when it exits.
   static Stream<bool> get pipModeChanges {
     if (!_android) return const Stream<bool>.empty();
-    return _eventChannel.receiveBroadcastStream().map((event) => event == true);
+    return _eventChannel
+        .receiveBroadcastStream()
+        .map((event) => event == true)
+        .handleError((_) {});
   }
 
   /// Fires when the user taps play/pause on the system PiP overlay.
   static Stream<void> get pipPlayPauseToggles {
     if (!_android) return const Stream<void>.empty();
-    return _controlChannel.receiveBroadcastStream().map((_) {});
+    return _controlChannel
+        .receiveBroadcastStream()
+        .map((_) {})
+        .handleError((_) {});
   }
 
-  static Map<String, dynamic> _args(
+  static Map<String, dynamic>? _args(
     VideoPlayerValue value, {
     Rect? sourceRectPhysical,
   }) {
+    if (!value.isInitialized) return null;
     final (w, h) = displaySizeForPip(value);
     final (aspectNum, aspectDen) = standardAspectRational(value);
     final map = <String, dynamic>{
@@ -90,10 +97,9 @@ class VideoPipHelper {
     final (w, h) = displaySizeForPip(value);
     if (w <= 0 || h <= 0) return false;
     try {
-      final ok = await _channel.invokeMethod<bool>(
-        'enter',
-        _args(value, sourceRectPhysical: sourceRectPhysical),
-      );
+      final args = _args(value, sourceRectPhysical: sourceRectPhysical);
+      if (args == null) return false;
+      final ok = await _channel.invokeMethod<bool>('enter', args);
       return ok ?? false;
     } on PlatformException {
       return false;
@@ -108,7 +114,9 @@ class VideoPipHelper {
     final (w, h) = displaySizeForPip(value);
     if (w <= 0 || h <= 0) return;
     try {
-      await _channel.invokeMethod<void>('prepare', _args(value));
+      final args = _args(value);
+      if (args == null) return;
+      await _channel.invokeMethod<void>('prepare', args);
     } on PlatformException {
       // ignore
     } catch (_) {

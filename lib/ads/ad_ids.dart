@@ -23,6 +23,8 @@ const String _adMobTestAppId = 'ca-app-pub-3940256099942544~3347511713';
 const String _adMobTestRewardedUnit = 'ca-app-pub-3940256099942544/5224354917';
 const String _adMobTestRewardedInterstitialUnit =
     'ca-app-pub-3940256099942544/5354046379';
+const String _adMobTestInterstitialUnit =
+    'ca-app-pub-3940256099942544/1033173712';
 const String _adMobTestBannerUnit = 'ca-app-pub-3940256099942544/6300978111';
 /// Native Advanced — Google sample unit (see AdMob test ads doc).
 const String _adMobTestNativeAdvancedUnit =
@@ -44,6 +46,9 @@ const String _adMobProdAppId = kAdMobProdApplicationId;
 const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/3493871496';
 const String _adMobProdRewardedInterstitialUnit =
     'ca-app-pub-8723888126390754/5103877770';
+/// Video player back — engaged users only (1× per day in app logic).
+const String _adMobProdVideoExitInterstitialUnit =
+    'ca-app-pub-8723888126390754/8935596981';
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
 const String _adMobProdNativeAdvancedUnit =
@@ -80,6 +85,10 @@ String get adMobRewardedUnitId =>
 String get adMobRewardedInterstitialUnitId => kUseTestAdIds
     ? _adMobTestRewardedInterstitialUnit
     : _adMobProdRewardedInterstitialUnit;
+
+String get adMobVideoExitInterstitialUnitId => kUseTestAdIds
+    ? _adMobTestInterstitialUnit
+    : _adMobProdVideoExitInterstitialUnit;
 
 String get adMobProUnlockRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdUnlockRewardedUnit;

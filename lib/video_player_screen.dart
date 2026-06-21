@@ -13,11 +13,13 @@ import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import 'download_service.dart';
+import 'app_navigator.dart';
 import 'services/app_settings_service.dart';
 import 'services/asset_playback_resolver.dart';
 import 'services/playback_resume_service.dart';
 import 'services/sleep_timer_service.dart';
 import 'services/video_continue_watching_service.dart';
+import 'services/video_exit_interstitial_service.dart';
 import 'services/video_orientation_channel.dart';
 import 'services/video_playback_queue.dart';
 import 'utils/video_navigation.dart';
@@ -93,6 +95,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool? _lastPipSyncPlaying;
   bool? _lastPipActionPlaying;
   Size? _lastPipSyncSize;
+  bool _playerBackHandling = false;
+  bool _pendingPopAfterExitAd = false;
 
   final GlobalKey _pipVideoBoundsKey = GlobalKey(debugLabel: 'pipVideoBounds');
 
@@ -111,6 +115,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _colorTutorialScheduleAttempted = false;
   VoidCallback? _sleepTimerListener;
   Timer? _positionSaveTimer;
+  Timer? _exitAdPreloadTimer;
   Duration? _resumedFromPosition;
 
   static const List<DeviceOrientation> _playerOrientations = <DeviceOrientation>[
@@ -148,30 +153,39 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       unawaited(WakelockPlus.enable());
     }
     unawaited(_primePlayerOrientation());
+    _exitAdPreloadTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+      if (!mounted) return;
+      VideoExitInterstitialService.instance.preloadIfNearEligible();
+    });
     if (Platform.isAndroid) {
-      _pipModeSub = VideoPipHelper.pipModeChanges.listen((inPip) {
-        if (!mounted) return;
-        setState(() {
-          _inPipMode = inPip;
-          if (!inPip) {
-            _pipPreparedSignature = null;
-            _lastPipActionPlaying = null;
+      _pipModeSub = VideoPipHelper.pipModeChanges.listen(
+        (inPip) {
+          if (!mounted) return;
+          setState(() {
+            _inPipMode = inPip;
+            if (!inPip) {
+              _pipPreparedSignature = null;
+              _lastPipActionPlaying = null;
+            }
+          });
+          if (inPip) {
+            final playing = _videoController?.value.isPlaying ?? true;
+            _lastPipActionPlaying = playing;
+            unawaited(VideoPipHelper.updatePipPlaybackAction(playing));
+          } else {
+            _syncNativePipEligibility();
           }
-        });
-        if (inPip) {
-          final playing = _videoController?.value.isPlaying ?? true;
-          _lastPipActionPlaying = playing;
-          unawaited(VideoPipHelper.updatePipPlaybackAction(playing));
-        } else {
-          _syncNativePipEligibility();
-        }
-      });
-      _pipControlSub = VideoPipHelper.pipPlayPauseToggles.listen((_) {
-        unawaited(_onPipPlayPauseToggle());
-      });
+        },
+        onError: (_) {},
+      );
+      _pipControlSub = VideoPipHelper.pipPlayPauseToggles.listen(
+        (_) => unawaited(_onPipPlayPauseToggle()),
+        onError: (_) {},
+      );
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
+      VideoExitInterstitialService.instance.preloadIfNearEligible();
       unawaited(
         VideoPlayerTelemetry.screenOpened(
           isLocal: widget.isLocal || widget.useContentUri,
@@ -302,6 +316,10 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.resumed) {
+      if (_pendingPopAfterExitAd) {
+        _popPlayerRoute();
+        return;
+      }
       unawaited(VideoOrientationChannel.enterPlayerMode());
       // Re-arm PiP after returning from PiP/fullscreen; native auto-enter may reset.
       _pipPreparedSignature = null;
@@ -352,12 +370,18 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   Future<void> _onPipPlayPauseToggle() async {
+    if (!mounted) return;
     final c = _videoController;
-    if (c == null || !c.value.isInitialized || !mounted) return;
-    if (c.value.isPlaying) {
-      await c.pause();
-    } else {
-      await c.play();
+    if (c == null) return;
+    try {
+      if (!c.value.isInitialized) return;
+      if (c.value.isPlaying) {
+        await c.pause();
+      } else {
+        await c.play();
+      }
+    } catch (e, st) {
+      debugPrint('[video] PiP play/pause failed: $e\n$st');
     }
   }
 
@@ -366,6 +390,60 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (playing == _lastPipActionPlaying) return;
     _lastPipActionPlaying = playing;
     unawaited(VideoPipHelper.updatePipPlaybackAction(playing));
+  }
+
+  Future<void> _onPlayerBackPressed() async {
+    if (!mounted || _playerBackHandling) return;
+    if (_inPipMode) {
+      final nav = rootNavigatorKey.currentState ?? Navigator.of(context);
+      if (nav.mounted && nav.canPop()) nav.pop();
+      return;
+    }
+
+    final navigator = rootNavigatorKey.currentState ?? Navigator.of(context);
+    _playerBackHandling = true;
+    _pendingPopAfterExitAd = true;
+    try {
+      final video = _videoController;
+      if (video?.value.isInitialized == true && video!.value.isPlaying) {
+        await video.pause();
+      }
+      if (mounted) {
+        await VideoExitInterstitialService.instance.tryShowBeforeExit(context);
+      }
+    } catch (e, st) {
+      debugPrint('[video] exit interstitial failed: $e\n$st');
+    } finally {
+      _playerBackHandling = false;
+      _popPlayerRoute(navigator: navigator);
+    }
+  }
+
+  /// Pops the player route after the native ad releases the Flutter surface.
+  void _popPlayerRoute({NavigatorState? navigator}) {
+    if (!_pendingPopAfterExitAd) return;
+    final nav = navigator ??
+        rootNavigatorKey.currentState ??
+        (mounted ? Navigator.of(context) : null);
+    if (nav == null) return;
+
+    void attemptPop() {
+      if (!_pendingPopAfterExitAd) return;
+      if (!nav.mounted || !nav.canPop()) return;
+      _pendingPopAfterExitAd = false;
+      final video = _videoController;
+      if (video?.value.isInitialized == true && video!.value.isPlaying) {
+        unawaited(video.pause());
+      }
+      nav.pop();
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      attemptPop();
+      // Native ad teardown can lag a frame or two on slower devices.
+      Future<void>.delayed(const Duration(milliseconds: 250), attemptPop);
+      Future<void>.delayed(const Duration(milliseconds: 750), attemptPop);
+    });
   }
 
   void _onChewieChanged() {
@@ -823,6 +901,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _positionSaveTimer?.cancel();
+    _exitAdPreloadTimer?.cancel();
     _orientationRebindTimer?.cancel();
     if (_sleepTimerListener != null) {
       SleepTimerService.instance.removeOnExpireListener(_sleepTimerListener!);
@@ -885,7 +964,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                     label: const Text("Retry"),
                   ),
                   OutlinedButton.icon(
-                    onPressed: () => Navigator.of(context).maybePop(),
+                    onPressed: () => unawaited(_onPlayerBackPressed()),
                     icon: const Icon(Icons.arrow_back),
                     label: const Text("Back"),
                   ),
@@ -960,7 +1039,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             videoController: video,
             chewieController: chewie,
           title: _videoTitle,
-          onBack: () => Navigator.of(context).maybePop(),
+          onBack: () => unawaited(_onPlayerBackPressed()),
           onRotate: () => unawaited(_onRotatePressed()),
           onCast: _onCastPressed,
           onDownload: _downloadVideo,
@@ -993,14 +1072,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.black,
-      body: Stack(
-        fit: StackFit.expand,
-        children: [
-          _buildBody(),
-          ..._playerChromeOverlays(context),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        unawaited(_onPlayerBackPressed());
+      },
+      child: Scaffold(
+        backgroundColor: Colors.black,
+        body: Stack(
+          fit: StackFit.expand,
+          children: [
+            _buildBody(),
+            ..._playerChromeOverlays(context),
+          ],
+        ),
       ),
     );
   }
