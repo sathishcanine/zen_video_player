@@ -12,10 +12,16 @@ class ZenVideoSurface extends StatelessWidget {
     super.key,
     required this.controller,
     this.colorFilter = VideoColorFilterSettings.standard,
+    this.surfaceEpoch = 0,
+    this.pipBoundsKey,
   });
 
   final VideoPlayerController controller;
   final VideoColorFilterSettings colorFilter;
+  final int surfaceEpoch;
+
+  /// When set, used for Android PiP [sourceRectHint] (video frame bounds only).
+  final GlobalKey? pipBoundsKey;
 
   /// Width/height from the decoder; [VideoPlayer] applies [rotationCorrection]
   /// via [RotatedBox]. The layout box must match the *displayed* aspect ratio.
@@ -41,6 +47,7 @@ class ZenVideoSurface extends StatelessWidget {
 
     return Center(
       child: AspectRatio(
+        key: pipBoundsKey,
         aspectRatio: aspectRatio,
         child: _filteredPlayer(),
       ),
@@ -48,7 +55,10 @@ class ZenVideoSurface extends StatelessWidget {
   }
 
   Widget _filteredPlayer() {
-    Widget child = VideoPlayer(controller);
+    Widget child = VideoPlayer(
+      controller,
+      key: ValueKey('zen_vp_${controller.hashCode}_$surfaceEpoch'),
+    );
     for (final filter in colorFilter.buildColorFilters()) {
       child = ColorFiltered(colorFilter: filter, child: child);
     }

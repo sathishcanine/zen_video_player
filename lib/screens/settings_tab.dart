@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../services/app_settings_service.dart';
+import '../services/hidden_folders_service.dart';
 import '../services/pro_features_service.dart';
 import '../utils/video_navigation.dart';
+import '../widgets/hidden_folders_sheet.dart';
 import '../widgets/duplicate_choose_dialog.dart';
 import '../widgets/network_stream_sheet.dart';
 import '../widgets/primary_color_picker_sheet.dart';
@@ -12,8 +16,43 @@ import '../widgets/pro_unlock_dialog.dart';
 import '../widgets/zen_brand_title.dart';
 
 /// Settings tab (network stream, appearance, utilities).
-class SettingsTab extends StatelessWidget {
+class SettingsTab extends StatefulWidget {
   const SettingsTab({super.key});
+
+  @override
+  State<SettingsTab> createState() => _SettingsTabState();
+}
+
+class _SettingsTabState extends State<SettingsTab> {
+  int _hiddenFolderCount = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    HiddenFoldersService.instance.addListener(_onHiddenFoldersChanged);
+    unawaited(_refreshHiddenCount());
+  }
+
+  @override
+  void dispose() {
+    HiddenFoldersService.instance.removeListener(_onHiddenFoldersChanged);
+    super.dispose();
+  }
+
+  void _onHiddenFoldersChanged() {
+    unawaited(_refreshHiddenCount());
+  }
+
+  Future<void> _refreshHiddenCount() async {
+    final count = (await HiddenFoldersService.instance.loadHiddenIds()).length;
+    if (!mounted) return;
+    setState(() => _hiddenFolderCount = count);
+  }
+
+  Future<void> _openHiddenFolders() async {
+    await showHiddenFoldersSheet(context);
+    await _refreshHiddenCount();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -75,6 +114,16 @@ class SettingsTab extends StatelessWidget {
                       feature: ProFeature.findDuplicate,
                       onUnlocked: () => showDuplicateChooseDialog(context),
                     ),
+                  ),
+                  const _SectionDivider(),
+                  _SectionLabel(text: l10n.settingsLibrary),
+                  _SettingsTile(
+                    icon: Icons.folder_off_outlined,
+                    title: l10n.settingsHiddenFolders,
+                    subtitle: _hiddenFolderCount > 0
+                        ? '${l10n.settingsHiddenFoldersSubtitle} · $_hiddenFolderCount'
+                        : l10n.settingsHiddenFoldersSubtitle,
+                    onTap: () => unawaited(_openHiddenFolders()),
                   ),
                   const _SectionDivider(),
                   _SectionLabel(text: l10n.settingsPlayback),

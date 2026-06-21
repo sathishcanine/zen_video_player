@@ -1,7 +1,7 @@
 package com.player.zen_video_player
 
 import android.content.pm.ActivityInfo
-import android.content.res.Configuration
+import android.view.Surface
 import io.flutter.embedding.android.FlutterActivity
 import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodChannel
@@ -52,12 +52,14 @@ class VideoOrientationBridge(private val activity: FlutterActivity) {
         if (!playerModeActive) {
             enterPlayerMode()
         }
-        val config = activity.resources.configuration
+        @Suppress("DEPRECATION")
+        val rotation = activity.windowManager.defaultDisplay.rotation
         activity.requestedOrientation =
-            if (config.orientation == Configuration.ORIENTATION_LANDSCAPE) {
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
-            } else {
-                ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+            when (rotation) {
+                Surface.ROTATION_0, Surface.ROTATION_180 ->
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_LANDSCAPE
+                else ->
+                    ActivityInfo.SCREEN_ORIENTATION_SENSOR_PORTRAIT
             }
     }
 

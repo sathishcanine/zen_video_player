@@ -26,7 +26,7 @@ class LocalMediaService {
       filterOption: kMediaAssetFilter,
     );
 
-    final hidden = await HiddenFoldersService.loadHiddenIds();
+    final hidden = await HiddenFoldersService.instance.loadHiddenIds();
     final folders = <MediaFolder>[];
     final folderCounts = <String, int>{};
 

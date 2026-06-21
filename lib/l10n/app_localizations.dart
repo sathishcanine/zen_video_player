@@ -1552,6 +1552,18 @@ abstract class AppLocalizations {
   /// **'Hide'**
   String get hide;
 
+  /// No description provided for @pictureInPicture.
+  ///
+  /// In en, this message translates to:
+  /// **'Picture-in-picture'**
+  String get pictureInPicture;
+
+  /// No description provided for @pictureInPictureUnavailable.
+  ///
+  /// In en, this message translates to:
+  /// **'Could not start Picture-in-picture. In system Settings, open Apps → Zen VideoPlayer → Picture-in-picture and allow it.'**
+  String get pictureInPictureUnavailable;
+
   /// No description provided for @proBadge.
   ///
   /// In en, this message translates to:
@@ -1719,6 +1731,72 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Prevent screen sleep during video playback'**
   String get settingsKeepScreenOnVideoSubtitle;
+
+  /// No description provided for @settingsLibrary.
+  ///
+  /// In en, this message translates to:
+  /// **'Library'**
+  String get settingsLibrary;
+
+  /// No description provided for @settingsHiddenFolders.
+  ///
+  /// In en, this message translates to:
+  /// **'Hidden video folders'**
+  String get settingsHiddenFolders;
+
+  /// No description provided for @settingsHiddenFoldersSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore folders hidden from the video list'**
+  String get settingsHiddenFoldersSubtitle;
+
+  /// No description provided for @settingsHiddenFoldersSheetBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Folders you hide from the video tab appear here. Tap Restore to show them in your library again.'**
+  String get settingsHiddenFoldersSheetBody;
+
+  /// No description provided for @hiddenFoldersEmpty.
+  ///
+  /// In en, this message translates to:
+  /// **'No hidden folders'**
+  String get hiddenFoldersEmpty;
+
+  /// No description provided for @hiddenFolderRestore.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore'**
+  String get hiddenFolderRestore;
+
+  /// No description provided for @hiddenFolderRestored.
+  ///
+  /// In en, this message translates to:
+  /// **'\"{name}\" is visible in your library again'**
+  String hiddenFolderRestored(String name);
+
+  /// No description provided for @hiddenFoldersRestoreAllTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore all folders?'**
+  String get hiddenFoldersRestoreAllTitle;
+
+  /// No description provided for @hiddenFoldersRestoreAllBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Every hidden video folder will appear in your library again.'**
+  String get hiddenFoldersRestoreAllBody;
+
+  /// No description provided for @hiddenFoldersRestoreAllConfirm.
+  ///
+  /// In en, this message translates to:
+  /// **'Restore all'**
+  String get hiddenFoldersRestoreAllConfirm;
+
+  /// No description provided for @hiddenFoldersRestoreAllDone.
+  ///
+  /// In en, this message translates to:
+  /// **'All folders restored'**
+  String get hiddenFoldersRestoreAllDone;
 
   /// No description provided for @folderDownloads.
   ///

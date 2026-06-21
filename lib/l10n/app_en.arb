@@ -357,6 +357,8 @@
   "save": "Save",
   "delete": "Delete",
   "hide": "Hide",
+  "pictureInPicture": "Picture-in-picture",
+  "pictureInPictureUnavailable": "Could not start Picture-in-picture. In system Settings, open Apps → Zen VideoPlayer → Picture-in-picture and allow it.",
   "proBadge": "FREE PRO",
   "proUnlockTitleFeature": "Unlock {feature}",
   "@proUnlockTitleFeature": {
@@ -410,6 +412,22 @@
   "settingsResumeVideoSubtitle": "Continue videos where you left off",
   "settingsKeepScreenOnVideo": "Keep screen on",
   "settingsKeepScreenOnVideoSubtitle": "Prevent screen sleep during video playback",
+  "settingsLibrary": "Library",
+  "settingsHiddenFolders": "Hidden video folders",
+  "settingsHiddenFoldersSubtitle": "Restore folders hidden from the video list",
+  "settingsHiddenFoldersSheetBody": "Folders you hide from the video tab appear here. Tap Restore to show them in your library again.",
+  "hiddenFoldersEmpty": "No hidden folders",
+  "hiddenFolderRestore": "Restore",
+  "hiddenFolderRestored": "\"{name}\" is visible in your library again",
+  "@hiddenFolderRestored": {
+    "placeholders": {
+      "name": {"type": "String"}
+    }
+  },
+  "hiddenFoldersRestoreAllTitle": "Restore all folders?",
+  "hiddenFoldersRestoreAllBody": "Every hidden video folder will appear in your library again.",
+  "hiddenFoldersRestoreAllConfirm": "Restore all",
+  "hiddenFoldersRestoreAllDone": "All folders restored",
   "folderDownloads": "Downloads",
   "badgeToday": "TODAY",
   "backgroundPlayingAudio": "Playing in background",

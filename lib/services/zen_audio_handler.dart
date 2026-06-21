@@ -26,6 +26,7 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
   Future<void> Function()? onSkipNext;
   Future<void> Function()? onSkipPrevious;
   Future<void> Function()? onStop;
+  Future<void> Function()? onResumePlay;
   bool Function()? hasQueue;
 
   int _queueIndex = 0;
@@ -34,11 +35,13 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
     required Future<void> Function() skipNext,
     required Future<void> Function() skipPrevious,
     required Future<void> Function() stop,
+    required Future<void> Function() resumePlay,
     required bool Function() hasQueue,
   }) {
     onSkipNext = skipNext;
     onSkipPrevious = skipPrevious;
     onStop = stop;
+    onResumePlay = resumePlay;
     this.hasQueue = hasQueue;
   }
 
@@ -105,16 +108,29 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   @override
-  Future<void> play() => player.play();
+  Future<void> play() async {
+    if (onResumePlay != null) {
+      await onResumePlay!();
+      return;
+    }
+    await player.play();
+  }
 
   @override
   Future<void> pause() => player.pause();
 
+  /// Notification / lock-screen stop — keeps the current track queued for resume.
   @override
   Future<void> stop() async {
     await player.stop();
-    clearNowPlaying();
     await onStop?.call();
+    await super.stop();
+  }
+
+  /// Full dismiss (mini-player close) — tears down the media session.
+  Future<void> stopAndDismissSession() async {
+    await player.stop();
+    clearNowPlaying();
     await super.stop();
   }
 

@@ -847,6 +847,13 @@ class AppLocalizationsTa extends AppLocalizations {
   String get hide => 'Hide';
 
   @override
+  String get pictureInPicture => 'Picture-in-picture';
+
+  @override
+  String get pictureInPictureUnavailable =>
+      'Could not start Picture-in-picture. In system Settings, open Apps → Zen VideoPlayer → Picture-in-picture and allow it.';
+
+  @override
   String get proBadge => 'FREE PRO';
 
   @override
@@ -944,6 +951,44 @@ class AppLocalizationsTa extends AppLocalizations {
   @override
   String get settingsKeepScreenOnVideoSubtitle =>
       'Prevent screen sleep during video playback';
+
+  @override
+  String get settingsLibrary => 'Library';
+
+  @override
+  String get settingsHiddenFolders => 'Hidden video folders';
+
+  @override
+  String get settingsHiddenFoldersSubtitle =>
+      'Restore folders hidden from the video list';
+
+  @override
+  String get settingsHiddenFoldersSheetBody =>
+      'Folders you hide from the video tab appear here. Tap Restore to show them in your library again.';
+
+  @override
+  String get hiddenFoldersEmpty => 'No hidden folders';
+
+  @override
+  String get hiddenFolderRestore => 'Restore';
+
+  @override
+  String hiddenFolderRestored(String name) {
+    return '\"$name\" is visible in your library again';
+  }
+
+  @override
+  String get hiddenFoldersRestoreAllTitle => 'Restore all folders?';
+
+  @override
+  String get hiddenFoldersRestoreAllBody =>
+      'Every hidden video folder will appear in your library again.';
+
+  @override
+  String get hiddenFoldersRestoreAllConfirm => 'Restore all';
+
+  @override
+  String get hiddenFoldersRestoreAllDone => 'All folders restored';
 
   @override
   String get folderDownloads => 'Downloads';

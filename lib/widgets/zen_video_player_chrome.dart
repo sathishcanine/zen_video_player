@@ -109,6 +109,14 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   VideoPlayerController get _video => widget.videoController;
   ChewieController get _chewie => widget.chewieController;
 
+  bool get _controllersReady {
+    try {
+      return _video.value.isInitialized;
+    } catch (_) {
+      return false;
+    }
+  }
+
   bool get _gestureExtras =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
@@ -343,14 +351,20 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   }
 
   Future<void> _togglePlayPause() async {
-    if (_video.value.isPlaying) {
-      await _video.pause();
-      if (mounted) setState(() => _userPausedForAd = true);
-    } else {
-      await _video.play();
-      if (mounted) {
-        setState(() => _userPausedForAd = false);
+    if (!_controllersReady) return;
+    try {
+      if (_video.value.isPlaying) {
+        await _video.pause();
+        if (mounted) setState(() => _userPausedForAd = true);
+      } else {
+        await _video.play();
+        if (mounted) {
+          setState(() => _userPausedForAd = false);
+        }
       }
+    } catch (e, st) {
+      debugPrint('[chrome] play/pause failed: $e\n$st');
+      return;
     }
     _wakeControls();
   }
@@ -583,6 +597,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   }
 
   void _showMoreMenu() {
+    if (!_hasMoreMenuItems) return;
     _wakeControls();
     showModalBottomSheet<void>(
       context: context,
@@ -604,27 +619,15 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
                     widget.onDownload!();
                   },
                 ),
-              if (widget.showPip && widget.onPip != null)
-                ListTile(
-                  leading: const Icon(
-                    Icons.picture_in_picture_alt_outlined,
-                    color: Colors.white,
-                  ),
-                  title: const Text(
-                    'Picture-in-picture',
-                    style: TextStyle(color: Colors.white),
-                  ),
-                  onTap: () {
-                    Navigator.pop(ctx);
-                    widget.onPip!();
-                  },
-                ),
             ],
           ),
         );
       },
     );
   }
+
+  bool get _hasMoreMenuItems =>
+      widget.showDownload && widget.onDownload != null;
 
   static String _formatDuration(Duration d) {
     final h = d.inHours;
@@ -694,7 +697,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
           IconButton(
             icon: const Icon(Icons.more_vert, color: Colors.white),
             tooltip: 'More',
-            onPressed: _showMoreMenu,
+            onPressed: _hasMoreMenuItems ? _showMoreMenu : null,
           ),
         ],
       ),
@@ -733,7 +736,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
             onTap: () => unawaited(_toggleNightMode()),
           ),
           _toolIcon(
-            icon: Icons.bedtime_outlined,
+            icon: Icons.timer_outlined,
             tooltip: l10n.sleepTimerTitle,
             onTap: () => unawaited(showSleepTimerSheet(context)),
           ),
@@ -1059,6 +1062,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   }
 
   Widget _bottomBar() {
+    final l10n = AppLocalizations.of(context)!;
     return SafeArea(
       top: false,
       child: Padding(
@@ -1090,17 +1094,22 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
                 },
               ),
             ),
-            IconButton(
-              visualDensity: VisualDensity.compact,
-              padding: const EdgeInsets.all(8),
-              constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
-              icon: const Icon(Icons.fit_screen, color: Colors.white, size: 26),
-              tooltip: 'Fullscreen',
-              onPressed: () {
-                _wakeControls();
-                _chewie.enterFullScreen();
-              },
-            ),
+            if (widget.showPip && widget.onPip != null)
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                padding: const EdgeInsets.all(8),
+                constraints: const BoxConstraints(minWidth: 40, minHeight: 40),
+                icon: const Icon(
+                  Icons.picture_in_picture_alt_outlined,
+                  color: Colors.white,
+                  size: 26,
+                ),
+                tooltip: l10n.pictureInPicture,
+                onPressed: () {
+                  _wakeControls();
+                  widget.onPip!();
+                },
+              ),
           ],
         ),
       ),

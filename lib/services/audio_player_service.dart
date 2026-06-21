@@ -22,6 +22,7 @@ class AudioPlayerService extends ChangeNotifier {
       skipNext: skipNext,
       skipPrevious: skipPrevious,
       stop: _onSystemStop,
+      resumePlay: _resumePlayback,
       hasQueue: () => _queue.isNotEmpty,
     );
     _positionSub = _player.positionStream.listen((p) {
@@ -169,6 +170,17 @@ class AudioPlayerService extends ChangeNotifier {
   Future<void> togglePlayPause() async {
     if (_player.playing) {
       await _player.pause();
+      return;
+    }
+    await _resumePlayback();
+  }
+
+  /// Reloads the current track after [AudioPlayer.stop] (notification stop).
+  Future<void> _resumePlayback() async {
+    if (currentTrack == null) return;
+    final state = _player.processingState;
+    if (state == ProcessingState.idle || state == ProcessingState.completed) {
+      await _playCurrent();
     } else {
       await _player.play();
     }
@@ -227,22 +239,20 @@ class AudioPlayerService extends ChangeNotifier {
   }
 
   Future<void> stopAndClear() async {
-    await _player.stop();
     unawaited(AudioVisualizerService.instance.unbind());
-    _handler.clearNowPlaying();
     _queue = [];
     _index = 0;
     _position = Duration.zero;
     _duration = Duration.zero;
     _isPlaying = false;
+    await _handler.stopAndDismissSession();
     notifyListeners();
   }
 
+  /// Notification stop — stop playback but keep queue so play can resume.
   Future<void> _onSystemStop() async {
-    _queue = [];
-    _index = 0;
+    unawaited(AudioVisualizerService.instance.unbind());
     _position = Duration.zero;
-    _duration = Duration.zero;
     _isPlaying = false;
     notifyListeners();
   }

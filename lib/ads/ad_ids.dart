@@ -47,7 +47,7 @@ const String _adMobProdRewardedInterstitialUnit =
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
 const String _adMobProdNativeAdvancedUnit =
-    'ca-app-pub-8723888126390754/9829892165';
+    'ca-app-pub-8723888126390754/8811473905';
 const String _adMobProdPauseNativeNetworkUnit =
     'ca-app-pub-8723888126390754/7649508461';
 const String _adMobProdPauseNativeLocalUnit =

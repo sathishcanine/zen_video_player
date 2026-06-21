@@ -7,6 +7,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 import '../models/media_folder.dart';
 import '../services/app_settings_service.dart';
 import '../services/local_media_service.dart';
+import '../services/hidden_folders_service.dart';
 import '../services/locale_service.dart';
 import '../services/new_media_tracker.dart';
 import '../services/media_permission_service.dart';
@@ -58,6 +59,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     LocaleService.instance.addListener(_onLocaleChanged);
     _continueWatching.addListener(_onContinueWatchingChanged);
     NewMediaTracker.instance.addListener(_onNewMediaBaselineChanged);
+    HiddenFoldersService.instance.addListener(_onHiddenFoldersChanged);
     _refresh();
     unawaited(_continueWatching.refresh());
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -98,6 +100,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
     LocaleService.instance.removeListener(_onLocaleChanged);
     _continueWatching.removeListener(_onContinueWatchingChanged);
     NewMediaTracker.instance.removeListener(_onNewMediaBaselineChanged);
+    HiddenFoldersService.instance.removeListener(_onHiddenFoldersChanged);
     super.dispose();
   }
 
@@ -108,6 +111,11 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
   void _onNewMediaBaselineChanged() {
     if (!mounted || _loading) return;
     unawaited(_updateFolderNewFlags());
+  }
+
+  void _onHiddenFoldersChanged() {
+    if (!mounted || _loading) return;
+    unawaited(_refresh());
   }
 
   Future<void> _updateFolderNewFlags() async {

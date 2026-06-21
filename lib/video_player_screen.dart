@@ -4,10 +4,12 @@ import 'dart:io';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
 import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:zen_video_player/analytics/video_player_telemetry.dart';
+import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 
 import 'download_service.dart';
@@ -85,11 +87,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Last `prepare` signature sent to Android; null if [clearPipEligibility] sent.
   String? _pipPreparedSignature;
 
-  final GlobalKey _pipStageKeyEmbedded = GlobalKey(debugLabel: 'pipEmbedded');
-  final GlobalKey _pipStageKeyFullscreen = GlobalKey(debugLabel: 'pipFullscreen');
+  bool _inPipMode = false;
+  StreamSubscription<bool>? _pipModeSub;
+  bool? _lastPipSyncPlaying;
+  Size? _lastPipSyncSize;
+
+  final GlobalKey _pipVideoBoundsKey = GlobalKey(debugLabel: 'pipVideoBounds');
 
   /// Dedupes [ChewieController] listener work when unrelated fields change.
   bool? _lastChewieFullScreen;
+
+  /// Bumped on rotation so the platform video view is recreated (Android blank fix).
+  int _videoSurfaceEpoch = 0;
+  Orientation? _lastReportedOrientation;
+  Timer? _orientationRebindTimer;
 
   VideoColorFilterSettings _colorFilter = VideoColorFilterSettings.standard;
 
@@ -135,6 +146,20 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       unawaited(WakelockPlus.enable());
     }
     unawaited(_primePlayerOrientation());
+    if (Platform.isAndroid) {
+      _pipModeSub = VideoPipHelper.pipModeChanges.listen((inPip) {
+        if (!mounted) return;
+        setState(() {
+          _inPipMode = inPip;
+          if (!inPip) {
+            _pipPreparedSignature = null;
+          }
+        });
+        if (!inPip) {
+          _syncNativePipEligibility();
+        }
+      });
+    }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
       unawaited(
@@ -154,7 +179,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       videoPlayerController: controller,
       autoPlay: true,
       looping: false,
-      allowFullScreen: true,
+      allowFullScreen: false,
       allowMuting: true,
       allowPlaybackSpeedChanging: true,
       allowedScreenSleep: !AppSettingsService.instance.keepScreenOnVideo,
@@ -178,7 +203,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                 fit: StackFit.expand,
                 children: [
                   KeyedSubtree(
-                    key: _pipStageKeyFullscreen,
+                    key: const ValueKey('pipFullscreenStage'),
                     child: Container(
                       color: Colors.black,
                       alignment: Alignment.center,
@@ -188,6 +213,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
                         videoChild: ZenChewiePlayer(
                           controller: _chewieController!,
                           colorFilter: _colorFilter,
+                          surfaceEpoch: _videoSurfaceEpoch,
+                          manageFullScreen: false,
+                          pipBoundsKey: _pipVideoBoundsKey,
                         ),
                       ),
                     ),
@@ -205,7 +233,60 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void didChangeMetrics() {
     super.didChangeMetrics();
-    if (mounted) setState(() {});
+    _scheduleOrientationRebind();
+  }
+
+  void _scheduleOrientationRebind() {
+    _orientationRebindTimer?.cancel();
+    _orientationRebindTimer = Timer(const Duration(milliseconds: 120), () {
+      if (!mounted) return;
+      final inFullscreen = _chewieController?.isFullScreen == true;
+      final orientation = MediaQuery.orientationOf(context);
+      if (_lastReportedOrientation == null) {
+        _lastReportedOrientation = orientation;
+        return;
+      }
+      if (_lastReportedOrientation == orientation) {
+        // Avoid rebuilding the embedded surface while Chewie fullscreen is open.
+        if (!inFullscreen && mounted) setState(() {});
+        return;
+      }
+      _lastReportedOrientation = orientation;
+      if (inFullscreen) {
+        unawaited(_rebindVideoAfterLayoutChange());
+        _pipPreparedSignature = null;
+        _syncNativePipEligibility();
+        return;
+      }
+      unawaited(_handleOrientationChange());
+    });
+  }
+
+  /// Rebuilds the video surface after portrait ↔ landscape (fixes blank screen).
+  Future<void> _handleOrientationChange() async {
+    _zoomTransform?.value = Matrix4.identity();
+    if (mounted) {
+      setState(() => _videoSurfaceEpoch++);
+    }
+    await _rebindVideoAfterLayoutChange();
+    _pipPreparedSignature = null;
+    _syncNativePipEligibility();
+  }
+
+  Future<void> _rebindVideoAfterLayoutChange() async {
+    final c = _videoController;
+    if (c == null || !c.value.isInitialized || c.value.hasError) return;
+    try {
+      final pos = c.value.position;
+      final playing = c.value.isPlaying;
+      if (playing) await c.pause();
+      await Future<void>.delayed(const Duration(milliseconds: 60));
+      if (!mounted || c != _videoController) return;
+      await c.seekTo(pos);
+      if (playing) await c.play();
+    } catch (e, st) {
+      debugPrint('[video] rebind after rotation failed: $e\n$st');
+    }
   }
 
   @override
@@ -215,6 +296,15 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Re-arm PiP after returning from PiP/fullscreen; native auto-enter may reset.
       _pipPreparedSignature = null;
       _syncNativePipEligibility();
+      return;
+    }
+    // Hide chrome as soon as the user leaves the app while PiP is armed.
+    if (Platform.isAndroid &&
+        _pipPreparedSignature != null &&
+        _videoController?.value.isPlaying == true &&
+        (state == AppLifecycleState.inactive ||
+            state == AppLifecycleState.paused)) {
+      if (mounted && !_inPipMode) setState(() => _inPipMode = true);
     }
   }
 
@@ -222,6 +312,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void _syncNativePipEligibility() {
     final c = _videoController;
     if (c == null || !mounted) return;
+    // Never push new PiP params while already in PiP — layout bounds change each
+    // resize and cause square ↔ rectangle oscillation with seamlessResize.
+    if (_inPipMode) return;
     if (!c.value.isInitialized ||
         _initError != null ||
         c.value.hasError ||
@@ -239,50 +332,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
       return;
     }
-    final s = c.value.size;
-    if (s.width <= 0 || s.height <= 0) {
-      if (_pipPreparedSignature != null) {
-        _pipPreparedSignature = null;
-        unawaited(VideoPipHelper.clearPipEligibility());
-      }
-      return;
-    }
-    final rect = _pipStageRectPhysical();
-    final rSnap = rect == null
-        ? 'n'
-        : '${rect.left.round()}_${rect.top.round()}_${rect.width.round()}_${rect.height.round()}';
+    final (aspectNum, aspectDen) = VideoPipHelper.standardAspectRational(c.value);
     final fs = (_chewieController?.isFullScreen == true) ? 'fs' : 'em';
-    final signature = '${s.width.round()}x${s.height.round()}@$rSnap@$fs';
+    final signature = '$aspectNum:$aspectDen@$fs';
     if (_pipPreparedSignature == signature) return;
     _pipPreparedSignature = signature;
-    unawaited(
-      VideoPipHelper.prepareAutoEnterWhilePlaying(
-        s.width,
-        s.height,
-        sourceRectPhysical: rect,
-      ),
-    );
-  }
-
-  /// Stage bounds in **physical pixels** for Android [PictureInPictureParams]
-  /// source-rect hint (YouTube-style transition).
-  Rect? _pipStageRectPhysical() {
-    final chewie = _chewieController;
-    final key = (chewie != null && chewie.isFullScreen)
-        ? _pipStageKeyFullscreen
-        : _pipStageKeyEmbedded;
-    final ctx = key.currentContext;
-    if (ctx == null) return null;
-    final box = ctx.findRenderObject() as RenderBox?;
-    if (box == null || !box.hasSize) return null;
-    final topLeft = box.localToGlobal(Offset.zero);
-    final dpr = MediaQuery.devicePixelRatioOf(ctx);
-    return Rect.fromLTRB(
-      topLeft.dx * dpr,
-      topLeft.dy * dpr,
-      (topLeft.dx + box.size.width) * dpr,
-      (topLeft.dy + box.size.height) * dpr,
-    );
+    unawaited(VideoPipHelper.prepareAutoEnterWhilePlaying(c.value));
   }
 
   void _onChewieChanged() {
@@ -298,7 +353,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   Future<void> _onRotatePressed() async {
     await VideoOrientationChannel.toggleOrientation();
-    if (mounted) setState(() {});
+    await Future<void>.delayed(const Duration(milliseconds: 280));
+    if (!mounted) return;
+    await _handleOrientationChange();
   }
 
   Future<void> _skipPrevious() async {
@@ -365,20 +422,30 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!Platform.isAndroid) return;
     final c = _videoController;
     if (c == null || !c.value.isInitialized || _initError != null) return;
-    final s = c.value.size;
-    if (s.width <= 0 || s.height <= 0) return;
-    final rect = _pipStageRectPhysical();
-    final ok = await VideoPipHelper.enterPictureInPicture(
-      s.width,
-      s.height,
-      sourceRectPhysical: rect,
-    );
+
+    if (!c.value.isPlaying) {
+      await c.play();
+    }
+
+    if (mounted) setState(() => _inPipMode = true);
+
+    final ok = await VideoPipHelper.enterPictureInPicture(c.value);
+
     if (!mounted) return;
     if (!ok) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Picture-in-picture is not available on this device.'),
+      setState(() => _inPipMode = false);
+      final l10n = AppLocalizations.of(context)!;
+      final messenger = ScaffoldMessenger.of(context);
+      messenger.hideCurrentSnackBar();
+      messenger.showSnackBar(
+        SnackBar(
+          content: Text(l10n.pictureInPictureUnavailable),
           behavior: SnackBarBehavior.floating,
+          duration: const Duration(seconds: 6),
+          action: SnackBarAction(
+            label: l10n.openSettings,
+            onPressed: () => unawaited(openAppSettings()),
+          ),
         ),
       );
     }
@@ -649,6 +716,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         unawaited(VideoContinueWatchingService.instance.clear());
       }
     }
+    final playing = c.value.isPlaying;
+    final size = c.value.size;
+    if (playing == _lastPipSyncPlaying && size == _lastPipSyncSize) return;
+    _lastPipSyncPlaying = playing;
+    _lastPipSyncSize = size;
     _syncNativePipEligibility();
   }
 
@@ -720,6 +792,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _positionSaveTimer?.cancel();
+    _orientationRebindTimer?.cancel();
     if (_sleepTimerListener != null) {
       SleepTimerService.instance.removeOnExpireListener(_sleepTimerListener!);
     }
@@ -727,6 +800,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       unawaited(WakelockPlus.disable());
     }
     _pipPreparedSignature = null;
+    _pipModeSub?.cancel();
     unawaited(VideoPipHelper.clearPipEligibility());
     unawaited(VideoOrientationChannel.exitPlayerMode());
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
@@ -796,13 +870,14 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       return const Center(child: CircularProgressIndicator());
     }
     return SizedBox.expand(
-      key: _pipStageKeyEmbedded,
       child: VideoPlayerGestureShell(
         chewieController: chewie,
         onTutorialVisibilityChanged: _onGestureTutorialVisibility,
         videoChild: ZenChewiePlayer(
           controller: chewie,
           colorFilter: _colorFilter,
+          surfaceEpoch: _videoSurfaceEpoch,
+          pipBoundsKey: _pipVideoBoundsKey,
         ),
       ),
     );
@@ -843,6 +918,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       return const [];
     }
     if (!video.value.isInitialized) return const [];
+    if (_inPipMode) return const [];
 
     return [
       Positioned.fill(

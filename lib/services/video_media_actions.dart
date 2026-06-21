@@ -134,7 +134,10 @@ class VideoMediaActions {
           confirm: l10n.hide,
         );
         if (!hideOk) return;
-        await HiddenFoldersService.hide(folder.id);
+        await HiddenFoldersService.instance.hide(
+          folder.id,
+          displayName: folder.displayName,
+        );
         onLibraryChanged();
       case MediaOptionAction.details:
         await showFolderDetailsDialog(context, folder: folder);

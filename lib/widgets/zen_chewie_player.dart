@@ -14,14 +14,24 @@ import 'package:zen_video_player/widgets/zen_video_surface.dart';
 
 /// Chewie controls with a rotation-friendly video surface.
 class ZenChewiePlayer extends StatefulWidget {
+  final ChewieController controller;
+  final VideoColorFilterSettings colorFilter;
+  final int surfaceEpoch;
+
+  /// When false, only renders the video surface (used inside Chewie's fullscreen route).
+  final bool manageFullScreen;
+
+  /// Android PiP source-rect hint; should wrap the visible video frame only.
+  final GlobalKey? pipBoundsKey;
+
   const ZenChewiePlayer({
     super.key,
     required this.controller,
     this.colorFilter = VideoColorFilterSettings.standard,
+    this.surfaceEpoch = 0,
+    this.manageFullScreen = true,
+    this.pipBoundsKey,
   });
-
-  final ChewieController controller;
-  final VideoColorFilterSettings colorFilter;
 
   @override
   State<ZenChewiePlayer> createState() => _ZenChewiePlayerState();
@@ -37,13 +47,23 @@ class _ZenChewiePlayerState extends State<ZenChewiePlayer> {
   void initState() {
     super.initState();
     _notifier = PlayerNotifier.init();
-    widget.controller.addListener(_onControllerChanged);
+    if (widget.manageFullScreen) {
+      widget.controller.addListener(_onControllerChanged);
+    }
   }
 
   @override
   void didUpdateWidget(ZenChewiePlayer oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.controller != widget.controller) {
+    if (oldWidget.manageFullScreen != widget.manageFullScreen) {
+      if (oldWidget.manageFullScreen) {
+        oldWidget.controller.removeListener(_onControllerChanged);
+      }
+      if (widget.manageFullScreen) {
+        widget.controller.addListener(_onControllerChanged);
+      }
+    } else if (widget.manageFullScreen &&
+        oldWidget.controller != widget.controller) {
       oldWidget.controller.removeListener(_onControllerChanged);
       widget.controller.addListener(_onControllerChanged);
     }
@@ -51,13 +71,15 @@ class _ZenChewiePlayerState extends State<ZenChewiePlayer> {
 
   @override
   void dispose() {
-    widget.controller.removeListener(_onControllerChanged);
+    if (widget.manageFullScreen) {
+      widget.controller.removeListener(_onControllerChanged);
+    }
     _notifier.dispose();
     super.dispose();
   }
 
   Future<void> _onControllerChanged() async {
-    if (!mounted) return;
+    if (!widget.manageFullScreen || !mounted) return;
     if (_controllerFullScreen && !_isFullScreen) {
       _isFullScreen = _controllerFullScreen;
       await _pushFullScreen();
@@ -111,7 +133,7 @@ class _ZenChewiePlayerState extends State<ZenChewiePlayer> {
                   controller: c,
                   child: ChangeNotifierProvider<PlayerNotifier>.value(
                     value: _notifier,
-                    child: ZenChewiePlayer(controller: c),
+                    child: ZenChewiePlayer(controller: c, manageFullScreen: false),
                   ),
                 ),
               ),
@@ -145,6 +167,10 @@ class _ZenChewiePlayerState extends State<ZenChewiePlayer> {
   @override
   Widget build(BuildContext context) {
     final chewie = widget.controller;
+    // Only one [VideoPlayer] per controller — hide embedded surface while fullscreen route is up.
+    if (widget.manageFullScreen && chewie.isFullScreen) {
+      return const ColoredBox(color: Colors.black);
+    }
     return ChewieControllerProvider(
       controller: chewie,
       child: ChangeNotifierProvider<PlayerNotifier>.value(
@@ -161,6 +187,8 @@ class _ZenChewiePlayerState extends State<ZenChewiePlayer> {
               child: ZenVideoSurface(
                 controller: chewie.videoPlayerController,
                 colorFilter: widget.colorFilter,
+                surfaceEpoch: widget.surfaceEpoch,
+                pipBoundsKey: widget.pipBoundsKey,
               ),
             ),
             if (chewie.overlay != null) chewie.overlay!,

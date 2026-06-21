@@ -342,10 +342,13 @@ class _ReactivePainter extends CustomPainter {
   void _paintRadialBars(Canvas canvas, Size size) {
     final center = Offset(size.width * 0.5, size.height * 0.5);
     final innerR = size.width * 0.34;
-    final maxLen = size.width * 0.13;
+    final maxLen = size.width * 0.15;
     final count = math.min(bands.length, barCount);
+    final sweep = (math.pi * 2) / count;
+    final barSweep = sweep * 0.58;
+
     for (var i = 0; i < count; i++) {
-      final angle = (i / count) * math.pi * 2 - math.pi / 2;
+      final angle = i * sweep - math.pi / 2;
       final target = isPlaying ? bands[i].clamp(0.04, 1.0) : 0.04;
       final bar = bars[i % bars.length];
       bar.height += (target - bar.height) * 0.28;
@@ -357,21 +360,34 @@ class _ReactivePainter extends CustomPainter {
         bandIndex,
         AudioEqualizerSpec.referenceFrequenciesHz.length,
       );
-      final inner = Offset(
-        center.dx + math.cos(angle) * innerR,
-        center.dy + math.sin(angle) * innerR,
-      );
-      final outer = Offset(
-        center.dx + math.cos(angle) * outerR,
-        center.dy + math.sin(angle) * outerR,
-      );
-      canvas.drawLine(
-        inner,
-        outer,
+
+      final path = Path()
+        ..arcTo(
+          Rect.fromCircle(center: center, radius: innerR),
+          angle - barSweep / 2,
+          barSweep,
+          false,
+        )
+        ..arcTo(
+          Rect.fromCircle(center: center, radius: outerR),
+          angle + barSweep / 2,
+          -barSweep,
+          false,
+        )
+        ..close();
+
+      canvas.drawPath(
+        path,
         Paint()
-          ..strokeWidth = math.max(2.5, size.width / count * 0.42)
-          ..strokeCap = StrokeCap.round
-          ..color = color.withValues(alpha: 0.9),
+          ..style = PaintingStyle.fill
+          ..color = color.withValues(alpha: 0.88),
+      );
+      canvas.drawPath(
+        path,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.6
+          ..color = color.withValues(alpha: 0.35),
       );
     }
   }
@@ -420,12 +436,37 @@ class _ReactivePainter extends CustomPainter {
   void _paintRadialCircle(Canvas canvas, Size size) {
     final center = Offset(size.width * 0.5, size.height * 0.5);
     final innerR = size.width * 0.34;
-    final maxLen = size.width * 0.12;
+    final maxLen = size.width * 0.14;
     final count = math.min(bands.length, barCount);
+
+    canvas.drawCircle(
+      center,
+      innerR,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.5
+        ..color = const Color(0x55FFFFFF),
+    );
+
+    var avgLevel = 0.0;
+    for (var i = 0; i < count; i++) {
+      avgLevel += isPlaying ? bands[i].clamp(0.04, 1.0) : 0.04;
+    }
+    avgLevel /= count;
+    final pulseR = innerR + maxLen * 0.35 + avgLevel * maxLen * 0.25;
+    canvas.drawCircle(
+      center,
+      pulseR,
+      Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2
+        ..color = AudioEqualizerSpec.midColor.withValues(alpha: 0.35 + avgLevel * 0.35),
+    );
+
     for (var i = 0; i < count; i++) {
       final angle = (i / count) * math.pi * 2 - math.pi / 2;
       final level = isPlaying ? bands[i].clamp(0.04, 1.0) : 0.04;
-      final outerR = innerR + level * maxLen;
+      final tipR = innerR + level * maxLen;
       final bandIndex = (i / count * referenceBandCount)
           .floor()
           .clamp(0, referenceBandCount - 1);
@@ -433,19 +474,29 @@ class _ReactivePainter extends CustomPainter {
         bandIndex,
         AudioEqualizerSpec.referenceFrequenciesHz.length,
       );
+
+      final base = Offset(
+        center.dx + math.cos(angle) * innerR,
+        center.dy + math.sin(angle) * innerR,
+      );
+      final tip = Offset(
+        center.dx + math.cos(angle) * tipR,
+        center.dy + math.sin(angle) * tipR,
+      );
+
       canvas.drawLine(
-        Offset(
-          center.dx + math.cos(angle) * innerR,
-          center.dy + math.sin(angle) * innerR,
-        ),
-        Offset(
-          center.dx + math.cos(angle) * outerR,
-          center.dy + math.sin(angle) * outerR,
-        ),
+        base,
+        tip,
         Paint()
-          ..strokeWidth = math.max(2.0, size.width / count * 0.38)
+          ..strokeWidth = 1.6
           ..strokeCap = StrokeCap.round
-          ..color = color.withValues(alpha: 0.85),
+          ..color = color.withValues(alpha: 0.75),
+      );
+
+      canvas.drawCircle(
+        tip,
+        1.8,
+        Paint()..color = color.withValues(alpha: 0.9),
       );
     }
   }
