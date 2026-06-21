@@ -10,6 +10,8 @@ class VideoPipHelper {
 
   static const MethodChannel _channel = MethodChannel('zen.video/pip');
   static const EventChannel _eventChannel = EventChannel('zen.video/pip_events');
+  static const EventChannel _controlChannel =
+      EventChannel('zen.video/pip_controls');
 
   static bool get _android => !kIsWeb && Platform.isAndroid;
 
@@ -49,20 +51,24 @@ class VideoPipHelper {
     return _eventChannel.receiveBroadcastStream().map((event) => event == true);
   }
 
+  /// Fires when the user taps play/pause on the system PiP overlay.
+  static Stream<void> get pipPlayPauseToggles {
+    if (!_android) return const Stream<void>.empty();
+    return _controlChannel.receiveBroadcastStream().map((_) {});
+  }
+
   static Map<String, dynamic> _args(
-    double width,
-    double height, {
-    required int aspectNum,
-    required int aspectDen,
+    VideoPlayerValue value, {
     Rect? sourceRectPhysical,
   }) {
-    final w = width.round().clamp(1, 100000);
-    final h = height.round().clamp(1, 100000);
+    final (w, h) = displaySizeForPip(value);
+    final (aspectNum, aspectDen) = standardAspectRational(value);
     final map = <String, dynamic>{
-      'width': w,
-      'height': h,
+      'width': w.round().clamp(1, 100000),
+      'height': h.round().clamp(1, 100000),
       'aspectNum': aspectNum.clamp(1, 239),
       'aspectDen': aspectDen.clamp(1, 239),
+      'isPlaying': value.isPlaying,
     };
     final r = sourceRectPhysical;
     if (r != null) {
@@ -83,17 +89,10 @@ class VideoPipHelper {
     if (!_android) return false;
     final (w, h) = displaySizeForPip(value);
     if (w <= 0 || h <= 0) return false;
-    final (aspectNum, aspectDen) = standardAspectRational(value);
     try {
       final ok = await _channel.invokeMethod<bool>(
         'enter',
-        _args(
-          w,
-          h,
-          aspectNum: aspectNum,
-          aspectDen: aspectDen,
-          sourceRectPhysical: sourceRectPhysical,
-        ),
+        _args(value, sourceRectPhysical: sourceRectPhysical),
       );
       return ok ?? false;
     } on PlatformException {
@@ -108,11 +107,22 @@ class VideoPipHelper {
     if (!_android) return;
     final (w, h) = displaySizeForPip(value);
     if (w <= 0 || h <= 0) return;
-    final (aspectNum, aspectDen) = standardAspectRational(value);
+    try {
+      await _channel.invokeMethod<void>('prepare', _args(value));
+    } on PlatformException {
+      // ignore
+    } catch (_) {
+      // ignore
+    }
+  }
+
+  /// Updates the PiP overlay play/pause icon to match playback state.
+  static Future<void> updatePipPlaybackAction(bool isPlaying) async {
+    if (!_android) return;
     try {
       await _channel.invokeMethod<void>(
-        'prepare',
-        _args(w, h, aspectNum: aspectNum, aspectDen: aspectDen),
+        'updateActions',
+        <String, dynamic>{'isPlaying': isPlaying},
       );
     } on PlatformException {
       // ignore

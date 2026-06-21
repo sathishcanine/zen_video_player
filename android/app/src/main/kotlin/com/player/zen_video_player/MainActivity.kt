@@ -1,9 +1,13 @@
 package com.player.zen_video_player
 
 import android.app.PictureInPictureParams
+import android.app.PendingIntent
+import android.app.RemoteAction
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.res.Configuration
 import android.graphics.Rect
+import android.graphics.drawable.Icon
 import android.os.Build
 import android.util.Log
 import android.util.Rational
@@ -28,6 +32,10 @@ class MainActivity : AudioServiceActivity() {
     private var pipParams: PictureInPictureParams? = null
 
     private var pipModeSink: EventChannel.EventSink? = null
+    private var pipControlSink: EventChannel.EventSink? = null
+
+    private var lastPipRational: Rational? = null
+    private var pipIsPlaying: Boolean = true
 
     private fun rationalFromArgs(args: Map<*, *>?): Rational {
         val aspectNum = (args?.get("aspectNum") as? Number)?.toInt()
@@ -40,6 +48,10 @@ class MainActivity : AudioServiceActivity() {
         return aspectRatioRational(w, h)
     }
 
+    private fun isPlayingFromArgs(args: Map<*, *>?): Boolean {
+        return (args?.get("isPlaying") as? Boolean) ?: true
+    }
+
     private fun readSourceRect(args: Map<*, *>?): Rect? {
         if (args == null) return null
         val l = (args["srcLeft"] as? Number)?.toInt() ?: return null
@@ -50,6 +62,29 @@ class MainActivity : AudioServiceActivity() {
         return Rect(l, t, r, b)
     }
 
+    private fun createPlayPauseAction(isPlaying: Boolean): RemoteAction? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return null
+        val iconRes =
+            if (isPlaying) android.R.drawable.ic_media_pause
+            else android.R.drawable.ic_media_play
+        val title = if (isPlaying) "Pause" else "Play"
+        val intent = Intent(ACTION_PIP_TOGGLE_PLAY_PAUSE)
+            .setClass(this, PipActionReceiver::class.java)
+        val flags = PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+        val pendingIntent = PendingIntent.getBroadcast(
+            this,
+            REQUEST_PIP_TOGGLE,
+            intent,
+            flags,
+        )
+        return RemoteAction(
+            Icon.createWithResource(this, iconRes),
+            title,
+            title,
+            pendingIntent,
+        )
+    }
+
     /**
      * [autoEnterEnabled] null = leave unset (manual enter). Non-null sets auto-enter on API 31+.
      */
@@ -58,10 +93,16 @@ class MainActivity : AudioServiceActivity() {
         sourceRect: Rect?,
         autoEnterEnabled: Boolean?,
         seamlessResize: Boolean,
+        isPlaying: Boolean,
     ): PictureInPictureParams {
         val b = PictureInPictureParams.Builder().setAspectRatio(rational)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && sourceRect != null) {
             b.setSourceRectHint(sourceRect)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            createPlayPauseAction(isPlaying)?.let { action ->
+                b.setActions(listOf(action))
+            }
         }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             if (autoEnterEnabled != null) {
@@ -74,9 +115,55 @@ class MainActivity : AudioServiceActivity() {
         return b.build()
     }
 
+    private fun storeAndApplyPipParams(
+        rational: Rational,
+        isPlaying: Boolean,
+        autoEnterEnabled: Boolean?,
+        seamlessResize: Boolean,
+        sourceRect: Rect? = null,
+    ): PictureInPictureParams {
+        lastPipRational = rational
+        pipIsPlaying = isPlaying
+        val params = buildPipParams(
+            rational = rational,
+            sourceRect = sourceRect,
+            autoEnterEnabled = autoEnterEnabled,
+            seamlessResize = seamlessResize,
+            isPlaying = isPlaying,
+        )
+        pipParams = params
+        try {
+            setPictureInPictureParams(params)
+        } catch (_: Exception) {
+            // ignore
+        }
+        return params
+    }
+
+    private fun refreshPipPlayPauseAction(isPlaying: Boolean) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) return
+        val rational = lastPipRational ?: return
+        pipIsPlaying = isPlaying
+        val autoEnter =
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && pipPreparedForLeave) true else null
+        storeAndApplyPipParams(
+            rational = rational,
+            isPlaying = isPlaying,
+            autoEnterEnabled = autoEnter,
+            seamlessResize = false,
+        )
+    }
+
     override fun onResume() {
         super.onResume()
         VideoOrientationBridge.reapplyIfNeeded(this)
+    }
+
+    override fun onDestroy() {
+        if (onPipTogglePlayPause === pipToggleHandler) {
+            onPipTogglePlayPause = null
+        }
+        super.onDestroy()
     }
 
     override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
@@ -88,6 +175,8 @@ class MainActivity : AudioServiceActivity() {
         castLocalMediaBridge = CastLocalMediaBridge(this, messenger).also { it.register() }
         videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
 
+        onPipTogglePlayPause = pipToggleHandler
+
         EventChannel(messenger, "zen.video/pip_events").setStreamHandler(
             object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
@@ -97,6 +186,18 @@ class MainActivity : AudioServiceActivity() {
 
                 override fun onCancel(arguments: Any?) {
                     pipModeSink = null
+                }
+            },
+        )
+
+        EventChannel(messenger, "zen.video/pip_controls").setStreamHandler(
+            object : EventChannel.StreamHandler {
+                override fun onListen(arguments: Any?, events: EventChannel.EventSink?) {
+                    pipControlSink = events
+                }
+
+                override fun onCancel(arguments: Any?) {
+                    pipControlSink = null
                 }
             },
         )
@@ -115,7 +216,6 @@ class MainActivity : AudioServiceActivity() {
                         result.success(null)
                         return@setMethodCallHandler
                     }
-                    // Do not update params while in PiP — causes aspect-ratio oscillation.
                     if (isInPictureInPictureMode) {
                         result.success(null)
                         return@setMethodCallHandler
@@ -123,26 +223,33 @@ class MainActivity : AudioServiceActivity() {
                     @Suppress("UNCHECKED_CAST")
                     val args = call.arguments as? Map<*, *>
                     val rational = rationalFromArgs(args)
+                    val isPlaying = isPlayingFromArgs(args)
                     val autoEnter =
                         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) true else null
-                    val params = buildPipParams(
+                    storeAndApplyPipParams(
                         rational = rational,
-                        sourceRect = null,
+                        isPlaying = isPlaying,
                         autoEnterEnabled = autoEnter,
                         seamlessResize = false,
                     )
-                    pipParams = params
                     pipPreparedForLeave = true
-                    try {
-                        setPictureInPictureParams(params)
-                    } catch (_: Exception) {
-                        // ignore
+                    result.success(null)
+                }
+                "updateActions" -> {
+                    if (Build.VERSION.SDK_INT < Build.VERSION_CODES.O) {
+                        result.success(null)
+                        return@setMethodCallHandler
                     }
+                    @Suppress("UNCHECKED_CAST")
+                    val args = call.arguments as? Map<*, *>
+                    val isPlaying = isPlayingFromArgs(args)
+                    refreshPipPlayPauseAction(isPlaying)
                     result.success(null)
                 }
                 "clear" -> {
                     pipPreparedForLeave = false
                     pipParams = null
+                    lastPipRational = null
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                         try {
                             val off = PictureInPictureParams.Builder()
@@ -177,10 +284,13 @@ class MainActivity : AudioServiceActivity() {
         }
     }
 
+    private val pipToggleHandler: () -> Unit = {
+        runOnUiThread {
+            pipControlSink?.success("toggle")
+        }
+    }
+
     override fun onUserLeaveHint() {
-        // Flutter's AppLifecycleState.paused is too late: enterPictureInPictureMode
-        // must run while still resumed. API 31+ uses setAutoEnterEnabled on prepare;
-        // API 26–30 enter here when the user presses Home / switches away.
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S &&
             pipPreparedForLeave &&
             Build.VERSION.SDK_INT >= Build.VERSION_CODES.O &&
@@ -205,30 +315,32 @@ class MainActivity : AudioServiceActivity() {
     ) {
         super.onPictureInPictureModeChanged(isInPictureInPictureMode, newConfig)
         pipModeSink?.success(isInPictureInPictureMode)
-        if (!isInPictureInPictureMode) {
+        if (isInPictureInPictureMode) {
+            refreshPipPlayPauseAction(pipIsPlaying)
+        } else {
             pipPreparedForLeave = false
         }
     }
 
-    /** Tries PiP enter with a stable decoder aspect ratio (no multi-ratio loop). */
     private fun tryEnterPip(args: Map<*, *>?): Boolean {
         if (isInPictureInPictureMode) return true
         val rational = rationalFromArgs(args)
+        val isPlaying = isPlayingFromArgs(args)
         val landscape = rational.numerator >= rational.denominator
 
-        val attempts = mutableListOf(
-            buildPipParams(rational, null, null, seamlessResize = false),
-            buildPipParams(
-                if (landscape) Rational(16, 9) else Rational(9, 16),
-                null,
-                null,
-                seamlessResize = false,
-            ),
+        val rationals = listOf(
+            rational,
+            if (landscape) Rational(16, 9) else Rational(9, 16),
         )
 
-        for (params in attempts) {
+        for (r in rationals) {
+            val params = storeAndApplyPipParams(
+                rational = r,
+                isPlaying = isPlaying,
+                autoEnterEnabled = null,
+                seamlessResize = false,
+            )
             if (enterPipWithParams(params)) {
-                pipParams = params
                 pipPreparedForLeave = true
                 return true
             }
@@ -263,7 +375,6 @@ class MainActivity : AudioServiceActivity() {
         return x.coerceAtLeast(1)
     }
 
-    /** Reduces to integers suitable for [Rational] (must stay within PiP aspect bounds). */
     private fun aspectRatioRational(width: Int, height: Int): Rational {
         var w = width.coerceAtLeast(1)
         var h = height.coerceAtLeast(1)
@@ -278,7 +389,6 @@ class MainActivity : AudioServiceActivity() {
         var g = gcd(w, h)
         w /= g
         h /= g
-        // Scale proportionally — never clamp w and h independently (that made 853×480 → 239×239 square).
         if (w > 239 || h > 239) {
             val scale = maxOf(w / 239.0, h / 239.0)
             w = maxOf(1, (w / scale).roundToInt())
@@ -292,6 +402,12 @@ class MainActivity : AudioServiceActivity() {
 
     companion object {
         private const val TAG = "ZenPip"
+        const val ACTION_PIP_TOGGLE_PLAY_PAUSE =
+            "com.player.zen_video_player.PIP_TOGGLE_PLAY_PAUSE"
+        private const val REQUEST_PIP_TOGGLE = 42_001
+
+        /** Set by [MainActivity]; invoked from [PipActionReceiver]. */
+        var onPipTogglePlayPause: (() -> Unit)? = null
     }
 
 }

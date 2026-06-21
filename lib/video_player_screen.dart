@@ -89,7 +89,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   bool _inPipMode = false;
   StreamSubscription<bool>? _pipModeSub;
+  StreamSubscription<void>? _pipControlSub;
   bool? _lastPipSyncPlaying;
+  bool? _lastPipActionPlaying;
   Size? _lastPipSyncSize;
 
   final GlobalKey _pipVideoBoundsKey = GlobalKey(debugLabel: 'pipVideoBounds');
@@ -153,11 +155,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           _inPipMode = inPip;
           if (!inPip) {
             _pipPreparedSignature = null;
+            _lastPipActionPlaying = null;
           }
         });
-        if (!inPip) {
+        if (inPip) {
+          final playing = _videoController?.value.isPlaying ?? true;
+          _lastPipActionPlaying = playing;
+          unawaited(VideoPipHelper.updatePipPlaybackAction(playing));
+        } else {
           _syncNativePipEligibility();
         }
+      });
+      _pipControlSub = VideoPipHelper.pipPlayPauseToggles.listen((_) {
+        unawaited(_onPipPlayPauseToggle());
       });
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -334,10 +344,28 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
     final (aspectNum, aspectDen) = VideoPipHelper.standardAspectRational(c.value);
     final fs = (_chewieController?.isFullScreen == true) ? 'fs' : 'em';
-    final signature = '$aspectNum:$aspectDen@$fs';
+    final playing = c.value.isPlaying;
+    final signature = '$aspectNum:$aspectDen@$fs@$playing';
     if (_pipPreparedSignature == signature) return;
     _pipPreparedSignature = signature;
     unawaited(VideoPipHelper.prepareAutoEnterWhilePlaying(c.value));
+  }
+
+  Future<void> _onPipPlayPauseToggle() async {
+    final c = _videoController;
+    if (c == null || !c.value.isInitialized || !mounted) return;
+    if (c.value.isPlaying) {
+      await c.pause();
+    } else {
+      await c.play();
+    }
+  }
+
+  void _syncPipPlaybackActionIcon(bool playing) {
+    if (!_inPipMode) return;
+    if (playing == _lastPipActionPlaying) return;
+    _lastPipActionPlaying = playing;
+    unawaited(VideoPipHelper.updatePipPlaybackAction(playing));
   }
 
   void _onChewieChanged() {
@@ -429,6 +457,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     if (mounted) setState(() => _inPipMode = true);
 
+    final playing = c.value.isPlaying;
+    _lastPipActionPlaying = playing;
     final ok = await VideoPipHelper.enterPictureInPicture(c.value);
 
     if (!mounted) return;
@@ -721,6 +751,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (playing == _lastPipSyncPlaying && size == _lastPipSyncSize) return;
     _lastPipSyncPlaying = playing;
     _lastPipSyncSize = size;
+    _syncPipPlaybackActionIcon(playing);
     _syncNativePipEligibility();
   }
 
@@ -801,6 +832,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
     _pipPreparedSignature = null;
     _pipModeSub?.cancel();
+    _pipControlSub?.cancel();
     unawaited(VideoPipHelper.clearPipEligibility());
     unawaited(VideoOrientationChannel.exitPlayerMode());
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);
