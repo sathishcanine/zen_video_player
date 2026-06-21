@@ -6,13 +6,14 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:screen_brightness/screen_brightness.dart';
 import 'package:video_player/video_player.dart';
+import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:zen_video_player/services/cast_service.dart';
 import 'package:zen_video_player/video/video_color_filter.dart';
 import 'package:zen_video_player/ads/video_pause_native_ad.dart';
 import 'package:zen_video_player/services/video_player_color_tutorial_service.dart';
-import 'package:zen_video_player/video_player_gestures.dart';
 import 'package:zen_video_player/widgets/video_color_tutorial_coach.dart';
 import 'package:zen_video_player/widgets/zen_color_filter_menu.dart';
+import 'package:zen_video_player/widgets/sleep_timer_sheet.dart';
 
 /// UPlayer-style video chrome: top bar, tool row, seek bar, transport controls.
 class ZenVideoPlayerChrome extends StatefulWidget {
@@ -32,6 +33,12 @@ class ZenVideoPlayerChrome extends StatefulWidget {
     required this.onColorFilterChanged,
     this.colorTutorialTrigger = 0,
     this.isLocalPlayback = true,
+    this.resumedFrom,
+    this.onResumePromptDismiss,
+    this.onStartOver,
+    this.onSkipPrevious,
+    this.onSkipNext,
+    this.canSkipToPrevious = false,
   });
 
   final VideoPlayerController videoController;
@@ -53,6 +60,14 @@ class ZenVideoPlayerChrome extends StatefulWidget {
   /// Drives pause native ad unit (local vs network) in [VideoPauseNativeAdOverlay].
   final bool isLocalPlayback;
 
+  /// When set, shows a brief resume prompt above the transport bar.
+  final Duration? resumedFrom;
+  final VoidCallback? onResumePromptDismiss;
+  final VoidCallback? onStartOver;
+  final VoidCallback? onSkipPrevious;
+  final VoidCallback? onSkipNext;
+  final bool canSkipToPrevious;
+
   static const double minPlaybackSpeed = 0.25;
   static const double maxPlaybackSpeed = 2.0;
 
@@ -64,6 +79,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   static const Duration _seekStep = Duration(seconds: 10);
   static const Duration _hideDelay = Duration(seconds: 4);
   static const Duration _speedPanelAutoCloseDelay = Duration(seconds: 3);
+  static const Duration _resumeBannerDuration = Duration(seconds: 3);
   static const double _nightBrightness = 0.06;
   static const double _speedPanelMaxWidth = 300;
 
@@ -80,11 +96,15 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   Timer? _hideTimer;
   Timer? _speedPanelTimer;
   Timer? _modeBannerTimer;
+  Timer? _resumeBannerTimer;
   Timer? _doubleTapHintTimer;
   String? _modeBannerText;
+  bool _resumeBannerVisible = false;
   bool? _doubleTapHintForward;
   bool _userPausedForAd = false;
   bool _colorTutorialActive = false;
+  bool _castConnected = false;
+  StreamSubscription<bool>? _castConnectionSub;
 
   VideoPlayerController get _video => widget.videoController;
   ChewieController get _chewie => widget.chewieController;
@@ -96,7 +116,15 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   void initState() {
     super.initState();
     _video.addListener(_onVideoTick);
+    _castConnected = CastService.instance.isConnected;
+    _castConnectionSub = CastService.instance.isConnectedStream.listen((connected) {
+      if (!mounted || _castConnected == connected) return;
+      setState(() => _castConnected = connected);
+    });
     _scheduleHide();
+    if (widget.resumedFrom != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _showResumeBanner());
+    }
   }
 
   @override
@@ -109,6 +137,13 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     if (widget.colorTutorialTrigger != oldWidget.colorTutorialTrigger) {
       unawaited(_beginColorTutorialIfNeeded());
     }
+    if (widget.resumedFrom != null &&
+        widget.resumedFrom != oldWidget.resumedFrom) {
+      _showResumeBanner();
+    }
+    if (widget.resumedFrom == null && oldWidget.resumedFrom != null) {
+      _hideResumeBanner(notifyParent: false);
+    }
   }
 
   @override
@@ -116,7 +151,9 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     _hideTimer?.cancel();
     _speedPanelTimer?.cancel();
     _modeBannerTimer?.cancel();
+    _resumeBannerTimer?.cancel();
     _doubleTapHintTimer?.cancel();
+    _castConnectionSub?.cancel();
     _video.removeListener(_onVideoTick);
     if (_nightMode && _gestureExtras) {
       unawaited(_restoreNormalBrightness());
@@ -159,6 +196,18 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
       setState(() => _visible = true);
     }
     if (!_locked) _scheduleHide();
+  }
+
+  void _hideControls() {
+    if (_locked || _scrubbing || _scrubbingSpeed) return;
+    _hideTimer?.cancel();
+    if (_visible) {
+      setState(() {
+        _visible = false;
+        _speedPanelOpen = false;
+        _colorMenuOpen = false;
+      });
+    }
   }
 
   void _scheduleHide() {
@@ -238,60 +287,20 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     });
   }
 
+  void _toggleControls() {
+    if (_locked || _speedPanelOpen || _colorMenuOpen) return;
+    if (_visible) {
+      _hideControls();
+    } else {
+      _wakeControls();
+    }
+  }
+
   void _onDoubleTapSeekDown(TapDownDetails details) {
+    if (_chewie.isLive) return;
     final w = MediaQuery.sizeOf(context).width;
     final forward = details.globalPosition.dx >= w / 2;
     unawaited(_doubleTapSeek(forward: forward));
-  }
-
-  double _edgeGestureSideWidth(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    return videoPlayerSideGestureWidth(size.width, size.height);
-  }
-
-  double _doubleTapZoneBottomInset(BuildContext context) {
-    final h = MediaQuery.sizeOf(context).height;
-    return h * 0.36 + MediaQuery.paddingOf(context).bottom;
-  }
-
-  /// Full-screen tap-to-wake + left/right double-tap seek when controls are hidden.
-  Widget? _doubleTapSeekWhenControlsHidden() {
-    if (_visible || _speedPanelOpen || _colorMenuOpen) return null;
-    return Positioned.fill(
-      child: GestureDetector(
-        behavior: HitTestBehavior.translucent,
-        onTap: _wakeControls,
-        onDoubleTapDown: _onDoubleTapSeekDown,
-      ),
-    );
-  }
-
-  /// Left/right double-tap seek above the control chrome when controls are visible.
-  Widget? _doubleTapSeekWhenControlsVisible() {
-    if (!_visible || _speedPanelOpen || _colorMenuOpen) return null;
-    final side = _edgeGestureSideWidth(context);
-    return Positioned(
-      left: side,
-      right: side,
-      top: 0,
-      bottom: _doubleTapZoneBottomInset(context),
-      child: Row(
-        children: [
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onDoubleTap: () => unawaited(_doubleTapSeek(forward: false)),
-            ),
-          ),
-          Expanded(
-            child: GestureDetector(
-              behavior: HitTestBehavior.translucent,
-              onDoubleTap: () => unawaited(_doubleTapSeek(forward: true)),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 
   Widget _doubleTapSeekHint() {
@@ -467,6 +476,73 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     });
   }
 
+  void _showResumeBanner() {
+    _resumeBannerTimer?.cancel();
+    setState(() => _resumeBannerVisible = true);
+    _resumeBannerTimer = Timer(_resumeBannerDuration, () {
+      _hideResumeBanner();
+    });
+  }
+
+  void _hideResumeBanner({bool notifyParent = true, bool startOver = false}) {
+    _resumeBannerTimer?.cancel();
+    if (!_resumeBannerVisible) return;
+    setState(() => _resumeBannerVisible = false);
+    if (!notifyParent) return;
+    if (startOver) {
+      widget.onStartOver?.call();
+    } else {
+      widget.onResumePromptDismiss?.call();
+    }
+  }
+
+  Widget _resumeBannerOverlay() {
+    if (!_resumeBannerVisible) return const SizedBox.shrink();
+    final l10n = AppLocalizations.of(context)!;
+    final bottomInset = MediaQuery.paddingOf(context).bottom;
+    return Positioned(
+      left: 0,
+      right: 0,
+      bottom: 76 + bottomInset,
+      child: Material(
+        color: Colors.black,
+        child: Padding(
+          padding: const EdgeInsets.only(left: 2, right: 8),
+          child: Row(
+            children: [
+              IconButton(
+                visualDensity: VisualDensity.compact,
+                icon: const Icon(Icons.close, color: Colors.white, size: 20),
+                tooltip: 'Dismiss',
+                onPressed: () => _hideResumeBanner(),
+              ),
+              Expanded(
+                child: Text(
+                  l10n.resumePlaybackPrompt,
+                  style: const TextStyle(color: Colors.white, fontSize: 14),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+              TextButton(
+                onPressed: () => _hideResumeBanner(startOver: true),
+                child: Text(
+                  l10n.resumeStartOver,
+                  style: const TextStyle(
+                    color: Color(0xFF64B5F6),
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    letterSpacing: 0.5,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _modeBannerOverlay() {
     final text = _modeBannerText;
     if (text == null) return const SizedBox.shrink();
@@ -600,9 +676,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
           ),
           IconButton(
             icon: Icon(
-              CastService.instance.isConnected
-                  ? Icons.cast_connected
-                  : Icons.cast,
+              _castConnected ? Icons.cast_connected : Icons.cast,
               color: Colors.white,
             ),
             tooltip: 'Cast',
@@ -628,6 +702,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   }
 
   Widget _toolRow() {
+    final l10n = AppLocalizations.of(context)!;
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 4),
       child: Row(
@@ -656,6 +731,11 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
             icon: _nightMode ? Icons.dark_mode : Icons.brightness_6,
             tooltip: _nightMode ? 'Normal mode' : 'Night mode',
             onTap: () => unawaited(_toggleNightMode()),
+          ),
+          _toolIcon(
+            icon: Icons.bedtime_outlined,
+            tooltip: l10n.sleepTimerTitle,
+            onTap: () => unawaited(showSleepTimerSheet(context)),
           ),
         ],
       ),
@@ -903,7 +983,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
   Widget _transportIconButton({
     required Widget icon,
     required String tooltip,
-    required VoidCallback onPressed,
+    VoidCallback? onPressed,
     double iconSize = 36,
   }) {
     return IconButton(
@@ -917,7 +997,23 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     );
   }
 
+  Widget _centerPlayPause({required bool playing}) {
+    return _transportIconButton(
+      icon: Icon(
+        playing ? Icons.pause : Icons.play_arrow,
+        color: Colors.white,
+      ),
+      iconSize: 44,
+      tooltip: playing ? 'Pause' : 'Play',
+      onPressed: () => unawaited(_togglePlayPause()),
+    );
+  }
+
   Widget _transportCluster({required bool playing}) {
+    final canPrevious = widget.onSkipPrevious != null &&
+        (widget.canSkipToPrevious || _video.value.position.inSeconds > 3);
+    final canNext = widget.onSkipNext != null;
+
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
@@ -928,9 +1024,12 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
         ),
         const SizedBox(width: _transportClusterGap),
         _transportIconButton(
-          icon: const Icon(Icons.skip_previous, color: Colors.white),
+          icon: Icon(
+            Icons.skip_previous,
+            color: canPrevious ? Colors.white : Colors.white38,
+          ),
           tooltip: 'Previous',
-          onPressed: () => unawaited(_seekRelative(-_seekStep)),
+          onPressed: canPrevious ? widget.onSkipPrevious : null,
         ),
         _transportIconButton(
           icon: Icon(
@@ -942,9 +1041,12 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
           onPressed: () => unawaited(_togglePlayPause()),
         ),
         _transportIconButton(
-          icon: const Icon(Icons.skip_next, color: Colors.white),
+          icon: Icon(
+            Icons.skip_next,
+            color: canNext ? Colors.white : Colors.white38,
+          ),
           tooltip: 'Next',
-          onPressed: () => unawaited(_seekRelative(_seekStep)),
+          onPressed: canNext ? widget.onSkipNext : null,
         ),
         const SizedBox(width: _transportClusterGap),
         _transportIconButton(
@@ -1038,7 +1140,13 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     return Stack(
       fit: StackFit.expand,
       children: [
-        if (_doubleTapSeekWhenControlsHidden() case final hidden?) hidden,
+        Positioned.fill(
+          child: GestureDetector(
+            behavior: HitTestBehavior.translucent,
+            onTap: _toggleControls,
+            onDoubleTapDown: _onDoubleTapSeekDown,
+          ),
+        ),
         IgnorePointer(
           ignoring: !_visible,
           child: AnimatedOpacity(
@@ -1070,9 +1178,7 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
                   children: [
                     _topBar(),
                     _toolRow(),
-                    Expanded(
-                      child: IgnorePointer(child: SizedBox.expand()),
-                    ),
+                    const Expanded(child: IgnorePointer(child: SizedBox.expand())),
                     _progressBar(),
                     _bottomBar(),
                   ],
@@ -1081,11 +1187,23 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
             ),
           ),
         ),
-        if (_doubleTapSeekWhenControlsVisible() case final visible?) visible,
+        IgnorePointer(
+          ignoring: !_visible,
+          child: AnimatedOpacity(
+            opacity: _visible ? 1 : 0,
+            duration: const Duration(milliseconds: 200),
+            child: Center(
+              child: _centerPlayPause(
+                playing: _video.value.isPlaying,
+              ),
+            ),
+          ),
+        ),
         if (_speedPanelOpen) _speedPanelOverlay(context),
         if (_colorMenuOpen) _colorMenuOverlay(),
         _doubleTapSeekHint(),
         _modeBannerOverlay(),
+        _resumeBannerOverlay(),
         VideoPauseNativeAdOverlay(
           controller: _video,
           isLocalPlayback: widget.isLocalPlayback,

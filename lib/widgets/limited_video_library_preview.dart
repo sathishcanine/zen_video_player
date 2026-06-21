@@ -4,6 +4,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 import '../models/media_folder.dart';
 import '../theme/zen_palette.dart';
 import '../theme/zen_theme.dart';
+import '../widgets/media_folder_list_icon.dart';
 
 /// Typical Android video buckets shown when the full library is locked.
 const _kTeaserFolderNames = [
@@ -276,13 +277,7 @@ class _LockedFolderTile extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           child: Row(
             children: [
-              Icon(
-                Icons.folder_outlined,
-                color: isTeaser
-                    ? zen.textSecondary.withValues(alpha: 0.7)
-                    : zen.textPrimary,
-                size: 28,
-              ),
+              MediaFolderListIcon(size: 28, muted: isTeaser),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(

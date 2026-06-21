@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import 'package:flutter/material.dart';
+import 'package:zen_video_player/utils/media_display_name.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:zen_video_player/analytics/telemetry.dart';
@@ -16,6 +17,7 @@ import 'app_navigator.dart';
 import 'home_screen.dart';
 import 'services/app_cache_maintenance.dart';
 import 'services/app_settings_service.dart';
+import 'services/audio_player_service.dart';
 import 'services/feature_announcement_service.dart';
 import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
@@ -47,6 +49,10 @@ Future<void> main() async {
   final coldStartUri = await AppLinks().getInitialAppLink();
   final coldStartOpenVideo =
       _isOpenWithVideoUri(coldStartUri) ? coldStartUri : null;
+
+  if (!kIsWeb) {
+    await AudioPlayerService.init();
+  }
 
   runZonedGuarded(
     () {
@@ -109,6 +115,10 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
         final nav = rootNavigatorKey.currentState;
         if (nav == null) return;
         final isContent = scheme == 'content';
+        final displayTitle = MediaDisplayName.forVideoSource(
+          source: uri.toString(),
+          isLocal: !isContent,
+        );
         nav.push(
           MaterialPageRoute<void>(
             settings: const RouteSettings(name: '/open-with'),
@@ -117,6 +127,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
               isLocal: !isContent,
               useContentUri: isContent,
               allowNetworkDownload: false,
+              displayTitle: displayTitle,
             ),
           ),
         );
@@ -187,6 +198,10 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     final open = widget.coldStartOpenVideo;
     if (open != null) {
       final isContent = open.scheme.toLowerCase() == 'content';
+      final displayTitle = MediaDisplayName.forVideoSource(
+        source: open.toString(),
+        isLocal: !isContent,
+      );
       return <Route<dynamic>>[
         MaterialPageRoute<void>(
           settings: const RouteSettings(name: '/'),
@@ -199,6 +214,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
             isLocal: !isContent,
             useContentUri: isContent,
             allowNetworkDownload: false,
+            displayTitle: displayTitle,
           ),
         ),
       ];

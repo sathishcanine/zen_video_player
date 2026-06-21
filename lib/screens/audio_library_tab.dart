@@ -6,6 +6,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 import '../models/audio_track.dart';
 import '../models/media_folder.dart';
 import '../services/audio_artwork_cache.dart';
+import '../services/audio_library_prefs.dart';
 import '../services/audio_playback_permissions.dart';
 import '../services/audio_player_service.dart';
 import '../services/local_audio_service.dart';
@@ -18,6 +19,7 @@ import '../widgets/language_icon_button.dart';
 import '../widgets/search_filter_bar.dart';
 import '../widgets/language_picker_sheet.dart';
 import '../widgets/limited_media_access_prompt.dart';
+import '../widgets/media_folder_list_icon.dart';
 import '../widgets/zen_brand_title.dart';
 import '../navigation/library_navigation.dart';
 import '../services/audio_media_actions.dart';
@@ -37,7 +39,7 @@ class AudioLibraryTab extends StatefulWidget {
 
 class _AudioLibraryTabState extends State<AudioLibraryTab> {
   _AudioSection _section = _AudioSection.album;
-  late final PageController _pageController;
+  PageController? _pageController;
   bool _loading = true;
   bool _hasAccess = false;
   bool _limitedAccess = false;
@@ -51,38 +53,49 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
   @override
   void initState() {
     super.initState();
-    _pageController = PageController();
     LocaleService.instance.addListener(_onLocaleChanged);
+    unawaited(_initSection());
     _refresh();
+  }
+
+  Future<void> _initSection() async {
+    final index = await AudioLibraryPrefs.loadSectionIndex();
+    if (!mounted) return;
+    final section = _AudioSection.values[index.clamp(0, _AudioSection.values.length - 1)];
+    setState(() {
+      _section = section;
+      _pageController = PageController(initialPage: section.index);
+    });
+    _syncPageToSection();
   }
 
   @override
   void dispose() {
-    _pageController.dispose();
+    _pageController?.dispose();
     LocaleService.instance.removeListener(_onLocaleChanged);
     super.dispose();
   }
 
   void _selectSection(_AudioSection section) {
-    if (_section == section) return;
     setState(() => _section = section);
-    _pageController.animateToPage(
-      section.index,
-      duration: const Duration(milliseconds: 280),
-      curve: Curves.easeOutCubic,
-    );
+    unawaited(AudioLibraryPrefs.saveSectionIndex(section.index));
+    _pageController?.jumpToPage(section.index);
   }
 
   void _onPageSwiped(int index) {
     final section = _AudioSection.values[index];
     if (_section == section) return;
     setState(() => _section = section);
+    unawaited(AudioLibraryPrefs.saveSectionIndex(section.index));
   }
 
   void _onLocaleChanged() => _refresh();
 
   Future<void> _refresh() async {
-    setState(() => _loading = true);
+    final showBlockingLoader = _pageController == null;
+    if (showBlockingLoader) {
+      setState(() => _loading = true);
+    }
     AudioArtworkCache.instance.clear();
     _hasAccess = await MediaPermissionService.hasAudioAccess();
     _limitedAccess = await MediaPermissionService.isAudioAccessLimited();
@@ -115,12 +128,22 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
       _albums = LocalAudioService.groupAlbums(tracks);
       _artists = artists;
       _folders = folders;
-      _loading = false;
+      if (showBlockingLoader) _loading = false;
     });
+    _syncPageToSection();
 
     final albums = await LocalAudioService.groupAlbumsEnriched(tracks);
     if (!mounted) return;
     setState(() => _albums = albums);
+  }
+
+  void _syncPageToSection() {
+    final controller = _pageController;
+    if (controller == null || !controller.hasClients) return;
+    final page = controller.page?.round() ?? controller.initialPage;
+    if (page != _section.index) {
+      controller.jumpToPage(_section.index);
+    }
   }
 
   List<AudioAlbum> get _filteredAlbums {
@@ -266,6 +289,14 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
         onOpenSettings: () => _requestFullAudioAccess(context, l10n),
       );
     }
+
+    if (_pageController == null) {
+      return Center(child: Text(l10n.loadingLibrary));
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _syncPageToSection();
+    });
 
     return PageView(
       controller: _pageController,
@@ -440,7 +471,7 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
         itemBuilder: (_, i) {
           final folder = _folders[i];
           return ListTile(
-            leading: Icon(Icons.folder_outlined, color: context.zen.textSecondary),
+            leading: const MediaFolderListIcon(),
             title: Text(folder.displayName),
             subtitle: Text(
               l10n.songCount(folder.videoCount),

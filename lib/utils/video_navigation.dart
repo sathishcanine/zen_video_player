@@ -27,6 +27,8 @@ abstract final class VideoNavigation {
     required bool isLocal,
     bool useContentUri = false,
     bool allowNetworkDownload = true,
+    String? displayTitle,
+    String? resumeKey,
   }) {
     final nav = _rootNav(context);
     if (nav == null) return Future.value();
@@ -38,6 +40,8 @@ abstract final class VideoNavigation {
           isLocal: isLocal,
           useContentUri: useContentUri,
           allowNetworkDownload: allowNetworkDownload,
+          displayTitle: displayTitle,
+          resumeKey: resumeKey,
         ),
       ),
     );

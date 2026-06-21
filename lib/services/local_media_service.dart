@@ -1,18 +1,17 @@
 import 'package:flutter/foundation.dart';
 import 'package:photo_manager/photo_manager.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../analytics/telemetry.dart';
 import '../models/media_folder.dart';
 import 'hidden_folders_service.dart';
 import 'media_asset_filter.dart';
 import 'media_permission_service.dart';
+import 'new_media_tracker.dart';
 
 /// Loads on-device video albums via [photo_manager].
 class LocalMediaService {
   LocalMediaService._();
 
-  static const _seenAlbumsKey = 'seen_album_ids_v1';
   static const _recentDays = 14;
 
   static Future<List<MediaFolder>> loadVideoFolders() async {
@@ -27,9 +26,9 @@ class LocalMediaService {
       filterOption: kMediaAssetFilter,
     );
 
-    final seen = await _loadSeenAlbumIds();
     final hidden = await HiddenFoldersService.loadHiddenIds();
     final folders = <MediaFolder>[];
+    final folderCounts = <String, int>{};
 
     try {
       final recent = await _buildRecentlyAdded(paths);
@@ -45,13 +44,20 @@ class LocalMediaService {
       try {
         final count = await path.assetCountAsync;
         if (count == 0) continue;
+        folderCounts[path.id] = count;
+
+        final isNew = await NewMediaTracker.isFolderNew(
+          folderId: path.id,
+          videoCount: count,
+        );
+
         folders.add(
           MediaFolder(
             id: path.id,
             displayName: path.name,
             videoCount: count,
             assetPath: path,
-            isNew: !seen.contains(path.id),
+            isNew: isNew,
           ),
         );
       } catch (e, st) {
@@ -69,7 +75,9 @@ class LocalMediaService {
       (a, b) => b.videoCount.compareTo(a.videoCount),
     );
 
-    await _markAlbumsSeen(paths.map((p) => p.id).toList());
+    // First scan after install: snapshot counts — nothing is "new" yet.
+    await NewMediaTracker.establishFolderBaseline(folderCounts);
+
     return folders;
   }
 
@@ -80,8 +88,6 @@ class LocalMediaService {
     final recentAssets = <AssetEntity>[];
 
     for (final path in paths) {
-      // Skip the synthetic "All" album — OEM MediaStore often breaks paging it
-      // (invalid `ORDER BY LIMIT` SQL). Per-folder scans are enough for "Recent".
       if (path.isAll) continue;
       try {
         final page = await path.getAssetListPaged(page: 0, size: 80);
@@ -106,7 +112,7 @@ class LocalMediaService {
 
     return MediaFolder(
       id: '__recent__',
-      displayName: '', // filled by UI with localized label
+      displayName: '',
       videoCount: recentAssets.length,
       isRecentlyAdded: true,
       assetPath: paths.firstWhere(
@@ -129,7 +135,6 @@ class LocalMediaService {
     return path.getAssetListPaged(page: page, size: size);
   }
 
-  /// Loads every video in a folder (paged) for share/delete actions.
   static Future<List<AssetEntity>> loadAllVideosInFolder(
     MediaFolder folder, {
     int pageSize = 200,
@@ -172,16 +177,5 @@ class LocalMediaService {
 
     out.sort((a, b) => b.createDateTime.compareTo(a.createDateTime));
     return out;
-  }
-
-  static Future<Set<String>> _loadSeenAlbumIds() async {
-    final prefs = await SharedPreferences.getInstance();
-    return (prefs.getStringList(_seenAlbumsKey) ?? []).toSet();
-  }
-
-  static Future<void> _markAlbumsSeen(List<String> ids) async {
-    final prefs = await SharedPreferences.getInstance();
-    final merged = {...await _loadSeenAlbumIds(), ...ids}.toList();
-    await prefs.setStringList(_seenAlbumsKey, merged);
   }
 }

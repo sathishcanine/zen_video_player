@@ -157,9 +157,23 @@
   "equalizerFeatureAnnounceHeadline": "Equalizer for Audio player",
   "equalizerFeatureAnnounceBody": "Fine-tune your music with presets, bass boost, 3D surround, and loudness — open any song and tap the equalizer icon.",
   "equalizerFeatureAnnounceCta": "Got it",
+  "whatsNewTitle": "What's New",
+  "whatsNewHeadline": "Your player just got better",
+  "whatsNewFeatureVisualizerTitle": "Music Visualizer",
+  "whatsNewFeatureVisualizerBody": "Watch your music come alive with Bars, Wave, and Circle styles wrapped around your album art.",
+  "whatsNewFeatureContinueTitle": "Continue Watching",
+  "whatsNewFeatureContinueBody": "Pick up right where you left off — your latest videos are ready on the home screen.",
+  "whatsNewFeatureSleepTimerTitle": "Sleep Timer",
+  "whatsNewFeatureSleepTimerBody": "Drift off peacefully. Set a timer or stop when the current song or video ends.",
+  "whatsNewCta": "Got it",
   "equalizerTitle": "Equalizer",
   "eqZenPlayer": "Zen Player",
   "eqAudioSpectrum": "Audio Spectrum",
+  "visualizerModeBars": "Bars",
+  "visualizerModeWave": "Wave",
+  "visualizerModeCircle": "Circle",
+  "visualizerStyle": "Visualizer style",
+  "visualizer": "Visualizer",
   "eqEnabled": "Enable equalizer",
   "eqReset": "Reset",
   "eqApply": "Apply",
@@ -368,5 +382,40 @@
   "playStoreRatingTitle": "Help us to Grow",
   "playStoreRatingBody": "A quick rating on Google Play helps us grow and keep Zen free for everyone.",
   "playStoreRatingRateNow": "Rate now",
-  "playStoreRatingMaybe": "Maybe"
+  "playStoreRatingMaybe": "Maybe",
+  "sleepTimerTitle": "Sleep timer",
+  "sleepTimerMinutes": "{minutes} minutes",
+  "@sleepTimerMinutes": {
+    "placeholders": {
+      "minutes": {"type": "int"}
+    }
+  },
+  "sleepTimerCustom": "Custom time",
+  "sleepTimerCustomHint": "Minutes",
+  "sleepTimerSet": "Set",
+  "sleepTimerCancel": "Cancel sleep timer",
+  "sleepTimerEndOfMedia": "When current ends",
+  "sleepTimerEndOfMediaSubtitle": "Stop playback when this video or song finishes",
+  "sleepTimerEndOfMediaActive": "Stops when current media ends",
+  "sleepTimerRemaining": "Time left: {time}",
+  "@sleepTimerRemaining": {
+    "placeholders": {
+      "time": {"type": "String"}
+    }
+  },
+  "settingsPlayback": "Playback",
+  "settingsResumeAudio": "Resume audio",
+  "settingsResumeAudioSubtitle": "Continue songs where you left off",
+  "settingsResumeVideo": "Resume video",
+  "settingsResumeVideoSubtitle": "Continue videos where you left off",
+  "settingsKeepScreenOnVideo": "Keep screen on",
+  "settingsKeepScreenOnVideoSubtitle": "Prevent screen sleep during video playback",
+  "folderDownloads": "Downloads",
+  "badgeToday": "TODAY",
+  "backgroundPlayingAudio": "Playing in background",
+  "backgroundPlayingVideo": "Video playing",
+  "tapToReturnPlayer": "Tap to return to player",
+  "continueWatching": "Continue watching",
+  "resumePlaybackPrompt": "Continue from where you stopped.",
+  "resumeStartOver": "START OVER"
 }

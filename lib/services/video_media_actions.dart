@@ -14,6 +14,7 @@ import 'hidden_folders_service.dart';
 import 'local_media_service.dart';
 import 'media_share_service.dart';
 import 'playlist_service.dart';
+import 'video_playback_queue.dart';
 
 /// Handles folder / video / playlist option-menu actions.
 class VideoMediaActions {
@@ -74,7 +75,11 @@ class VideoMediaActions {
           );
           return;
         }
-        await _openAsset(context, assets.first);
+        await _openAsset(
+          context,
+          assets.first,
+          queueAssetIds: assets.map((a) => a.id).toList(),
+        );
       case MediaOptionAction.delete:
         final ok = await _confirm(
           context,
@@ -143,13 +148,18 @@ class VideoMediaActions {
     required AssetEntity asset,
     required MediaOptionAction action,
     VoidCallback? onListChanged,
+    List<String>? queueAssetIds,
   }) async {
     final l10n = AppLocalizations.of(context)!;
     final name = asset.title ?? asset.relativePath ?? 'Video';
 
     switch (action) {
       case MediaOptionAction.play:
-        await _openAsset(context, asset);
+        await _openAsset(
+          context,
+          asset,
+          queueAssetIds: queueAssetIds,
+        );
       case MediaOptionAction.delete:
         final ok = await _confirm(
           context,
@@ -203,7 +213,11 @@ class VideoMediaActions {
         if (playlist.assetIds.isEmpty) return;
         final entity = await AssetEntity.fromId(playlist.assetIds.first);
         if (entity == null || !context.mounted) return;
-        await _openAsset(context, entity);
+        await _openAsset(
+          context,
+          entity,
+          queueAssetIds: playlist.assetIds,
+        );
       case MediaOptionAction.delete:
         final ok = await _confirm(
           context,
@@ -256,10 +270,15 @@ class VideoMediaActions {
     required AssetEntity asset,
     required MediaOptionAction action,
     required VoidCallback onChanged,
+    List<String>? queueAssetIds,
   }) async {
     switch (action) {
       case MediaOptionAction.play:
-        await _openAsset(context, asset);
+        await _openAsset(
+          context,
+          asset,
+          queueAssetIds: queueAssetIds,
+        );
       case MediaOptionAction.removeFromPlaylist:
         await PlaylistService.removeAsset(playlistId, asset.id);
         onChanged();
@@ -272,7 +291,16 @@ class VideoMediaActions {
     }
   }
 
-  static Future<void> _openAsset(BuildContext context, AssetEntity asset) async {
+  static Future<void> _openAsset(
+    BuildContext context,
+    AssetEntity asset, {
+    List<String>? queueAssetIds,
+  }) async {
+    if (queueAssetIds != null && queueAssetIds.length > 1) {
+      VideoPlaybackQueue.install(queueAssetIds, asset.id);
+    } else {
+      VideoPlaybackQueue.clear();
+    }
     final target = await AssetPlaybackResolver.resolve(asset);
     if (!context.mounted) return;
     if (target == null) {
@@ -286,6 +314,8 @@ class VideoMediaActions {
       videoSource: target.videoSource,
       isLocal: target.isLocal,
       useContentUri: target.useContentUri,
+      displayTitle: target.displayName,
+      resumeKey: target.assetId,
     );
   }
 

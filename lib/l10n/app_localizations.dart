@@ -814,6 +814,60 @@ abstract class AppLocalizations {
   /// **'Got it'**
   String get equalizerFeatureAnnounceCta;
 
+  /// No description provided for @whatsNewTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'What\'s New'**
+  String get whatsNewTitle;
+
+  /// No description provided for @whatsNewHeadline.
+  ///
+  /// In en, this message translates to:
+  /// **'Your player just got better'**
+  String get whatsNewHeadline;
+
+  /// No description provided for @whatsNewFeatureVisualizerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Music Visualizer'**
+  String get whatsNewFeatureVisualizerTitle;
+
+  /// No description provided for @whatsNewFeatureVisualizerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Watch your music come alive with Bars, Wave, and Circle styles wrapped around your album art.'**
+  String get whatsNewFeatureVisualizerBody;
+
+  /// No description provided for @whatsNewFeatureContinueTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue Watching'**
+  String get whatsNewFeatureContinueTitle;
+
+  /// No description provided for @whatsNewFeatureContinueBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Pick up right where you left off — your latest videos are ready on the home screen.'**
+  String get whatsNewFeatureContinueBody;
+
+  /// No description provided for @whatsNewFeatureSleepTimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep Timer'**
+  String get whatsNewFeatureSleepTimerTitle;
+
+  /// No description provided for @whatsNewFeatureSleepTimerBody.
+  ///
+  /// In en, this message translates to:
+  /// **'Drift off peacefully. Set a timer or stop when the current song or video ends.'**
+  String get whatsNewFeatureSleepTimerBody;
+
+  /// No description provided for @whatsNewCta.
+  ///
+  /// In en, this message translates to:
+  /// **'Got it'**
+  String get whatsNewCta;
+
   /// No description provided for @equalizerTitle.
   ///
   /// In en, this message translates to:
@@ -831,6 +885,36 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Audio Spectrum'**
   String get eqAudioSpectrum;
+
+  /// No description provided for @visualizerModeBars.
+  ///
+  /// In en, this message translates to:
+  /// **'Bars'**
+  String get visualizerModeBars;
+
+  /// No description provided for @visualizerModeWave.
+  ///
+  /// In en, this message translates to:
+  /// **'Wave'**
+  String get visualizerModeWave;
+
+  /// No description provided for @visualizerModeCircle.
+  ///
+  /// In en, this message translates to:
+  /// **'Circle'**
+  String get visualizerModeCircle;
+
+  /// No description provided for @visualizerStyle.
+  ///
+  /// In en, this message translates to:
+  /// **'Visualizer style'**
+  String get visualizerStyle;
+
+  /// No description provided for @visualizer.
+  ///
+  /// In en, this message translates to:
+  /// **'Visualizer'**
+  String get visualizer;
 
   /// No description provided for @eqEnabled.
   ///
@@ -1533,6 +1617,156 @@ abstract class AppLocalizations {
   /// In en, this message translates to:
   /// **'Maybe'**
   String get playStoreRatingMaybe;
+
+  /// No description provided for @sleepTimerTitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Sleep timer'**
+  String get sleepTimerTitle;
+
+  /// No description provided for @sleepTimerMinutes.
+  ///
+  /// In en, this message translates to:
+  /// **'{minutes} minutes'**
+  String sleepTimerMinutes(int minutes);
+
+  /// No description provided for @sleepTimerCustom.
+  ///
+  /// In en, this message translates to:
+  /// **'Custom time'**
+  String get sleepTimerCustom;
+
+  /// No description provided for @sleepTimerCustomHint.
+  ///
+  /// In en, this message translates to:
+  /// **'Minutes'**
+  String get sleepTimerCustomHint;
+
+  /// No description provided for @sleepTimerSet.
+  ///
+  /// In en, this message translates to:
+  /// **'Set'**
+  String get sleepTimerSet;
+
+  /// No description provided for @sleepTimerCancel.
+  ///
+  /// In en, this message translates to:
+  /// **'Cancel sleep timer'**
+  String get sleepTimerCancel;
+
+  /// No description provided for @sleepTimerEndOfMedia.
+  ///
+  /// In en, this message translates to:
+  /// **'When current ends'**
+  String get sleepTimerEndOfMedia;
+
+  /// No description provided for @sleepTimerEndOfMediaSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Stop playback when this video or song finishes'**
+  String get sleepTimerEndOfMediaSubtitle;
+
+  /// No description provided for @sleepTimerEndOfMediaActive.
+  ///
+  /// In en, this message translates to:
+  /// **'Stops when current media ends'**
+  String get sleepTimerEndOfMediaActive;
+
+  /// No description provided for @sleepTimerRemaining.
+  ///
+  /// In en, this message translates to:
+  /// **'Time left: {time}'**
+  String sleepTimerRemaining(String time);
+
+  /// No description provided for @settingsPlayback.
+  ///
+  /// In en, this message translates to:
+  /// **'Playback'**
+  String get settingsPlayback;
+
+  /// No description provided for @settingsResumeAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume audio'**
+  String get settingsResumeAudio;
+
+  /// No description provided for @settingsResumeAudioSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue songs where you left off'**
+  String get settingsResumeAudioSubtitle;
+
+  /// No description provided for @settingsResumeVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Resume video'**
+  String get settingsResumeVideo;
+
+  /// No description provided for @settingsResumeVideoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue videos where you left off'**
+  String get settingsResumeVideoSubtitle;
+
+  /// No description provided for @settingsKeepScreenOnVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Keep screen on'**
+  String get settingsKeepScreenOnVideo;
+
+  /// No description provided for @settingsKeepScreenOnVideoSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Prevent screen sleep during video playback'**
+  String get settingsKeepScreenOnVideoSubtitle;
+
+  /// No description provided for @folderDownloads.
+  ///
+  /// In en, this message translates to:
+  /// **'Downloads'**
+  String get folderDownloads;
+
+  /// No description provided for @badgeToday.
+  ///
+  /// In en, this message translates to:
+  /// **'TODAY'**
+  String get badgeToday;
+
+  /// No description provided for @backgroundPlayingAudio.
+  ///
+  /// In en, this message translates to:
+  /// **'Playing in background'**
+  String get backgroundPlayingAudio;
+
+  /// No description provided for @backgroundPlayingVideo.
+  ///
+  /// In en, this message translates to:
+  /// **'Video playing'**
+  String get backgroundPlayingVideo;
+
+  /// No description provided for @tapToReturnPlayer.
+  ///
+  /// In en, this message translates to:
+  /// **'Tap to return to player'**
+  String get tapToReturnPlayer;
+
+  /// No description provided for @continueWatching.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue watching'**
+  String get continueWatching;
+
+  /// No description provided for @resumePlaybackPrompt.
+  ///
+  /// In en, this message translates to:
+  /// **'Continue from where you stopped.'**
+  String get resumePlaybackPrompt;
+
+  /// No description provided for @resumeStartOver.
+  ///
+  /// In en, this message translates to:
+  /// **'START OVER'**
+  String get resumeStartOver;
 }
 
 class _AppLocalizationsDelegate

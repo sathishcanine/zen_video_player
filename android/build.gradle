@@ -2,6 +2,8 @@ allprojects {
     repositories {
         google()
         mavenCentral()
+        // Pangle SDK (AdMob mediation).
+        maven { url = uri("https://artifact.bytedance.com/repository/pangle/") }
     }
 }
 

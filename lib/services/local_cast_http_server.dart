@@ -38,24 +38,7 @@ class LocalCastHttpServer {
           await request.response.close();
           return;
         }
-        final path = _filePath;
-        if (path == null) {
-          request.response.statusCode = HttpStatus.notFound;
-          await request.response.close();
-          return;
-        }
-        final media = File(path);
-        if (!await media.exists()) {
-          request.response.statusCode = HttpStatus.notFound;
-          await request.response.close();
-          return;
-        }
-        final length = await media.length();
-        request.response.headers.set('Content-Type', _mimeForPath(path));
-        request.response.headers.set('Accept-Ranges', 'bytes');
-        request.response.contentLength = length;
-        await request.response.addStream(media.openRead());
-        await request.response.close();
+        await _handleMediaRequest(request);
       } catch (_) {
         try {
           request.response.statusCode = HttpStatus.internalServerError;
@@ -65,6 +48,75 @@ class LocalCastHttpServer {
     });
 
     return Uri(scheme: 'http', host: ip, port: port, path: '/media');
+  }
+
+  Future<void> _handleMediaRequest(HttpRequest request) async {
+    final path = _filePath;
+    if (path == null) {
+      request.response.statusCode = HttpStatus.notFound;
+      await request.response.close();
+      return;
+    }
+
+    final media = File(path);
+    if (!await media.exists()) {
+      request.response.statusCode = HttpStatus.notFound;
+      await request.response.close();
+      return;
+    }
+
+    final length = await media.length();
+    final mime = _mimeForPath(path);
+    final rangeHeader = request.headers.value(HttpHeaders.rangeHeader);
+
+    if (rangeHeader != null) {
+      final match = RegExp(r'bytes=(\d*)-(\d*)').firstMatch(rangeHeader);
+      if (match != null) {
+        final start = match.group(1)!.isEmpty
+            ? 0
+            : int.parse(match.group(1)!);
+        var end = match.group(2)!.isEmpty
+            ? length - 1
+            : int.parse(match.group(2)!);
+        if (start >= length) {
+          request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+          request.response.headers.set(
+            HttpHeaders.contentRangeHeader,
+            'bytes */$length',
+          );
+          await request.response.close();
+          return;
+        }
+        end = end.clamp(0, length - 1);
+        if (start <= end) {
+          final contentLength = end - start + 1;
+          request.response.statusCode = HttpStatus.partialContent;
+          request.response.headers.set(HttpHeaders.contentTypeHeader, mime);
+          request.response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
+          request.response.headers.set(
+            HttpHeaders.contentRangeHeader,
+            'bytes $start-$end/$length',
+          );
+          request.response.contentLength = contentLength;
+          if (request.method != 'HEAD') {
+            await request.response.addStream(
+              media.openRead(start, end + 1),
+            );
+          }
+          await request.response.close();
+          return;
+        }
+      }
+    }
+
+    request.response.statusCode = HttpStatus.ok;
+    request.response.headers.set(HttpHeaders.contentTypeHeader, mime);
+    request.response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
+    request.response.contentLength = length;
+    if (request.method != 'HEAD') {
+      await request.response.addStream(media.openRead());
+    }
+    await request.response.close();
   }
 
   static Future<String?> _lanIpv4() async {

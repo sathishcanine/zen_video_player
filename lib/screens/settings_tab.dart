@@ -77,6 +77,34 @@ class SettingsTab extends StatelessWidget {
                     ),
                   ),
                   const _SectionDivider(),
+                  _SectionLabel(text: l10n.settingsPlayback),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.movie_outlined),
+                    title: Text(
+                      l10n.settingsResumeVideo,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      l10n.settingsResumeVideoSubtitle,
+                      style: subtitleStyle,
+                    ),
+                    value: settings.resumeVideo,
+                    onChanged: settings.setResumeVideo,
+                  ),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.screen_lock_portrait_outlined),
+                    title: Text(
+                      l10n.settingsKeepScreenOnVideo,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      l10n.settingsKeepScreenOnVideoSubtitle,
+                      style: subtitleStyle,
+                    ),
+                    value: settings.keepScreenOnVideo,
+                    onChanged: settings.setKeepScreenOnVideo,
+                  ),
+                  const _SectionDivider(),
                   _SectionLabel(text: l10n.settingsAppearance),
                   SwitchListTile(
                     secondary: Stack(

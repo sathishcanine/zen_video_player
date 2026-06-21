@@ -2,7 +2,9 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
+import 'package:zen_video_player/l10n/app_localizations.dart';
 import 'package:zen_video_player/theme/zen_palette.dart';
+import 'package:zen_video_player/theme/zen_theme.dart';
 
 /// Video row with thumbnail and duration badge (UPlayer-style).
 class VideoAssetTile extends StatelessWidget {
@@ -13,6 +15,7 @@ class VideoAssetTile extends StatelessWidget {
     required this.subtitle,
     required this.onTap,
     this.onMenu,
+    this.isNew = false,
   });
 
   final AssetEntity asset;
@@ -20,21 +23,49 @@ class VideoAssetTile extends StatelessWidget {
   final String subtitle;
   final VoidCallback onTap;
   final VoidCallback? onMenu;
+  final bool isNew;
 
   @override
   Widget build(BuildContext context) {
     final zen = context.zen;
+    final l10n = AppLocalizations.of(context)!;
     return ListTile(
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 4),
       leading: _Thumbnail(asset: asset),
-      title: Text(
-        title,
-        maxLines: 2,
-        overflow: TextOverflow.ellipsis,
-        style: TextStyle(
-          fontWeight: FontWeight.w500,
-          color: zen.textPrimary,
-        ),
+      title: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                fontWeight: FontWeight.w500,
+                color: zen.textPrimary,
+              ),
+            ),
+          ),
+          if (isNew) ...[
+            const SizedBox(width: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+              decoration: BoxDecoration(
+                color: ZenTheme.badgeNew,
+                borderRadius: BorderRadius.circular(4),
+              ),
+              child: Text(
+                _isToday(asset.createDateTime)
+                    ? l10n.badgeToday
+                    : l10n.badgeNew,
+                style: const TextStyle(
+                  fontSize: 9,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.white,
+                ),
+              ),
+            ),
+          ],
+        ],
       ),
       subtitle: Text(
         subtitle,
@@ -48,6 +79,13 @@ class VideoAssetTile extends StatelessWidget {
             ),
       onTap: onTap,
     );
+  }
+
+  static bool _isToday(DateTime created) {
+    final now = DateTime.now();
+    return created.year == now.year &&
+        created.month == now.month &&
+        created.day == now.day;
   }
 }
 

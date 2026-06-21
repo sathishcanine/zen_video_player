@@ -23,6 +23,9 @@ class AudioPlaybackPermissions {
 
   /// Shows background-play sheet once; requests battery opt-out on Android.
   static Future<void> ensureAcknowledged(BuildContext context) async {
+    if (Platform.isAndroid) {
+      await Permission.notification.request();
+    }
     if (await wasAcknowledged()) return;
     if (!context.mounted) return;
 

@@ -4,6 +4,7 @@ import 'package:photo_manager/photo_manager.dart';
 import '../models/media_folder.dart';
 import '../navigation/library_navigation.dart';
 import '../services/local_media_service.dart';
+import '../services/new_media_tracker.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
 import '../widgets/video_asset_tile.dart';
@@ -20,6 +21,7 @@ class FolderDetailScreen extends StatefulWidget {
 
 class _FolderDetailScreenState extends State<FolderDetailScreen> {
   List<AssetEntity> _assets = [];
+  final Map<String, bool> _newByAssetId = {};
   bool _loading = true;
 
   @override
@@ -31,9 +33,23 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
   Future<void> _load() async {
     setState(() => _loading = true);
     final assets = await LocalMediaService.loadAllVideosInFolder(widget.folder);
+    final newFlags = <String, bool>{};
+    if (!widget.folder.isRecentlyAdded) {
+      final newIds = await NewMediaTracker.newAssetIdsInFolder(
+        folderId: widget.folder.id,
+        assets: assets,
+      );
+      for (final id in newIds) {
+        newFlags[id] = true;
+      }
+      await NewMediaTracker.acknowledgeFolder(widget.folder.id, assets);
+    }
     if (!mounted) return;
     setState(() {
       _assets = assets;
+      _newByAssetId
+        ..clear()
+        ..addAll(newFlags);
       _loading = false;
     });
   }
@@ -104,10 +120,13 @@ class _FolderDetailScreenState extends State<FolderDetailScreen> {
                             asset: asset,
                             title: name,
                             subtitle: _subtitle(asset),
+                            isNew: _newByAssetId[asset.id] ?? false,
                             onTap: () => VideoMediaActions.handleAsset(
                               context,
                               asset: asset,
                               action: MediaOptionAction.play,
+                              queueAssetIds:
+                                  _assets.map((a) => a.id).toList(),
                             ),
                             onMenu: () => _openMenu(asset),
                           );

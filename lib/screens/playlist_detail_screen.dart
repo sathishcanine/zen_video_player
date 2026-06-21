@@ -147,6 +147,7 @@ class _PlaylistDetailScreenState extends State<PlaylistDetailScreen> {
                             asset: asset,
                             action: MediaOptionAction.play,
                             onChanged: _load,
+                            queueAssetIds: playlist.assetIds,
                           ),
                           onMenu: () => _openMenu(asset),
                         );

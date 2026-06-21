@@ -5,14 +5,16 @@ import android.content.pm.PackageManager
 import android.graphics.Rect
 import android.os.Build
 import android.util.Rational
-import io.flutter.embedding.android.FlutterActivity
+import com.ryanheise.audioservice.AudioServiceActivity
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.plugin.common.MethodChannel
 
-class MainActivity : FlutterActivity() {
+class MainActivity : AudioServiceActivity() {
 
     private var audioMetadataBridge: AudioMetadataBridge? = null
+    private var audioVisualizerBridge: AudioVisualizerBridge? = null
     private var mediaAssetBridge: MediaAssetBridge? = null
+    private var castLocalMediaBridge: CastLocalMediaBridge? = null
     private var videoOrientationBridge: VideoOrientationBridge? = null
 
     /** When true, pre-Android-12 devices may enter PiP from [onUserLeaveHint]. */
@@ -70,7 +72,9 @@ class MainActivity : FlutterActivity() {
         super.configureFlutterEngine(flutterEngine)
         val messenger = flutterEngine.dartExecutor.binaryMessenger
         audioMetadataBridge = AudioMetadataBridge(this, messenger).also { it.register() }
+        audioVisualizerBridge = AudioVisualizerBridge(messenger).also { it.register() }
         mediaAssetBridge = MediaAssetBridge(this, messenger).also { it.register() }
+        castLocalMediaBridge = CastLocalMediaBridge(this, messenger).also { it.register() }
         videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
 
         MethodChannel(

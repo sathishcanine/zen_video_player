@@ -61,6 +61,6 @@ flutter {
 }
 
 dependencies {
-    // GAID for ad network targeting (Meta/Unity via AdMob mediation).
+    // GAID for ad network targeting (Meta/Unity/Pangle via AdMob mediation).
     implementation 'com.google.android.gms:play-services-ads-identifier:18.0.1'
 }

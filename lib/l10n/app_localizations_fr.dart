@@ -406,6 +406,36 @@ class AppLocalizationsFr extends AppLocalizations {
   String get equalizerFeatureAnnounceCta => 'Got it';
 
   @override
+  String get whatsNewTitle => 'What\'s New';
+
+  @override
+  String get whatsNewHeadline => 'Your player just got better';
+
+  @override
+  String get whatsNewFeatureVisualizerTitle => 'Music Visualizer';
+
+  @override
+  String get whatsNewFeatureVisualizerBody =>
+      'Watch your music come alive with Bars, Wave, and Circle styles wrapped around your album art.';
+
+  @override
+  String get whatsNewFeatureContinueTitle => 'Continue Watching';
+
+  @override
+  String get whatsNewFeatureContinueBody =>
+      'Pick up right where you left off — your latest videos are ready on the home screen.';
+
+  @override
+  String get whatsNewFeatureSleepTimerTitle => 'Sleep Timer';
+
+  @override
+  String get whatsNewFeatureSleepTimerBody =>
+      'Drift off peacefully. Set a timer or stop when the current song or video ends.';
+
+  @override
+  String get whatsNewCta => 'Got it';
+
+  @override
   String get equalizerTitle => 'Equalizer';
 
   @override
@@ -413,6 +443,21 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get eqAudioSpectrum => 'Audio Spectrum';
+
+  @override
+  String get visualizerModeBars => 'Bars';
+
+  @override
+  String get visualizerModeWave => 'Wave';
+
+  @override
+  String get visualizerModeCircle => 'Circle';
+
+  @override
+  String get visualizerStyle => 'Visualizer style';
+
+  @override
+  String get visualizer => 'Visualizer';
 
   @override
   String get eqEnabled => 'Enable equalizer';
@@ -843,4 +888,86 @@ class AppLocalizationsFr extends AppLocalizations {
 
   @override
   String get playStoreRatingMaybe => 'Maybe';
+
+  @override
+  String get sleepTimerTitle => 'Sleep timer';
+
+  @override
+  String sleepTimerMinutes(int minutes) {
+    return '$minutes minutes';
+  }
+
+  @override
+  String get sleepTimerCustom => 'Custom time';
+
+  @override
+  String get sleepTimerCustomHint => 'Minutes';
+
+  @override
+  String get sleepTimerSet => 'Set';
+
+  @override
+  String get sleepTimerCancel => 'Cancel sleep timer';
+
+  @override
+  String get sleepTimerEndOfMedia => 'When current ends';
+
+  @override
+  String get sleepTimerEndOfMediaSubtitle =>
+      'Stop playback when this video or song finishes';
+
+  @override
+  String get sleepTimerEndOfMediaActive => 'Stops when current media ends';
+
+  @override
+  String sleepTimerRemaining(String time) {
+    return 'Time left: $time';
+  }
+
+  @override
+  String get settingsPlayback => 'Playback';
+
+  @override
+  String get settingsResumeAudio => 'Resume audio';
+
+  @override
+  String get settingsResumeAudioSubtitle => 'Continue songs where you left off';
+
+  @override
+  String get settingsResumeVideo => 'Resume video';
+
+  @override
+  String get settingsResumeVideoSubtitle =>
+      'Continue videos where you left off';
+
+  @override
+  String get settingsKeepScreenOnVideo => 'Keep screen on';
+
+  @override
+  String get settingsKeepScreenOnVideoSubtitle =>
+      'Prevent screen sleep during video playback';
+
+  @override
+  String get folderDownloads => 'Downloads';
+
+  @override
+  String get badgeToday => 'TODAY';
+
+  @override
+  String get backgroundPlayingAudio => 'Playing in background';
+
+  @override
+  String get backgroundPlayingVideo => 'Video playing';
+
+  @override
+  String get tapToReturnPlayer => 'Tap to return to player';
+
+  @override
+  String get continueWatching => 'Continue watching';
+
+  @override
+  String get resumePlaybackPrompt => 'Continue from where you stopped.';
+
+  @override
+  String get resumeStartOver => 'START OVER';
 }

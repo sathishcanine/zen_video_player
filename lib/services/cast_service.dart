@@ -1,10 +1,12 @@
 import 'dart:async';
 import 'dart:io';
 
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter_chrome_cast/lib.dart';
 import 'package:path/path.dart' as p;
+import 'package:photo_manager/photo_manager.dart';
 
+import 'cast_local_media_channel.dart';
 import 'local_cast_http_server.dart';
 
 /// Media to load on a Cast receiver after the user picks a device.
@@ -16,6 +18,7 @@ class CastMediaPayload {
     this.useContentUri = false,
     this.playPosition = Duration.zero,
     this.duration,
+    this.assetId,
   });
 
   final String title;
@@ -24,6 +27,9 @@ class CastMediaPayload {
   final bool useContentUri;
   final Duration playPosition;
   final Duration? duration;
+
+  /// MediaStore / gallery asset id — used to resolve `content://` for Cast.
+  final String? assetId;
 }
 
 /// Google Cast discovery, session, and media loading.
@@ -45,7 +51,8 @@ class CastService {
       GoogleCastConnectState.connected;
 
   Stream<bool> get isConnectedStream =>
-      GoogleCastSessionManager.instance.currentSessionStream.map((_) => isConnected);
+      GoogleCastSessionManager.instance.currentSessionStream
+          .map((_) => isConnected);
 
   Future<void> init() async {
     if (!isSupported || _initialized) return;
@@ -83,10 +90,8 @@ class CastService {
 
   /// Resolves a URL the Cast receiver can fetch.
   Future<Uri?> resolvePlayableUrl(CastMediaPayload media) async {
-    if (media.useContentUri) return null;
-
-    if (media.isLocal) {
-      final path = _localFilePath(media.videoSource);
+    if (_requiresLocalHttpServer(media)) {
+      final path = await _resolveLocalMediaPath(media);
       if (path == null) return null;
       return _localServer.serveFile(path);
     }
@@ -103,21 +108,19 @@ class CastService {
   }) async {
     if (!_initialized) await init();
 
-    final connected = await GoogleCastSessionManager.instance
-        .startSessionWithDevice(device);
-    if (!connected) {
-      throw StateError('Could not connect to ${device.friendlyName}');
-    }
+    await _ensureSession(device);
 
     if (media == null) return;
 
     final url = await resolvePlayableUrl(media);
     if (url == null) {
-      await disconnect();
-      if (media.useContentUri) {
+      if (!isConnected) {
+        await disconnect();
+      }
+      if (media.useContentUri || media.videoSource.startsWith('content://')) {
         throw StateError('content_uri_unsupported');
       }
-      if (media.isLocal) {
+      if (_requiresLocalHttpServer(media)) {
         throw StateError('local_wifi_unavailable');
       }
       throw StateError('invalid_source');
@@ -134,6 +137,68 @@ class CastService {
       autoPlay: true,
       playPosition: media.playPosition,
     );
+  }
+
+  Future<void> _ensureSession(GoogleCastDevice device) async {
+    final sessionManager = GoogleCastSessionManager.instance;
+    if (sessionManager.hasConnectedSession) {
+      final currentId = sessionManager.currentSession?.device?.deviceID;
+      if (currentId == device.deviceID) return;
+      await disconnect();
+    }
+
+    final connected = await sessionManager.startSessionWithDevice(device);
+    if (!connected) {
+      throw StateError('Could not connect to ${device.friendlyName}');
+    }
+
+    // Receiver needs a moment before loadMedia succeeds on some TVs.
+    await Future<void>.delayed(const Duration(milliseconds: 400));
+  }
+
+  bool _requiresLocalHttpServer(CastMediaPayload media) {
+    if (media.isLocal || media.useContentUri) return true;
+    final source = media.videoSource;
+    if (source.startsWith('content://') || source.startsWith('file://')) {
+      return true;
+    }
+    if (source.startsWith('/')) return true;
+    return false;
+  }
+
+  Future<String?> _resolveLocalMediaPath(CastMediaPayload media) async {
+    if (media.assetId != null) {
+      final fromAsset = await _pathFromAssetId(media.assetId!);
+      if (fromAsset != null) return fromAsset;
+    }
+
+    if (!media.videoSource.startsWith('content://')) {
+      final path = _localFilePath(media.videoSource);
+      if (path != null) {
+        final file = File(path);
+        if (await file.exists()) return path;
+      }
+    }
+
+    if (media.useContentUri || media.videoSource.startsWith('content://')) {
+      return CastLocalMediaChannel.resolveReadablePath(media.videoSource);
+    }
+
+    return null;
+  }
+
+  Future<String?> _pathFromAssetId(String assetId) async {
+    try {
+      final entity = await AssetEntity.fromId(assetId);
+      if (entity == null) return null;
+      final origin = await entity.originFile;
+      if (origin != null && await origin.exists()) return origin.path;
+      final file = await entity.file;
+      if (file != null && await file.exists()) return file.path;
+    } catch (e, st) {
+      debugPrint('[cast] asset resolve failed: $e\n$st');
+    }
+    return null;
   }
 
   GoogleCastMediaInformation _buildMediaInformation({
@@ -167,6 +232,7 @@ class CastService {
     if (parsed != null && parsed.isScheme('file')) {
       return parsed.toFilePath();
     }
+    if (source.startsWith('content://')) return null;
     if (source.startsWith('/')) return source;
     return p.normalize(source);
   }

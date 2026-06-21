@@ -4,13 +4,21 @@ import 'dart:io';
 import 'package:chewie/chewie.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:path/path.dart' as p;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:video_player/video_player.dart';
+import 'package:wakelock_plus/wakelock_plus.dart';
 import 'package:zen_video_player/analytics/video_player_telemetry.dart';
+import 'package:photo_manager/photo_manager.dart';
 
 import 'download_service.dart';
+import 'services/app_settings_service.dart';
+import 'services/asset_playback_resolver.dart';
+import 'services/playback_resume_service.dart';
+import 'services/sleep_timer_service.dart';
+import 'services/video_continue_watching_service.dart';
 import 'services/video_orientation_channel.dart';
+import 'services/video_playback_queue.dart';
+import 'utils/video_navigation.dart';
 import 'video/video_playback_handoff.dart';
 import 'video_pip_helper.dart';
 import 'services/video_player_color_tutorial_service.dart';
@@ -21,6 +29,7 @@ import 'widgets/cast_device_picker_sheet.dart';
 import 'widgets/zen_chewie_player.dart';
 import 'widgets/zen_video_player_chrome.dart';
 import 'widgets/zen_video_surface.dart';
+import 'utils/media_display_name.dart';
 
 class VideoPlayerScreen extends StatefulWidget {
   final String videoSource;
@@ -33,12 +42,20 @@ class VideoPlayerScreen extends StatefulWidget {
   /// App bar download for network URLs; ignored when [isLocal] is true.
   final bool allowNetworkDownload;
 
+  /// Shown in the player top bar, e.g. `MyMovie.mp4`.
+  final String? displayTitle;
+
+  /// Stable id for resume position (e.g. MediaStore asset id).
+  final String? resumeKey;
+
   const VideoPlayerScreen({
     super.key,
     required this.videoSource,
     this.isLocal = false,
     this.useContentUri = false,
     this.allowNetworkDownload = true,
+    this.displayTitle,
+    this.resumeKey,
   });
 
   @override
@@ -79,6 +96,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   bool _gestureTutorialVisible = false;
   int _colorTutorialTrigger = 0;
   bool _colorTutorialScheduleAttempted = false;
+  VoidCallback? _sleepTimerListener;
+  Timer? _positionSaveTimer;
+  Duration? _resumedFromPosition;
 
   static const List<DeviceOrientation> _playerOrientations = <DeviceOrientation>[
     DeviceOrientation.portraitUp,
@@ -103,7 +123,17 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   @override
   void initState() {
     super.initState();
+    if (widget.resumeKey != null) {
+      VideoPlaybackQueue.syncCurrent(widget.resumeKey!);
+    } else {
+      VideoPlaybackQueue.clear();
+    }
     WidgetsBinding.instance.addObserver(this);
+    _sleepTimerListener = _onSleepTimerExpired;
+    SleepTimerService.instance.addOnExpireListener(_sleepTimerListener!);
+    if (AppSettingsService.instance.keepScreenOnVideo) {
+      unawaited(WakelockPlus.enable());
+    }
     unawaited(_primePlayerOrientation());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
@@ -127,6 +157,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       allowFullScreen: true,
       allowMuting: true,
       allowPlaybackSpeedChanging: true,
+      allowedScreenSleep: !AppSettingsService.instance.keepScreenOnVideo,
       showControls: false,
       showControlsOnInitialize: false,
       customControls: const SizedBox.shrink(),
@@ -270,6 +301,42 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (mounted) setState(() {});
   }
 
+  Future<void> _skipPrevious() async {
+    final video = _videoController;
+    if (video?.value.isInitialized == true &&
+        video!.value.position.inSeconds > 3) {
+      await video.seekTo(Duration.zero);
+      return;
+    }
+    await _openQueuedAsset(VideoPlaybackQueue.previousAssetId);
+  }
+
+  Future<void> _skipNext() async {
+    await _openQueuedAsset(VideoPlaybackQueue.nextAssetId);
+  }
+
+  Future<void> _openQueuedAsset(String? assetId) async {
+    if (assetId == null || !mounted) return;
+    await _saveVideoPosition();
+    final entity = await AssetEntity.fromId(assetId);
+    if (entity == null || !mounted) return;
+    final target = await AssetPlaybackResolver.resolve(entity);
+    if (target == null || !mounted) return;
+
+    await Navigator.of(context).pushReplacement(
+      MaterialPageRoute<void>(
+        settings: const RouteSettings(name: VideoRoutes.player),
+        builder: (_) => VideoPlayerScreen(
+          videoSource: target.videoSource,
+          isLocal: target.isLocal,
+          useContentUri: target.useContentUri,
+          displayTitle: target.displayName,
+          resumeKey: target.assetId,
+        ),
+      ),
+    );
+  }
+
   void _onCastPressed(BuildContext chromeContext) {
     final video = _videoController;
     final position = video?.value.isInitialized == true
@@ -284,10 +351,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         media: CastMediaPayload(
           title: _videoTitle,
           videoSource: widget.videoSource,
-          isLocal: widget.isLocal,
+          isLocal: widget.isLocal || widget.useContentUri,
           useContentUri: widget.useContentUri,
           playPosition: position,
           duration: duration,
+          assetId: widget.resumeKey,
         ),
       ),
     );
@@ -332,24 +400,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Full init path: local file opened directly, content URI, or no handoff.
     final sw = Stopwatch()..start();
 
-    void dismissLoadingHint() {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).hideCurrentSnackBar();
-    }
-
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted) return;
-      final messenger = ScaffoldMessenger.of(context);
-      messenger.hideCurrentSnackBar();
-      messenger.showSnackBar(
-        const SnackBar(
-          content: Text('Loading, please wait for 10 seconds.'),
-          duration: Duration(seconds: 10),
-          behavior: SnackBarBehavior.floating,
-        ),
-      );
-    });
-
     unawaited(
       VideoPlayerTelemetry.initStarted(
         isLocal: widget.isLocal || widget.useContentUri,
@@ -388,7 +438,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
         },
       );
     } catch (e, st) {
-      dismissLoadingHint();
       sw.stop();
       unawaited(
         VideoPlayerTelemetry.initFailed(
@@ -421,7 +470,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       return;
     }
 
-    dismissLoadingHint();
     sw.stop();
     unawaited(
       VideoPlayerTelemetry.initSucceeded(
@@ -451,10 +499,85 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _pipPreparedSignature = null;
     _syncNativePipEligibility();
 
+    await _applyResumePosition(controller);
+    _startPositionSaver();
+
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_scheduleColorTutorialIfGestureAlreadyDone());
     });
+  }
+
+  Future<void> _applyResumePosition(VideoPlayerController controller) async {
+    if (!AppSettingsService.instance.resumeVideo) return;
+    final resume = await PlaybackResumeService.loadVideoPosition(_resumeKey);
+    if (resume == null || !mounted) return;
+    if (resume.inSeconds < 5) return;
+    await controller.seekTo(resume);
+    if (!mounted) return;
+    setState(() => _resumedFromPosition = resume);
+  }
+
+  void _dismissResumePrompt() {
+    if (_resumedFromPosition == null) return;
+    setState(() => _resumedFromPosition = null);
+  }
+
+  Future<void> _startVideoOver() async {
+    final c = _videoController;
+    if (c != null && c.value.isInitialized) {
+      await c.seekTo(Duration.zero);
+    }
+    if (mounted) setState(() => _resumedFromPosition = null);
+  }
+
+  void _startPositionSaver() {
+    _positionSaveTimer?.cancel();
+    _positionSaveTimer = Timer.periodic(const Duration(seconds: 8), (_) {
+      _saveVideoPosition();
+    });
+  }
+
+  Future<void> _saveVideoPosition() async {
+    final c = _videoController;
+    if (c == null || !c.value.isInitialized) return;
+    final pos = c.value.position;
+    final dur = c.value.duration;
+    if (pos.inMilliseconds < 5000) return;
+
+    if (!AppSettingsService.instance.resumeVideo) return;
+
+    await PlaybackResumeService.saveVideoPosition(_resumeKey, pos);
+    await VideoContinueWatchingService.instance.updateFromPlayback(
+      storageKey: _resumeKey,
+      videoSource: widget.videoSource,
+      displayTitle: _videoTitle,
+      position: pos,
+      duration: dur,
+      isLocal: widget.isLocal,
+      useContentUri: widget.useContentUri,
+      allowNetworkDownload: widget.allowNetworkDownload,
+      assetId: widget.resumeKey,
+    );
+  }
+
+  String get _resumeKey => PlaybackResumeService.videoKeyForSource(
+        widget.videoSource,
+        assetId: widget.resumeKey,
+      );
+
+  String get _videoTitle => MediaDisplayName.forVideoSource(
+        source: widget.videoSource,
+        displayTitle: widget.displayTitle,
+        isLocal: widget.isLocal || widget.useContentUri,
+      );
+
+  void _onSleepTimerExpired() {
+    final c = _videoController;
+    if (c != null && c.value.isInitialized) {
+      unawaited(c.pause());
+    }
+    if (mounted) Navigator.of(context).maybePop();
   }
 
   /// Fast path: the preview screen already initialized the controller and
@@ -491,6 +614,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     _pipPreparedSignature = null;
     _syncNativePipEligibility();
 
+    await _applyResumePosition(controller);
+    _startPositionSaver();
+
     setState(() {});
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) unawaited(_scheduleColorTutorialIfGestureAlreadyDone());
@@ -511,6 +637,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
             errorDescription: desc,
           ),
         );
+      }
+    }
+    if (c.value.isInitialized &&
+        !c.value.isPlaying &&
+        !c.value.isBuffering &&
+        c.value.duration > Duration.zero) {
+      final remaining = c.value.duration - c.value.position;
+      if (remaining <= const Duration(milliseconds: 500)) {
+        unawaited(SleepTimerService.instance.onMediaCompleted());
+        unawaited(VideoContinueWatchingService.instance.clear());
       }
     }
     _syncNativePipEligibility();
@@ -575,8 +711,21 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
   }
 
   @override
+  void deactivate() {
+    unawaited(_saveVideoPosition());
+    super.deactivate();
+  }
+
+  @override
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
+    _positionSaveTimer?.cancel();
+    if (_sleepTimerListener != null) {
+      SleepTimerService.instance.removeOnExpireListener(_sleepTimerListener!);
+    }
+    if (AppSettingsService.instance.keepScreenOnVideo) {
+      unawaited(WakelockPlus.disable());
+    }
     _pipPreparedSignature = null;
     unawaited(VideoPipHelper.clearPipEligibility());
     unawaited(VideoOrientationChannel.exitPlayerMode());
@@ -659,21 +808,6 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     );
   }
 
-  String get _videoTitle {
-    final src = widget.videoSource;
-    if (widget.useContentUri) return 'Video';
-    try {
-      if (src.startsWith('http://') || src.startsWith('https://')) {
-        final uri = Uri.parse(src);
-        final seg = uri.pathSegments.isNotEmpty ? uri.pathSegments.last : '';
-        if (seg.isNotEmpty) return Uri.decodeComponent(seg);
-      }
-      return p.basename(src);
-    } catch (_) {
-      return 'Video';
-    }
-  }
-
   void _onGestureTutorialVisibility(bool visible) {
     final wasVisible = _gestureTutorialVisible;
     if (!mounted || _gestureTutorialVisible == visible) return;
@@ -733,6 +867,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
           },
           colorTutorialTrigger: _colorTutorialTrigger,
           isLocalPlayback: widget.isLocal || widget.useContentUri,
+          resumedFrom: _resumedFromPosition,
+          onResumePromptDismiss: _dismissResumePrompt,
+          onStartOver: _startVideoOver,
+          onSkipPrevious: VideoPlaybackQueue.isActive
+              ? () => unawaited(_skipPrevious())
+              : null,
+          onSkipNext: VideoPlaybackQueue.isActive && VideoPlaybackQueue.hasNext
+              ? () => unawaited(_skipNext())
+              : null,
+          canSkipToPrevious: VideoPlaybackQueue.hasPrevious,
           ),
         ),
       ),

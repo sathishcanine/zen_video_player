@@ -1,7 +1,7 @@
 /// Ad network IDs — [kUseTestAdIds] switches Google sample AdMob units vs
 /// **live** dashboard values.
 ///
-/// Meta (native) and Unity (rewarded) are mediated inside AdMob — map
+/// Meta, Unity, and Pangle are mediated inside AdMob — map
 /// account/placement IDs in the AdMob console only.
 ///
 /// **Production:** set [kUseTestAdIds] to `false` and set native **AdMob app id**
@@ -41,7 +41,7 @@ const String _adMobProdAppId = kAdMobProdApplicationId;
 //   Native-ad             → video preview native
 //   v3-Pause-Native-Ad    → player pause / end native (network stream)
 //   pause-native-local    → player pause / end native (local / content URI)
-const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/9098430274';
+const String _adMobProdRewardedUnit = 'ca-app-pub-8723888126390754/3493871496';
 const String _adMobProdRewardedInterstitialUnit =
     'ca-app-pub-8723888126390754/5103877770';
 const String _adMobProdUnlockRewardedUnit =

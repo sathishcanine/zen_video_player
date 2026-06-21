@@ -1,17 +1,29 @@
 import 'dart:async';
+import 'dart:io';
 import 'dart:math';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
+import 'package:permission_handler/permission_handler.dart';
 
 import '../models/audio_track.dart';
 import 'asset_playback_resolver.dart';
 import 'audio_equalizer_service.dart';
+import 'audio_visualizer_service.dart';
+import 'sleep_timer_service.dart';
+import 'zen_audio_handler.dart';
 
 /// Global audio queue + playback (mini-player and now-playing UI).
 class AudioPlayerService extends ChangeNotifier {
-  AudioPlayerService._() {
+  AudioPlayerService._(this._handler) {
     unawaited(_eq.ensureLoaded());
+    _handler.bindTransport(
+      skipNext: skipNext,
+      skipPrevious: skipPrevious,
+      stop: _onSystemStop,
+      hasQueue: () => _queue.isNotEmpty,
+    );
     _positionSub = _player.positionStream.listen((p) {
       _position = p;
       notifyListeners();
@@ -24,17 +36,58 @@ class AudioPlayerService extends ChangeNotifier {
     });
     _stateSub = _player.playerStateStream.listen((s) {
       _isPlaying = s.playing;
+      AudioVisualizerService.instance.setPlaying(s.playing);
+      if (s.playing) {
+        AudioVisualizerService.instance.bindPlayer(_player, isPlaying: true);
+      }
       if (s.processingState == ProcessingState.completed && _queue.isNotEmpty) {
+        unawaited(SleepTimerService.instance.onMediaCompleted());
         unawaited(skipNext());
       }
       notifyListeners();
     });
+    SleepTimerService.instance.addOnExpireListener(_onSleepTimerExpired);
   }
 
-  static final AudioPlayerService instance = AudioPlayerService._();
+  static AudioPlayerService? _instance;
 
+  static AudioPlayerService get instance {
+    final i = _instance;
+    if (i == null) {
+      throw StateError(
+        'Call AudioPlayerService.init() before accessing instance.',
+      );
+    }
+    return i;
+  }
+
+  /// Registers background playback + system media controls.
+  static Future<void> init() async {
+    if (_instance != null) return;
+
+    if (kIsWeb) {
+      _instance = AudioPlayerService._(ZenAudioHandler());
+      return;
+    }
+
+    final handler = ZenAudioHandler();
+    await AudioService.init(
+      builder: () => handler,
+      config: const AudioServiceConfig(
+        androidNotificationChannelId: 'com.player.zen_video_player.audio',
+        androidNotificationChannelName: 'Audio playback',
+        androidStopForegroundOnPause: false,
+        androidNotificationClickStartsActivity: true,
+        androidResumeOnClick: true,
+      ),
+    );
+    _instance = AudioPlayerService._(handler);
+  }
+
+  final ZenAudioHandler _handler;
   final _eq = AudioEqualizerService.instance;
-  late final AudioPlayer _player = AudioPlayer(audioPipeline: _eq.pipeline);
+
+  AudioPlayer get _player => _handler.player;
   StreamSubscription<Duration>? _positionSub;
   StreamSubscription<Duration?>? _durationSub;
   StreamSubscription<PlayerState>? _stateSub;
@@ -67,8 +120,13 @@ class AudioPlayerService extends ChangeNotifier {
     int startIndex = 0,
   }) async {
     if (tracks.isEmpty) return;
+    if (!kIsWeb && Platform.isAndroid) {
+      await Permission.notification.request();
+    }
     _queue = List<AudioTrack>.from(tracks);
     _index = startIndex.clamp(0, _queue.length - 1);
+    _handler.syncTrackQueue(_queue);
+    _handler.setQueueIndex(_index);
     await _playCurrent();
   }
 
@@ -93,12 +151,19 @@ class AudioPlayerService extends ChangeNotifier {
         await _player.setFilePath(source);
       }
       _duration = Duration(seconds: track.asset.duration);
+      _handler.setQueueIndex(_index);
+      unawaited(_handler.updateNowPlaying(track));
       await _player.play();
+      AudioVisualizerService.instance.bindPlayer(_player, isPlaying: true);
       unawaited(_eq.reapplyAfterPlayback());
       notifyListeners();
     } catch (e, st) {
       debugPrint('[audio] play failed: $e\n$st');
     }
+  }
+
+  void _onSleepTimerExpired() {
+    unawaited(stopAndClear());
   }
 
   Future<void> togglePlayPause() async {
@@ -122,6 +187,7 @@ class AudioPlayerService extends ChangeNotifier {
     } else {
       return;
     }
+    _handler.setQueueIndex(_index);
     await _playCurrent();
   }
 
@@ -139,6 +205,7 @@ class AudioPlayerService extends ChangeNotifier {
       await seek(Duration.zero);
       return;
     }
+    _handler.setQueueIndex(_index);
     await _playCurrent();
   }
 
@@ -161,6 +228,17 @@ class AudioPlayerService extends ChangeNotifier {
 
   Future<void> stopAndClear() async {
     await _player.stop();
+    unawaited(AudioVisualizerService.instance.unbind());
+    _handler.clearNowPlaying();
+    _queue = [];
+    _index = 0;
+    _position = Duration.zero;
+    _duration = Duration.zero;
+    _isPlaying = false;
+    notifyListeners();
+  }
+
+  Future<void> _onSystemStop() async {
     _queue = [];
     _index = 0;
     _position = Duration.zero;
@@ -172,11 +250,13 @@ class AudioPlayerService extends ChangeNotifier {
   Future<void> jumpTo(int index) async {
     if (index < 0 || index >= _queue.length) return;
     _index = index;
+    _handler.setQueueIndex(_index);
     await _playCurrent();
   }
 
   @override
   void dispose() {
+    SleepTimerService.instance.removeOnExpireListener(_onSleepTimerExpired);
     _positionSub?.cancel();
     _durationSub?.cancel();
     _stateSub?.cancel();

@@ -4,6 +4,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../app_update/force_update_dialog.dart';
 import '../widgets/equalizer_feature_announce_prompt.dart';
+import '../widgets/whats_new_feature_announce_prompt.dart';
 import '../navigation/library_shell_scope.dart';
 import '../navigation/library_tab_index.dart';
 import '../navigation/mini_player_visibility_observer.dart';
@@ -39,6 +40,8 @@ class _LibraryShellScreenState extends State<LibraryShellScreen> {
       await showForceUpdateDialogIfNeeded(context);
       if (!mounted) return;
       await EqualizerFeatureAnnouncePrompt.maybeShow(context);
+      if (!mounted) return;
+      await WhatsNewFeatureAnnouncePrompt.maybeShow(context);
     });
   }
 

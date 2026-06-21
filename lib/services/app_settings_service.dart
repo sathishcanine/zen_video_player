@@ -9,6 +9,8 @@ class AppSettingsService extends ChangeNotifier {
 
   static const _darkThemeKey = 'settings_dark_theme';
   static const _primaryColorKey = 'settings_primary_color';
+  static const _resumeVideoKey = 'settings_resume_video';
+  static const _keepScreenOnVideoKey = 'settings_keep_screen_on_video';
 
   /// Preset accent colors (UPlayer-style pink included).
   static const List<Color> primaryColorPresets = <Color>[
@@ -24,13 +26,19 @@ class AppSettingsService extends ChangeNotifier {
 
   bool _isDarkTheme = true;
   Color _primaryColor = primaryColorPresets[1];
+  bool _resumeVideo = true;
+  bool _keepScreenOnVideo = true;
 
   bool get isDarkTheme => _isDarkTheme;
   Color get primaryColor => _primaryColor;
+  bool get resumeVideo => _resumeVideo;
+  bool get keepScreenOnVideo => _keepScreenOnVideo;
 
   Future<void> load() async {
     final prefs = await SharedPreferences.getInstance();
     _isDarkTheme = prefs.getBool(_darkThemeKey) ?? true;
+    _resumeVideo = prefs.getBool(_resumeVideoKey) ?? true;
+    _keepScreenOnVideo = prefs.getBool(_keepScreenOnVideoKey) ?? true;
     final stored = prefs.getInt(_primaryColorKey);
     if (stored != null) {
       _primaryColor = Color(stored);
@@ -50,6 +58,22 @@ class AppSettingsService extends ChangeNotifier {
     _primaryColor = color;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_primaryColorKey, color.toARGB32());
+    notifyListeners();
+  }
+
+  Future<void> setResumeVideo(bool value) async {
+    if (_resumeVideo == value) return;
+    _resumeVideo = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_resumeVideoKey, value);
+    notifyListeners();
+  }
+
+  Future<void> setKeepScreenOnVideo(bool value) async {
+    if (_keepScreenOnVideo == value) return;
+    _keepScreenOnVideo = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keepScreenOnVideoKey, value);
     notifyListeners();
   }
 }

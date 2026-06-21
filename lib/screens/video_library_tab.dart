@@ -5,8 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
 
 import '../models/media_folder.dart';
+import '../services/app_settings_service.dart';
 import '../services/local_media_service.dart';
 import '../services/locale_service.dart';
+import '../services/new_media_tracker.dart';
 import '../services/media_permission_service.dart';
 import '../theme/zen_palette.dart';
 import '../theme/zen_theme.dart';
@@ -23,8 +25,12 @@ import 'playlist_list_screen.dart';
 import '../services/video_media_actions.dart';
 import '../widgets/media_options_sheet.dart';
 import '../navigation/library_navigation.dart';
+import '../utils/media_display_name.dart';
 import '../utils/video_navigation.dart';
+import '../services/video_continue_watching_service.dart';
+import '../widgets/media_folder_list_icon.dart';
 import '../widgets/play_store_rating_home_prompt.dart';
+import '../widgets/video_continue_watching_card.dart';
 
 class VideoLibraryTab extends StatefulWidget {
   const VideoLibraryTab({super.key});
@@ -43,13 +49,17 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
   String _query = '';
   bool _awaitingPermission = false;
   final GlobalKey _languageButtonKey = GlobalKey();
+  final _continueWatching = VideoContinueWatchingService.instance;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
     LocaleService.instance.addListener(_onLocaleChanged);
+    _continueWatching.addListener(_onContinueWatchingChanged);
+    NewMediaTracker.instance.addListener(_onNewMediaBaselineChanged);
     _refresh();
+    unawaited(_continueWatching.refresh());
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _maybeShowLanguageTutorial();
       unawaited(_maybeShowPlayStoreRating());
@@ -86,7 +96,47 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     LocaleService.instance.removeListener(_onLocaleChanged);
+    _continueWatching.removeListener(_onContinueWatchingChanged);
+    NewMediaTracker.instance.removeListener(_onNewMediaBaselineChanged);
     super.dispose();
+  }
+
+  void _onContinueWatchingChanged() {
+    if (mounted) setState(() {});
+  }
+
+  void _onNewMediaBaselineChanged() {
+    if (!mounted || _loading) return;
+    unawaited(_updateFolderNewFlags());
+  }
+
+  Future<void> _updateFolderNewFlags() async {
+    if (_folders.isEmpty) return;
+    final updated = <MediaFolder>[];
+    for (final f in _folders) {
+      if (f.isRecentlyAdded) {
+        updated.add(f);
+        continue;
+      }
+      final isNew = await NewMediaTracker.isFolderNew(
+        folderId: f.id,
+        videoCount: f.videoCount,
+      );
+      updated.add(MediaFolder(
+        id: f.id,
+        displayName: f.displayName,
+        videoCount: f.videoCount,
+        assetPath: f.assetPath,
+        totalBytes: f.totalBytes,
+        isRecentlyAdded: f.isRecentlyAdded,
+        isNew: isNew,
+      ));
+    }
+    if (!mounted) return;
+    setState(() {
+      _folders = updated;
+      _applyFilter();
+    });
   }
 
   @override
@@ -95,6 +145,18 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
       _awaitingPermission = false;
       _refresh();
     }
+    if (state == AppLifecycleState.resumed) {
+      unawaited(_continueWatching.refresh());
+      if (_hasAccess) {
+        unawaited(_refresh());
+      }
+    }
+  }
+
+  Future<void> _dismissContinueWatching() async {
+    final entry = _continueWatching.visibleEntry;
+    if (entry == null) return;
+    await _continueWatching.dismiss(entry.storageKey);
   }
 
   Future<void> _refresh() async {
@@ -120,6 +182,7 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
           unawaited(_maybeShowPlayStoreRating());
         });
       }
+      unawaited(_continueWatching.refresh());
     } else {
       if (!mounted) return;
       setState(() {
@@ -210,6 +273,10 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
       context: context,
       videoSource: path,
       isLocal: true,
+      displayTitle: MediaDisplayName.forVideoSource(
+        source: path,
+        isLocal: true,
+      ),
     );
   }
 
@@ -319,6 +386,12 @@ class _VideoLibraryTabState extends State<VideoLibraryTab>
             ],
           ),
         ),
+        if (_continueWatching.visibleEntry != null)
+          VideoContinueWatchingCard(
+            entry: _continueWatching.visibleEntry!,
+            onDismiss: _dismissContinueWatching,
+            onOpened: () => unawaited(_continueWatching.refresh()),
+          ),
         SearchFilterBar(
           query: _query,
           onClear: _clearSearch,
@@ -491,7 +564,7 @@ class _FolderTile extends StatelessWidget {
 
     final zen = context.zen;
     return ListTile(
-      leading: Icon(Icons.folder_outlined, color: zen.textSecondary),
+      leading: const MediaFolderListIcon(),
       title: Row(
         children: [
           Flexible(

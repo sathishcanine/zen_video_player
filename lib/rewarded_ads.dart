@@ -4,6 +4,7 @@ import 'ads/ads_orchestrator.dart';
 import 'ads/rewarded_loading_overlay.dart';
 import 'download_service.dart';
 import 'services/play_store_rating_service.dart';
+import 'utils/media_display_name.dart';
 import 'utils/video_navigation.dart';
 
 /// Backwards-compat facade. The real logic lives in [AdsOrchestrator];
@@ -152,6 +153,10 @@ class AdManager {
         videoSource: url,
         isLocal: isLocal,
         allowNetworkDownload: allowNetworkDownloadInPlayer,
+        displayTitle: MediaDisplayName.forVideoSource(
+          source: url,
+          isLocal: isLocal,
+        ),
       );
     }
   }
