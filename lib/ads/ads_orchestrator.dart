@@ -50,7 +50,21 @@ class AdsOrchestrator {
       '${_orderedNetworks().map((n) => n.name).join(",")}',
     );
     await _initEnabledNetworks();
-    _preloadPrimary();
+  }
+
+  /// Preload playback rewarded on preview open, then wait so Play/Download do
+  /// not fire a duplicate request while the first load is still in flight.
+  static Future<void> preparePlaybackRewardedForPreview({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (!_booted) await init();
+    await _initEnabledNetworks();
+    if (!_config.rewardedEnabled) return;
+    final list = _orderedNetworks();
+    if (list.isEmpty) return;
+    final primary = list.first;
+    primary.preloadRewarded();
+    await primary.waitForRewardedPreload(timeout: timeout);
   }
 
   /// Apply a new config (typically parsed from a deeplink) at runtime.
@@ -65,7 +79,6 @@ class AdsOrchestrator {
     );
     await newConfig.save();
     await _initEnabledNetworks();
-    _preloadPrimary();
   }
 
   static Future<void> _initEnabledNetworks() async {
@@ -78,13 +91,6 @@ class AdsOrchestrator {
       }
     }
     await Future.wait(futures);
-  }
-
-  static void _preloadPrimary() {
-    final list = _orderedNetworks();
-    if (list.isEmpty) return;
-    final primary = list.first;
-    if (_config.rewardedEnabled) primary.preloadRewarded();
   }
 
   /// Networks resolved from [AdConfig.adOrder] only — registry entries not

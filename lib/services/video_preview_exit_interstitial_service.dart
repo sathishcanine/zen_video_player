@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zen_video_player/ads/ad_ids.dart';
 import 'package:zen_video_player/ads/ad_throttle.dart';
 import 'package:zen_video_player/ads/interstitial_loading_overlay.dart';
@@ -15,15 +14,13 @@ import 'exit_interstitial_gate.dart';
 /// Interstitial when leaving [VideoPreviewScreen] back to home.
 ///
 /// Pops to home first, shows a loader, requests a fill, then presents the ad
-/// or dismisses safely when no fill is available (1× per calendar day).
+/// or dismisses safely when no fill is available. No daily cap.
 class VideoPreviewExitInterstitialService {
   VideoPreviewExitInterstitialService._();
 
   static final VideoPreviewExitInterstitialService instance =
       VideoPreviewExitInterstitialService._();
 
-  static const String _lastShownDayKey =
-      'video_preview_exit_interstitial_day_v1';
   static const Duration _loadTimeout = Duration(seconds: 5);
 
   bool _adsReady = false;
@@ -38,25 +35,6 @@ class VideoPreviewExitInterstitialService {
     }
   }
 
-  String _dayKey(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-
-  Future<bool> _shownToday() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_lastShownDayKey) == _dayKey(DateTime.now());
-    } catch (_) {
-      return true;
-    }
-  }
-
-  Future<void> _markShownToday() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastShownDayKey, _dayKey(DateTime.now()));
-    } catch (_) {}
-  }
-
   bool get _platformSupported =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
@@ -65,11 +43,6 @@ class VideoPreviewExitInterstitialService {
     if (!_platformSupported) return false;
     if (!ExitInterstitialGate.tryAcquire()) {
       debugPrint('[preview_exit_ad] skip: another exit ad is active');
-      return false;
-    }
-    if (await _shownToday()) {
-      debugPrint('[preview_exit_ad] skip: already shown today');
-      ExitInterstitialGate.release();
       return false;
     }
 
@@ -103,11 +76,7 @@ class VideoPreviewExitInterstitialService {
         return false;
       }
 
-      final shown = await _present(ad);
-      if (shown) {
-        await _markShownToday();
-      }
-      return shown;
+      return await _present(ad);
     } catch (e, st) {
       debugPrint('[preview_exit_ad] tryShow failed: $e\n$st');
       removeLoader();

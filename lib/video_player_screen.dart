@@ -405,7 +405,11 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (!mounted || _playerBackHandling) return;
     if (_inPipMode) {
       final nav = rootNavigatorKey.currentState ?? Navigator.of(context);
-      if (nav.mounted && nav.canPop()) nav.pop();
+      if (_isNetworkPlayback) {
+        _popNetworkPlayerToHome(nav);
+      } else if (nav.mounted && nav.canPop()) {
+        nav.pop();
+      }
       return;
     }
 
@@ -418,7 +422,7 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       if (_isNetworkPlayback) {
-        _popPlayerRouteImmediate(navigator);
+        _popNetworkPlayerToHome(navigator);
         WidgetsBinding.instance.addPostFrameCallback((_) {
           unawaited(
             NetworkVideoExitInterstitialService.instance.tryShowAfterLanding(),
@@ -439,14 +443,19 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
   }
 
-  void _popPlayerRouteImmediate(NavigatorState nav) {
-    if (!nav.mounted || !nav.canPop()) return;
+  /// Network playback from preview: leave player **and** preview, land on home.
+  void _popNetworkPlayerToHome(NavigatorState nav) {
+    if (!nav.mounted) return;
     _pendingPopAfterExitAd = false;
     final video = _videoController;
     if (video?.value.isInitialized == true && video!.value.isPlaying) {
       unawaited(video.pause());
     }
-    nav.pop();
+    nav.popUntil((route) {
+      if (route.isFirst) return true;
+      final name = route.settings.name;
+      return name != VideoRoutes.player && name != VideoRoutes.preview;
+    });
   }
 
   /// Pops the player route after the native ad releases the Flutter surface.

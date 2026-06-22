@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 
+import 'ads/ads_orchestrator.dart';
+import 'ads/rewarded_loading_overlay.dart';
 import 'app_navigator.dart';
 import 'services/video_preview_exit_interstitial_service.dart';
+import 'utils/video_navigation.dart';
 import 'video/video_playback_handoff.dart';
 
 class VideoPreviewScreen extends StatefulWidget {
@@ -33,11 +36,23 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   VideoPlayerController? _previewController;
   bool _previewFailed = false;
   bool _backHandling = false;
+  bool _rewardedGateReady = false;
 
   @override
   void initState() {
     super.initState();
     _initPreview();
+    unawaited(_prepareRewardedGate());
+  }
+
+  Future<void> _prepareRewardedGate() async {
+    try {
+      await AdsOrchestrator.preparePlaybackRewardedForPreview();
+    } catch (e, st) {
+      debugPrint('[video_preview] rewarded gate failed: $e\n$st');
+    } finally {
+      if (mounted) setState(() => _rewardedGateReady = true);
+    }
   }
 
   @override
@@ -73,6 +88,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   }
 
   void _playVideo() {
+    if (!_rewardedGateReady) return;
     AdManager.showRewarded(
       context,
       url: widget.videoSource,
@@ -93,6 +109,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   }
 
   void _downloadVideo() {
+    if (!_rewardedGateReady) return;
     AdManager.showRewarded(
       context,
       url: widget.videoSource,
@@ -103,13 +120,24 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
   }
 
   Future<void> _onBackPressed() async {
-    if (_backHandling) return;
+    if (!_rewardedGateReady || _backHandling) return;
     _backHandling = true;
     try {
       final nav = rootNavigatorKey.currentState ?? Navigator.of(context);
-      if (nav.canPop()) {
-        nav.pop();
+      if (!nav.mounted) return;
+
+      final preview = _previewController;
+      if (preview?.value.isInitialized == true && preview!.value.isPlaying) {
+        await preview.pause();
       }
+
+      if (nav.canPop()) {
+        nav.popUntil((route) {
+          if (route.isFirst) return true;
+          return route.settings.name != VideoRoutes.preview;
+        });
+      }
+
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(
           VideoPreviewExitInterstitialService.instance.tryShowAfterLanding(),
@@ -134,7 +162,10 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
         if (didPop) return;
         unawaited(_onBackPressed());
       },
-      child: Scaffold(
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Scaffold(
 
       appBar: AppBar(
         leading: BackButton(onPressed: () => unawaited(_onBackPressed())),
@@ -342,7 +373,10 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
           ),
         ),
       ),
-    ),
+          ),
+          if (!_rewardedGateReady) const RewardedLoadingOverlay(),
+        ],
+      ),
     );
   }
 }

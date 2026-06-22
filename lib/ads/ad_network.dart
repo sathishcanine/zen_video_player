@@ -17,6 +17,12 @@ abstract class AdNetwork {
   /// Preload a rewarded ad in the background. Should be idempotent.
   void preloadRewarded();
 
+  /// Blocks until a rewarded or rewarded-interstitial fill is ready, loading
+  /// has finished without a fill, or [timeout] elapses.
+  Future<void> waitForRewardedPreload({
+    Duration timeout = const Duration(seconds: 8),
+  });
+
   /// Show a rewarded ad. [onReward] fires only if the user actually
   /// earned the reward. Returns true if an ad was displayed.
   ///

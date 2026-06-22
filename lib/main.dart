@@ -26,6 +26,7 @@ import 'services/locale_service.dart';
 import 'services/play_store_rating_service.dart';
 import 'services/push_notification_service.dart';
 import 'theme/zen_theme.dart';
+import 'utils/video_navigation.dart';
 import 'video_player_screen.dart';
 import 'widgets/play_store_rating_coordinator.dart';
 
@@ -199,6 +200,7 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     if (video.isEmpty) return;
     rootNavigatorKey.currentState?.push(
       MaterialPageRoute(
+        settings: const RouteSettings(name: VideoRoutes.preview),
         builder: (_) => VideoPreviewScreen(
           videoSource: video,
           openedViaDeeplink: true,

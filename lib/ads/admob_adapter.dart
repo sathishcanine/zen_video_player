@@ -146,6 +146,19 @@ class AdmobAdapter implements AdNetwork {
     }
   }
 
+  @override
+  Future<void> waitForRewardedPreload({
+    Duration timeout = const Duration(seconds: 8),
+  }) async {
+    if (!_initialized) return;
+    final deadline = DateTime.now().add(timeout);
+    while (DateTime.now().isBefore(deadline)) {
+      if (_rewarded != null || _rewardedInterstitial != null) return;
+      if (!_rewardedLoading && !_rewardedInterstitialLoading) return;
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    }
+  }
+
   void _preloadRewardedInterstitial() {
     if (!_initialized ||
         _rewardedInterstitial != null ||

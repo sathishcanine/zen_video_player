@@ -49,7 +49,7 @@ const String _adMobProdRewardedInterstitialUnit =
 /// Video player back — engaged users only (1× per day in app logic).
 const String _adMobProdVideoExitInterstitialUnit =
     'ca-app-pub-8723888126390754/8935596981';
-/// Video preview back — once per day after landing on home.
+/// Video preview back — after landing on home (no daily cap).
 const String _adMobProdVideoPreviewExitInterstitialUnit =
     'ca-app-pub-8723888126390754/2414566459';
 /// Network video player back — after landing on home (no session gate).
