@@ -4,7 +4,6 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:google_mobile_ads/google_mobile_ads.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 import 'package:zen_video_player/ads/ad_ids.dart';
 import 'package:zen_video_player/ads/ad_throttle.dart';
 import 'package:zen_video_player/ads/interstitial_loading_overlay.dart';
@@ -12,18 +11,16 @@ import 'package:zen_video_player/app_navigator.dart';
 
 import 'exit_interstitial_gate.dart';
 
-/// Interstitial when leaving [VideoPreviewScreen] back to home.
+/// Interstitial when leaving the player after **network** playback (back → home).
 ///
-/// Pops to home first, shows a loader, requests a fill, then presents the ad
-/// or dismisses safely when no fill is available (1× per calendar day).
-class VideoPreviewExitInterstitialService {
-  VideoPreviewExitInterstitialService._();
+/// No session-length gate; may show on every eligible back. Mutually exclusive
+/// with the 8-minute local-player exit interstitial via [ExitInterstitialGate].
+class NetworkVideoExitInterstitialService {
+  NetworkVideoExitInterstitialService._();
 
-  static final VideoPreviewExitInterstitialService instance =
-      VideoPreviewExitInterstitialService._();
+  static final NetworkVideoExitInterstitialService instance =
+      NetworkVideoExitInterstitialService._();
 
-  static const String _lastShownDayKey =
-      'video_preview_exit_interstitial_day_v1';
   static const Duration _loadTimeout = Duration(seconds: 5);
 
   bool _adsReady = false;
@@ -34,42 +31,18 @@ class VideoPreviewExitInterstitialService {
       await MobileAds.instance.initialize();
       _adsReady = true;
     } catch (e) {
-      debugPrint('[preview_exit_ad] MobileAds init failed: $e');
+      debugPrint('[network_exit_ad] MobileAds init failed: $e');
     }
-  }
-
-  String _dayKey(DateTime dt) =>
-      '${dt.year}-${dt.month.toString().padLeft(2, '0')}-${dt.day.toString().padLeft(2, '0')}';
-
-  Future<bool> _shownToday() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      return prefs.getString(_lastShownDayKey) == _dayKey(DateTime.now());
-    } catch (_) {
-      return true;
-    }
-  }
-
-  Future<void> _markShownToday() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setString(_lastShownDayKey, _dayKey(DateTime.now()));
-    } catch (_) {}
   }
 
   bool get _platformSupported =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
-  /// Call after the preview route has been popped and home is visible.
+  /// Call after the player route has been popped and home is visible.
   Future<bool> tryShowAfterLanding() async {
     if (!_platformSupported) return false;
     if (!ExitInterstitialGate.tryAcquire()) {
-      debugPrint('[preview_exit_ad] skip: another exit ad is active');
-      return false;
-    }
-    if (await _shownToday()) {
-      debugPrint('[preview_exit_ad] skip: already shown today');
-      ExitInterstitialGate.release();
+      debugPrint('[network_exit_ad] skip: another exit ad is active');
       return false;
     }
 
@@ -82,7 +55,7 @@ class VideoPreviewExitInterstitialService {
       try {
         entry?.remove();
       } catch (e) {
-        debugPrint('[preview_exit_ad] loader remove: $e');
+        debugPrint('[network_exit_ad] loader remove: $e');
       }
       entry = null;
     }
@@ -99,17 +72,13 @@ class VideoPreviewExitInterstitialService {
       final ad = await _requestInterstitial();
       removeLoader();
       if (ad == null) {
-        debugPrint('[preview_exit_ad] skip: no fill');
+        debugPrint('[network_exit_ad] skip: no fill');
         return false;
       }
 
-      final shown = await _present(ad);
-      if (shown) {
-        await _markShownToday();
-      }
-      return shown;
+      return await _present(ad);
     } catch (e, st) {
-      debugPrint('[preview_exit_ad] tryShow failed: $e\n$st');
+      debugPrint('[network_exit_ad] tryShow failed: $e\n$st');
       removeLoader();
       return false;
     } finally {
@@ -127,7 +96,7 @@ class VideoPreviewExitInterstitialService {
     AdThrottle.recordRequest();
 
     InterstitialAd.load(
-      adUnitId: adMobVideoPreviewExitInterstitialUnitId,
+      adUnitId: adMobNetworkVideoExitInterstitialUnitId,
       request: const AdRequest(),
       adLoadCallback: InterstitialAdLoadCallback(
         onAdLoaded: (ad) {
@@ -135,7 +104,7 @@ class VideoPreviewExitInterstitialService {
         },
         onAdFailedToLoad: (err) {
           debugPrint(
-            '[preview_exit_ad] load failed: ${err.code} ${err.message}',
+            '[network_exit_ad] load failed: ${err.code} ${err.message}',
           );
           if (!completer.isCompleted) completer.complete(null);
         },
@@ -145,7 +114,7 @@ class VideoPreviewExitInterstitialService {
     return completer.future.timeout(
       _loadTimeout,
       onTimeout: () {
-        debugPrint('[preview_exit_ad] load timed out');
+        debugPrint('[network_exit_ad] load timed out');
         return null;
       },
     );
@@ -166,7 +135,7 @@ class VideoPreviewExitInterstitialService {
       onAdFailedToShowFullScreenContent: (failed, err) {
         failed.dispose();
         debugPrint(
-          '[preview_exit_ad] show failed: ${err.code} ${err.message}',
+          '[network_exit_ad] show failed: ${err.code} ${err.message}',
         );
         if (!completer.isCompleted) completer.complete(false);
       },
@@ -175,7 +144,7 @@ class VideoPreviewExitInterstitialService {
     try {
       ad.show();
     } catch (e) {
-      debugPrint('[preview_exit_ad] show threw: $e');
+      debugPrint('[network_exit_ad] show threw: $e');
       ad.dispose();
       return false;
     }
@@ -183,7 +152,7 @@ class VideoPreviewExitInterstitialService {
     return completer.future.timeout(
       const Duration(seconds: 120),
       onTimeout: () {
-        debugPrint('[preview_exit_ad] show timed out');
+        debugPrint('[network_exit_ad] show timed out');
         return markedShown;
       },
     );

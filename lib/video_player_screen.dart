@@ -20,6 +20,7 @@ import 'services/playback_resume_service.dart';
 import 'services/sleep_timer_service.dart';
 import 'services/video_continue_watching_service.dart';
 import 'services/video_exit_interstitial_service.dart';
+import 'services/network_video_exit_interstitial_service.dart';
 import 'services/video_orientation_channel.dart';
 import 'services/video_playback_queue.dart';
 import 'utils/safe_stream.dart';
@@ -154,10 +155,13 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       unawaited(WakelockPlus.enable());
     }
     unawaited(_primePlayerOrientation());
-    _exitAdPreloadTimer = Timer.periodic(const Duration(seconds: 45), (_) {
-      if (!mounted) return;
-      VideoExitInterstitialService.instance.preloadIfNearEligible();
-    });
+    final isNetworkPlayback = !widget.isLocal && !widget.useContentUri;
+    if (!isNetworkPlayback) {
+      _exitAdPreloadTimer = Timer.periodic(const Duration(seconds: 45), (_) {
+        if (!mounted) return;
+        VideoExitInterstitialService.instance.preloadIfNearEligible();
+      });
+    }
     if (Platform.isAndroid) {
       _pipModeSub = VideoPipHelper.pipModeChanges.listen(
         (inPip) {
@@ -186,7 +190,9 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (!mounted) return;
-      VideoExitInterstitialService.instance.preloadIfNearEligible();
+      if (widget.isLocal || widget.useContentUri) {
+        VideoExitInterstitialService.instance.preloadIfNearEligible();
+      }
       unawaited(
         VideoPlayerTelemetry.screenOpened(
           isLocal: widget.isLocal || widget.useContentUri,
@@ -393,6 +399,8 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
     unawaited(VideoPipHelper.updatePipPlaybackAction(playing));
   }
 
+  bool get _isNetworkPlayback => !widget.isLocal && !widget.useContentUri;
+
   Future<void> _onPlayerBackPressed() async {
     if (!mounted || _playerBackHandling) return;
     if (_inPipMode) {
@@ -403,12 +411,23 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
 
     final navigator = rootNavigatorKey.currentState ?? Navigator.of(context);
     _playerBackHandling = true;
-    _pendingPopAfterExitAd = true;
     try {
       final video = _videoController;
       if (video?.value.isInitialized == true && video!.value.isPlaying) {
         await video.pause();
       }
+
+      if (_isNetworkPlayback) {
+        _popPlayerRouteImmediate(navigator);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(
+            NetworkVideoExitInterstitialService.instance.tryShowAfterLanding(),
+          );
+        });
+        return;
+      }
+
+      _pendingPopAfterExitAd = true;
       if (mounted) {
         await VideoExitInterstitialService.instance.tryShowBeforeExit(context);
       }
@@ -418,6 +437,16 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       _playerBackHandling = false;
       _popPlayerRoute(navigator: navigator);
     }
+  }
+
+  void _popPlayerRouteImmediate(NavigatorState nav) {
+    if (!nav.mounted || !nav.canPop()) return;
+    _pendingPopAfterExitAd = false;
+    final video = _videoController;
+    if (video?.value.isInitialized == true && video!.value.isPlaying) {
+      unawaited(video.pause());
+    }
+    nav.pop();
   }
 
   /// Pops the player route after the native ad releases the Flutter surface.

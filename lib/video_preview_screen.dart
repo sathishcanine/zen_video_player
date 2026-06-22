@@ -4,7 +4,6 @@ import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 
-import 'ads/video_preview_native_ad.dart';
 import 'app_navigator.dart';
 import 'services/video_preview_exit_interstitial_service.dart';
 import 'video/video_playback_handoff.dart';
@@ -337,14 +336,6 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
                 ),
 
               ],
-
-              const SizedBox(height: 20),
-
-              const Center(
-                child: VideoPreviewNativeAd(),
-              ),
-
-              const SizedBox(height: 20),
 
               ],
             ),

@@ -10,6 +10,8 @@ import 'package:zen_video_player/ads/ad_throttle.dart';
 import 'package:zen_video_player/ads/interstitial_loading_overlay.dart';
 import 'package:zen_video_player/services/active_session_tracker.dart';
 
+import 'exit_interstitial_gate.dart';
+
 /// Video-exit interstitial for engaged users (8 min session, back from player).
 ///
 /// Show-rate policy:
@@ -29,7 +31,6 @@ class VideoExitInterstitialService {
 
   InterstitialAd? _ad;
   bool _loading = false;
-  bool _flowActive = false;
   bool _adsReady = false;
   DateTime? _lastFailedPreloadAt;
 
@@ -137,17 +138,22 @@ class VideoExitInterstitialService {
 
   /// Returns `true` if an interstitial was shown.
   Future<bool> tryShowBeforeExit(BuildContext context) async {
-    if (!_platformSupported || _flowActive) return false;
+    if (!_platformSupported) return false;
+    if (!ExitInterstitialGate.tryAcquire()) {
+      debugPrint('[video_exit_ad] skip: another exit ad is active');
+      return false;
+    }
     if (!ActiveSessionTracker.instance.meetsVideoExitAdThreshold) {
       debugPrint('[video_exit_ad] skip: session under 8 min');
+      ExitInterstitialGate.release();
       return false;
     }
     if (await _shownToday()) {
       debugPrint('[video_exit_ad] skip: already shown today');
+      ExitInterstitialGate.release();
       return false;
     }
 
-    _flowActive = true;
     OverlayEntry? entry;
     var loaderRemoved = false;
 
@@ -192,8 +198,8 @@ class VideoExitInterstitialService {
       removeLoader();
       return false;
     } finally {
-      _flowActive = false;
       if (!loaderRemoved) removeLoader();
+      ExitInterstitialGate.release();
     }
   }
 

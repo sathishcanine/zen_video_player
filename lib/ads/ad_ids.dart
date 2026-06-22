@@ -52,6 +52,9 @@ const String _adMobProdVideoExitInterstitialUnit =
 /// Video preview back — once per day after landing on home.
 const String _adMobProdVideoPreviewExitInterstitialUnit =
     'ca-app-pub-8723888126390754/2414566459';
+/// Network video player back — after landing on home (no session gate).
+const String _adMobProdNetworkVideoExitInterstitialUnit =
+    'ca-app-pub-8723888126390754/8393651444';
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
 const String _adMobProdNativeAdvancedUnit =
@@ -96,6 +99,10 @@ String get adMobVideoExitInterstitialUnitId => kUseTestAdIds
 String get adMobVideoPreviewExitInterstitialUnitId => kUseTestAdIds
     ? _adMobTestInterstitialUnit
     : _adMobProdVideoPreviewExitInterstitialUnit;
+
+String get adMobNetworkVideoExitInterstitialUnitId => kUseTestAdIds
+    ? _adMobTestInterstitialUnit
+    : _adMobProdNetworkVideoExitInterstitialUnit;
 
 String get adMobProUnlockRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdUnlockRewardedUnit;
