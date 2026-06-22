@@ -49,6 +49,9 @@ const String _adMobProdRewardedInterstitialUnit =
 /// Video player back — engaged users only (1× per day in app logic).
 const String _adMobProdVideoExitInterstitialUnit =
     'ca-app-pub-8723888126390754/8935596981';
+/// Video preview back — once per day after landing on home.
+const String _adMobProdVideoPreviewExitInterstitialUnit =
+    'ca-app-pub-8723888126390754/2414566459';
 const String _adMobProdUnlockRewardedUnit =
     'ca-app-pub-8723888126390754/8579446752';
 const String _adMobProdNativeAdvancedUnit =
@@ -89,6 +92,10 @@ String get adMobRewardedInterstitialUnitId => kUseTestAdIds
 String get adMobVideoExitInterstitialUnitId => kUseTestAdIds
     ? _adMobTestInterstitialUnit
     : _adMobProdVideoExitInterstitialUnit;
+
+String get adMobVideoPreviewExitInterstitialUnitId => kUseTestAdIds
+    ? _adMobTestInterstitialUnit
+    : _adMobProdVideoPreviewExitInterstitialUnit;
 
 String get adMobProUnlockRewardedUnitId =>
     kUseTestAdIds ? _adMobTestRewardedUnit : _adMobProdUnlockRewardedUnit;

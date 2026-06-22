@@ -1,9 +1,12 @@
+import 'dart:async';
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:video_player/video_player.dart';
 import 'package:zen_video_player/rewarded_ads.dart';
 
 import 'ads/video_preview_native_ad.dart';
+import 'app_navigator.dart';
+import 'services/video_preview_exit_interstitial_service.dart';
 import 'video/video_playback_handoff.dart';
 
 class VideoPreviewScreen extends StatefulWidget {
@@ -30,6 +33,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
   VideoPlayerController? _previewController;
   bool _previewFailed = false;
+  bool _backHandling = false;
 
   @override
   void initState() {
@@ -99,6 +103,23 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
   }
 
+  Future<void> _onBackPressed() async {
+    if (_backHandling) return;
+    _backHandling = true;
+    try {
+      final nav = rootNavigatorKey.currentState ?? Navigator.of(context);
+      if (nav.canPop()) {
+        nav.pop();
+      }
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        unawaited(
+          VideoPreviewExitInterstitialService.instance.tryShowAfterLanding(),
+        );
+      });
+    } finally {
+      _backHandling = false;
+    }
+  }
 
   bool get _showDownload =>
       widget.isLocal || widget.openedViaDeeplink;
@@ -108,9 +129,16 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
 
     String fileName = widget.videoSource.split('/').last;
 
-    return Scaffold(
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, _) {
+        if (didPop) return;
+        unawaited(_onBackPressed());
+      },
+      child: Scaffold(
 
       appBar: AppBar(
+        leading: BackButton(onPressed: () => unawaited(_onBackPressed())),
         title: const Text("Video Preview"),
         centerTitle: true,
       ),
@@ -323,6 +351,7 @@ class _VideoPreviewScreenState extends State<VideoPreviewScreen> {
           ),
         ),
       ),
+    ),
     );
   }
 }
