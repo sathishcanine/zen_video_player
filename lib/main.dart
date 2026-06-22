@@ -1,7 +1,8 @@
 import 'dart:async';
+import 'dart:io' show Platform;
 
 import 'package:app_links/app_links.dart';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
 import 'package:flutter/material.dart';
 import 'package:zen_video_player/utils/media_display_name.dart';
 import 'package:zen_video_player/l10n/app_localizations.dart';
@@ -24,6 +25,7 @@ import 'services/pro_features_service.dart';
 import 'services/cast_service.dart';
 import 'services/locale_service.dart';
 import 'services/play_store_rating_service.dart';
+import 'services/push_notification_service.dart';
 import 'theme/zen_theme.dart';
 import 'video_player_screen.dart';
 import 'widgets/play_store_rating_coordinator.dart';
@@ -36,6 +38,10 @@ bool _isOpenWithVideoUri(Uri? uri) {
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  if (!kIsWeb && Platform.isAndroid) {
+    PushNotificationService.registerBackgroundHandler();
+  }
 
   // Silent cache repair for 3.0.2 storage leak — no user steps required.
   await AppCacheMaintenance.runOnColdStart();
@@ -60,14 +66,15 @@ Future<void> main() async {
       runApp(DiskwalaApp(coldStartOpenVideo: coldStartOpenVideo));
       // Defer heavy SDK init until after first frame (reduces ANR risk on update).
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        unawaited(Telemetry.init());
-        if (!kIsWeb) {
-          unawaited(CastService.instance.init());
-        }
-        unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
-        ActiveSessionTracker.instance.start();
-        unawaited(PlayStoreRatingService.recordCalendarDay());
-        unawaited(FeatureAnnouncementService.recordVersionOnColdStart());
+        unawaited(Telemetry.init().then((_) {
+          if (!kIsWeb) {
+            unawaited(CastService.instance.init());
+          }
+          unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
+          ActiveSessionTracker.instance.start();
+          unawaited(PlayStoreRatingService.recordCalendarDay());
+          unawaited(FeatureAnnouncementService.recordVersionOnColdStart());
+        }));
       });
     },
     (error, stack) => Telemetry.recordZoneError(error, stack),
@@ -92,6 +99,24 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
     super.initState();
     LocaleService.instance.addListener(_onLocaleChanged);
     initDeepLinks();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      unawaited(_initPushNotifications());
+    });
+  }
+
+  Future<void> _initPushNotifications() async {
+    try {
+      final deadline = DateTime.now().add(const Duration(seconds: 10));
+      while (!Telemetry.isFirebaseReady && DateTime.now().isBefore(deadline)) {
+        await Future<void>.delayed(const Duration(milliseconds: 80));
+      }
+      await PushNotificationService.init(onDeeplink: _handleDeeplink);
+    } catch (e, st) {
+      debugPrint('[push] startup init failed (app continues): $e\n$st');
+      unawaited(
+        Telemetry.recordNonFatal(e, st, reason: 'push_startup_init'),
+      );
+    }
   }
 
   @override
@@ -109,7 +134,8 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
   ///   1. Update ad-network config from any extra query params.
   ///   2. Navigate to the video preview if `url=` is present.
   Future<void> _handleDeeplink(Uri uri) async {
-    final scheme = uri.scheme.toLowerCase();
+    try {
+      final scheme = uri.scheme.toLowerCase();
     if (scheme == 'content' || scheme == 'file') {
       if (!mounted) return;
       void pushOpenWith() {
@@ -181,19 +207,37 @@ class _DiskwalaAppState extends State<DiskwalaApp> {
         ),
       ),
     );
+    } catch (e, st) {
+      debugPrint('[deeplink] handle failed: $e\n$st');
+      unawaited(
+        Telemetry.recordNonFatal(e, st, reason: 'deeplink_handle'),
+      );
+    }
   }
 
   Future<void> initDeepLinks() async {
-    final appLinks = AppLinks();
+    try {
+      final appLinks = AppLinks();
 
-    final initial = await appLinks.getInitialAppLink();
-    if (initial != null && !_isOpenWithVideoUri(initial)) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        _handleDeeplink(initial);
-      });
+      final initial = await appLinks.getInitialAppLink();
+      if (initial != null && !_isOpenWithVideoUri(initial)) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          unawaited(_handleDeeplink(initial));
+        });
+      }
+
+      _linkSubscription = appLinks.uriLinkStream.listen(
+        (uri) => unawaited(_handleDeeplink(uri)),
+        onError: (Object e, StackTrace st) {
+          debugPrint('[deeplink] stream error: $e\n$st');
+        },
+      );
+    } catch (e, st) {
+      debugPrint('[deeplink] init failed (app continues): $e\n$st');
+      unawaited(
+        Telemetry.recordNonFatal(e, st, reason: 'deeplink_init'),
+      );
     }
-
-    _linkSubscription = appLinks.uriLinkStream.listen(_handleDeeplink);
   }
 
   List<Route<dynamic>> _onGenerateInitialRoutes(String initialRoute) {

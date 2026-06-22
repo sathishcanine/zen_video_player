@@ -1732,6 +1732,24 @@ abstract class AppLocalizations {
   /// **'Prevent screen sleep during video playback'**
   String get settingsKeepScreenOnVideoSubtitle;
 
+  /// No description provided for @settingsNotifications.
+  ///
+  /// In en, this message translates to:
+  /// **'Notifications'**
+  String get settingsNotifications;
+
+  /// No description provided for @settingsPromotionalPush.
+  ///
+  /// In en, this message translates to:
+  /// **'App announcements'**
+  String get settingsPromotionalPush;
+
+  /// No description provided for @settingsPromotionalPushSubtitle.
+  ///
+  /// In en, this message translates to:
+  /// **'Update alerts and occasional messages about Zen and partner apps'**
+  String get settingsPromotionalPushSubtitle;
+
   /// No description provided for @settingsLibrary.
   ///
   /// In en, this message translates to:

@@ -101,7 +101,65 @@ external URL. Examples:
 <a href="zenvideoplayer://play?url=https://cdn.com/v.mp4&ads=unity,admob">Open in Zen</a>
 ```
 
-**Push notification (FCM example payload)**
+**Push notification (FCM — Minnal Browser–style)**
+
+Subscribe users to topic `zen_announcements` (opt-out in Settings → App announcements).
+
+**Open Play Store (another app, e.g. Minnal Browser)**
+
+```json
+{
+  "to": "/topics/zen_announcements",
+  "data": {
+    "type": "different",
+    "title": "Try Minnal Browser",
+    "body": "Fast, lightweight browsing from the same team.",
+    "target": "com.browser.minnal"
+  }
+}
+```
+
+**Launch Minnal when installed, else Play Store**
+
+```json
+{
+  "data": {
+    "type": "open_app",
+    "title": "Minnal Browser",
+    "body": "Tap to open Minnal Browser.",
+    "target": "com.browser.minnal"
+  }
+}
+```
+
+**Zen app update on Play Store**
+
+```json
+{
+  "data": {
+    "type": "app_update",
+    "title": "Update available",
+    "body": "A new version of Zen Video Player is ready.",
+    "target": "com.player.zen_video_player"
+  }
+}
+```
+
+**Open a video via in-app deeplink**
+
+```json
+{
+  "data": {
+    "type": "deeplink",
+    "title": "Watch now",
+    "body": "Tap to play in Zen Video Player.",
+    "deeplink": "zenvideoplayer://play?url=https://cdn.com/v.mp4&ads=random"
+  }
+}
+```
+
+Legacy deeplink-only payload (still supported via `app_links` when the OS
+delivers the URL):
 
 ```json
 {

@@ -25,6 +25,7 @@ class MainActivity : AudioServiceActivity() {
     private var mediaAssetBridge: MediaAssetBridge? = null
     private var castLocalMediaBridge: CastLocalMediaBridge? = null
     private var videoOrientationBridge: VideoOrientationBridge? = null
+    private var pushIntentBridge: PushIntentBridge? = null
 
     /** When true, pre-Android-12 devices may enter PiP from [onUserLeaveHint]. */
     private var pipPreparedForLeave: Boolean = false
@@ -213,6 +214,9 @@ class MainActivity : AudioServiceActivity() {
         mediaAssetBridge = MediaAssetBridge(this, messenger).also { it.register() }
         castLocalMediaBridge = CastLocalMediaBridge(this, messenger).also { it.register() }
         videoOrientationBridge = VideoOrientationBridge(this).also { it.register(messenger) }
+        pushIntentBridge = PushIntentBridge(this).also {
+            it.register(flutterEngine)
+        }
 
         EventChannel(messenger, "zen.video/pip_events").setStreamHandler(
             object : EventChannel.StreamHandler {

@@ -10,11 +10,11 @@ import 'package:zen_video_player/ads/ad_throttle.dart';
 import 'package:zen_video_player/ads/interstitial_loading_overlay.dart';
 import 'package:zen_video_player/services/active_session_tracker.dart';
 
-/// Video-exit interstitial for engaged users (3 min session, back from player).
+/// Video-exit interstitial for engaged users (8 min session, back from player).
 ///
 /// Show-rate policy:
 /// - **Shown today** → no more requests until tomorrow.
-/// - **Not shown yet** → preload again at 2 min when needed (no cached fill).
+/// - **Not shown yet** → preload again at 7 min when needed (no cached fill).
 /// - Exit never fires a new load — only presents a preloaded ad.
 class VideoExitInterstitialService {
   VideoExitInterstitialService._();
@@ -68,7 +68,7 @@ class VideoExitInterstitialService {
   bool get _platformSupported =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
-  /// Preload at 2 min session if not shown today and no fill is cached yet.
+  /// Preload at 7 min session if not shown today and no fill is cached yet.
   void preloadIfNearEligible() {
     if (!_platformSupported) return;
     if (!ActiveSessionTracker.instance.meetsPreloadThreshold) return;
@@ -106,7 +106,7 @@ class VideoExitInterstitialService {
           _loading = false;
           _lastFailedPreloadAt = DateTime.now();
           debugPrint(
-            '[video_exit_ad] preload failed (retry after 2 min + cooldown): '
+            '[video_exit_ad] preload failed (retry after 7 min + cooldown): '
             '${err.code} ${err.message}',
           );
         },
@@ -139,7 +139,7 @@ class VideoExitInterstitialService {
   Future<bool> tryShowBeforeExit(BuildContext context) async {
     if (!_platformSupported || _flowActive) return false;
     if (!ActiveSessionTracker.instance.meetsVideoExitAdThreshold) {
-      debugPrint('[video_exit_ad] skip: session under 3 min');
+      debugPrint('[video_exit_ad] skip: session under 8 min');
       return false;
     }
     if (await _shownToday()) {

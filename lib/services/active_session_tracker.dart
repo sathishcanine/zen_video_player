@@ -7,10 +7,10 @@ class ActiveSessionTracker with WidgetsBindingObserver {
   static final ActiveSessionTracker instance = ActiveSessionTracker._();
 
   /// Minimum engaged session before a video-exit interstitial may show.
-  static const Duration videoExitAdMinSession = Duration(minutes: 3);
+  static const Duration videoExitAdMinSession = Duration(minutes: 8);
 
   /// Start preloading the exit interstitial when the user is close to eligible.
-  static const Duration videoExitAdPreloadSession = Duration(minutes: 2);
+  static const Duration videoExitAdPreloadSession = Duration(minutes: 7);
 
   Duration _accumulated = Duration.zero;
   DateTime? _resumedAt;

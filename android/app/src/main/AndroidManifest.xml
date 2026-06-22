@@ -88,6 +88,9 @@
             android:name="com.google.android.gms.ads.APPLICATION_ID"
             android:value="ca-app-pub-8723888126390754~6064872820"/>
         <meta-data
+            android:name="com.google.firebase.messaging.default_notification_channel_id"
+            android:value="zen_announcements"/>
+        <meta-data
             android:name="com.google.android.gms.cast.framework.OPTIONS_PROVIDER_CLASS_NAME"
             android:value="com.felnanuke.google_cast.GoogleCastOptionsProvider"/>
         <service
@@ -136,5 +139,6 @@
             <action android:name="android.intent.action.VIEW"/>
             <data android:scheme="http"/>
         </intent>
+        <package android:name="com.browser.minnal"/>
     </queries>
 </manifest>

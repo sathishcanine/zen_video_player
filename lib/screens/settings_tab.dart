@@ -7,6 +7,7 @@ import 'package:zen_video_player/l10n/app_localizations.dart';
 import '../services/app_settings_service.dart';
 import '../services/hidden_folders_service.dart';
 import '../services/pro_features_service.dart';
+import '../services/push_notification_service.dart';
 import '../utils/video_navigation.dart';
 import '../widgets/hidden_folders_sheet.dart';
 import '../widgets/duplicate_choose_dialog.dart';
@@ -152,6 +153,28 @@ class _SettingsTabState extends State<SettingsTab> {
                     ),
                     value: settings.keepScreenOnVideo,
                     onChanged: settings.setKeepScreenOnVideo,
+                  ),
+                  const _SectionDivider(),
+                  _SectionLabel(text: l10n.settingsNotifications),
+                  SwitchListTile(
+                    secondary: const Icon(Icons.campaign_outlined),
+                    title: Text(
+                      l10n.settingsPromotionalPush,
+                      style: const TextStyle(fontWeight: FontWeight.w500),
+                    ),
+                    subtitle: Text(
+                      l10n.settingsPromotionalPushSubtitle,
+                      style: subtitleStyle,
+                    ),
+                    value: settings.promotionalPushEnabled,
+                    onChanged: (enabled) async {
+                      try {
+                        await settings.setPromotionalPushEnabled(enabled);
+                        await PushNotificationService.syncTopicSubscription();
+                      } catch (e) {
+                        debugPrint('[push] settings toggle failed: $e');
+                      }
+                    },
                   ),
                   const _SectionDivider(),
                   _SectionLabel(text: l10n.settingsAppearance),

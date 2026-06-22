@@ -956,6 +956,16 @@ class AppLocalizationsPt extends AppLocalizations {
       'Prevent screen sleep during video playback';
 
   @override
+  String get settingsNotifications => 'Notifications';
+
+  @override
+  String get settingsPromotionalPush => 'App announcements';
+
+  @override
+  String get settingsPromotionalPushSubtitle =>
+      'Update alerts and occasional messages about Zen and partner apps';
+
+  @override
   String get settingsLibrary => 'Library';
 
   @override
