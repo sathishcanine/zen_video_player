@@ -125,10 +125,13 @@ class _ZenVideoPlayerChromeState extends State<ZenVideoPlayerChrome> {
     super.initState();
     _video.addListener(_onVideoTick);
     _castConnected = CastService.instance.isConnected;
-    _castConnectionSub = CastService.instance.isConnectedStream.listen((connected) {
-      if (!mounted || _castConnected == connected) return;
-      setState(() => _castConnected = connected);
-    });
+    _castConnectionSub = CastService.instance.isConnectedStream.listen(
+      (connected) {
+        if (!mounted || _castConnected == connected) return;
+        setState(() => _castConnected = connected);
+      },
+      onError: (_, __) {},
+    );
     _scheduleHide();
     if (widget.resumedFrom != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) => _showResumeBanner());

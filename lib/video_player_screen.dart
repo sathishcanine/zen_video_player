@@ -22,6 +22,7 @@ import 'services/video_continue_watching_service.dart';
 import 'services/video_exit_interstitial_service.dart';
 import 'services/video_orientation_channel.dart';
 import 'services/video_playback_queue.dart';
+import 'utils/safe_stream.dart';
 import 'utils/video_navigation.dart';
 import 'video/video_playback_handoff.dart';
 import 'video_pip_helper.dart';
@@ -910,8 +911,12 @@ class _VideoPlayerScreenState extends State<VideoPlayerScreen>
       unawaited(WakelockPlus.disable());
     }
     _pipPreparedSignature = null;
-    _pipModeSub?.cancel();
-    _pipControlSub?.cancel();
+    final pipModeSub = _pipModeSub;
+    final pipControlSub = _pipControlSub;
+    _pipModeSub = null;
+    _pipControlSub = null;
+    unawaited(safeCancelSubscription(pipModeSub));
+    unawaited(safeCancelSubscription(pipControlSub));
     unawaited(VideoPipHelper.clearPipEligibility());
     unawaited(VideoOrientationChannel.exitPlayerMode());
     SystemChrome.setPreferredOrientations(DeviceOrientation.values);

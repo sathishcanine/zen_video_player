@@ -238,15 +238,25 @@ class AudioPlayerService extends ChangeNotifier {
     await playQueue(shuffled);
   }
 
+  bool _stopClearInProgress = false;
+
   Future<void> stopAndClear() async {
-    unawaited(AudioVisualizerService.instance.unbind());
-    _queue = [];
-    _index = 0;
-    _position = Duration.zero;
-    _duration = Duration.zero;
-    _isPlaying = false;
-    await _handler.stopAndDismissSession();
-    notifyListeners();
+    if (_stopClearInProgress) return;
+    _stopClearInProgress = true;
+    try {
+      unawaited(AudioVisualizerService.instance.unbind());
+      _queue = [];
+      _index = 0;
+      _position = Duration.zero;
+      _duration = Duration.zero;
+      _isPlaying = false;
+      await _handler.stopAndDismissSession();
+    } catch (e, st) {
+      debugPrint('[audio] stopAndClear failed: $e\n$st');
+    } finally {
+      _stopClearInProgress = false;
+      notifyListeners();
+    }
   }
 
   /// Notification stop — stop playback but keep queue so play can resume.

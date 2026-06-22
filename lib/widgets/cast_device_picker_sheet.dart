@@ -66,6 +66,14 @@ class _CastDevicePickerBodyState extends State<_CastDevicePickerBody> {
   Future<void> _bootstrap() async {
     try {
       await CastService.instance.init().timeout(const Duration(seconds: 8));
+      if (!CastService.instance.canUseCast) {
+        if (!mounted) return;
+        setState(() {
+          _initError = 'cast_unavailable';
+          _ready = false;
+        });
+        return;
+      }
       await CastService.instance.startDiscovery();
       if (!mounted) return;
       setState(() {
@@ -137,6 +145,9 @@ class _CastDevicePickerBodyState extends State<_CastDevicePickerBody> {
 
   String _errorMessage(AppLocalizations l10n, Object error) {
     final msg = error.toString();
+    if (msg.contains('cast_unavailable')) {
+      return l10n.castUnsupportedPlatform;
+    }
     if (msg.contains('content_uri_unsupported')) {
       return l10n.castUnsupportedContentUri;
     }
@@ -221,11 +232,14 @@ class _CastDevicePickerBodyState extends State<_CastDevicePickerBody> {
 
   Widget _buildDeviceList(AppLocalizations l10n) {
     if (_initError != null) {
+      final message = _initError == 'cast_unavailable'
+          ? l10n.castUnsupportedPlatform
+          : l10n.castFailed;
       return Center(
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Text(
-            l10n.castFailed,
+            message,
             textAlign: TextAlign.center,
             style: const TextStyle(color: Colors.white70),
           ),

@@ -120,7 +120,13 @@ class _AudioLibraryTabState extends State<AudioLibraryTab> {
       tracks = const [];
     }
     final artists = LocalAudioService.groupArtists(tracks);
-    final folders = await LocalAudioService.loadAudioFolders();
+    List<MediaFolder> folders;
+    try {
+      folders = await LocalAudioService.loadAudioFolders();
+    } catch (e, st) {
+      debugPrint('[audio_library] loadAudioFolders failed: $e\n$st');
+      folders = const [];
+    }
 
     if (!mounted) return;
     setState(() {

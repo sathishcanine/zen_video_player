@@ -17,7 +17,12 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
     player = AudioPlayer(audioPipeline: _eq.pipeline);
     unawaited(_configureSession());
     unawaited(_eq.ensureLoaded());
-    player.playbackEventStream.map(_transformEvent).pipe(playbackState);
+    // Do not use `.pipe(playbackState)` — it uses [Subject.addStream], which
+    // races with [BaseAudioHandler.stop] and causes fatal "Bad state" crashes.
+    player.playbackEventStream.listen((event) {
+      if (_suppressPlaybackEvents) return;
+      _safePlaybackStateAdd(_transformEvent(event));
+    });
   }
 
   final _eq = AudioEqualizerService.instance;
@@ -30,6 +35,8 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
   bool Function()? hasQueue;
 
   int _queueIndex = 0;
+  bool _suppressPlaybackEvents = false;
+  bool _stopInProgress = false;
 
   void bindTransport({
     required Future<void> Function() skipNext,
@@ -58,26 +65,25 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
   }
 
   Future<void> updateNowPlaying(AudioTrack track) async {
-    final duration = Duration(seconds: track.asset.duration);
-    mediaItem.add(
+    await _safeMediaItemAdd(
       MediaItem(
         id: track.asset.id,
         title: track.title,
         artist: track.artist,
         album: track.albumName,
-        duration: duration,
+        duration: Duration(seconds: track.asset.duration),
         artUri: await _artworkUri(track),
       ),
     );
   }
 
   void syncTrackQueue(List<AudioTrack> tracks) {
-    queue.add(tracks.map(_toMediaItem).toList());
+    _safeQueueAdd(tracks.map(_toMediaItem).toList());
   }
 
   void clearNowPlaying() {
-    mediaItem.add(null);
-    queue.add([]);
+    _safeMediaItemAdd(null);
+    _safeQueueAdd(const <MediaItem>[]);
   }
 
   MediaItem _toMediaItem(AudioTrack track) {
@@ -122,16 +128,70 @@ class ZenAudioHandler extends BaseAudioHandler with SeekHandler {
   /// Notification / lock-screen stop — keeps the current track queued for resume.
   @override
   Future<void> stop() async {
-    await player.stop();
-    await onStop?.call();
-    await super.stop();
+    await _runStopSession(() async {
+      await player.stop();
+      await onStop?.call();
+      await _setIdlePlaybackState();
+    });
   }
 
   /// Full dismiss (mini-player close) — tears down the media session.
   Future<void> stopAndDismissSession() async {
-    await player.stop();
-    clearNowPlaying();
-    await super.stop();
+    await _runStopSession(() async {
+      await player.stop();
+      clearNowPlaying();
+      await _setIdlePlaybackState();
+    });
+  }
+
+  Future<void> _runStopSession(Future<void> Function() action) async {
+    if (_stopInProgress) return;
+    _stopInProgress = true;
+    _suppressPlaybackEvents = true;
+    try {
+      await action();
+      // Let any in-flight just_audio events drain before resuming updates.
+      await Future<void>.delayed(Duration.zero);
+    } catch (e, st) {
+      debugPrint('[audio] stop session failed: $e\n$st');
+    } finally {
+      _suppressPlaybackEvents = false;
+      _stopInProgress = false;
+    }
+  }
+
+  Future<void> _setIdlePlaybackState() async {
+    final current = playbackState.hasValue ? playbackState.value : null;
+    _safePlaybackStateAdd(
+      (current ?? PlaybackState()).copyWith(
+        processingState: AudioProcessingState.idle,
+        playing: false,
+      ),
+    );
+  }
+
+  void _safePlaybackStateAdd(PlaybackState state) {
+    try {
+      playbackState.add(state);
+    } catch (e, st) {
+      debugPrint('[audio] playbackState.add failed: $e\n$st');
+    }
+  }
+
+  Future<void> _safeMediaItemAdd(MediaItem? item) async {
+    try {
+      mediaItem.add(item);
+    } catch (e, st) {
+      debugPrint('[audio] mediaItem.add failed: $e\n$st');
+    }
+  }
+
+  void _safeQueueAdd(List<MediaItem> items) {
+    try {
+      queue.add(items);
+    } catch (e, st) {
+      debugPrint('[audio] queue.add failed: $e\n$st');
+    }
   }
 
   @override

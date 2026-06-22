@@ -46,18 +46,20 @@ class VideoPipHelper {
   }
 
   /// Emits `true` when the activity enters PiP, `false` when it exits.
+  static Stream<bool>? _pipModeBroadcast;
   static Stream<bool> get pipModeChanges {
     if (!_android) return const Stream<bool>.empty();
-    return _eventChannel
+    return _pipModeBroadcast ??= _eventChannel
         .receiveBroadcastStream()
         .map((event) => event == true)
         .handleError((_) {});
   }
 
   /// Fires when the user taps play/pause on the system PiP overlay.
+  static Stream<void>? _pipControlBroadcast;
   static Stream<void> get pipPlayPauseToggles {
     if (!_android) return const Stream<void>.empty();
-    return _controlChannel
+    return _pipControlBroadcast ??= _controlChannel
         .receiveBroadcastStream()
         .map((_) {})
         .handleError((_) {});

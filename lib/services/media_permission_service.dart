@@ -1,7 +1,12 @@
+import 'dart:async';
+
+import 'package:flutter/foundation.dart';
+import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import '../analytics/telemetry.dart';
 import '../models/duplicate_media_kind.dart';
 
 /// Result of asking the user to upgrade from limited to full media access.
@@ -45,11 +50,45 @@ class MediaPermissionService {
     }
   }
 
+  static Future<PermissionState> _safePermissionState(
+    PermissionRequestOption option, {
+    String reason = 'getPermissionState',
+  }) async {
+    try {
+      return await PhotoManager.getPermissionState(requestOption: option);
+    } on PlatformException catch (e, st) {
+      debugPrint('[media_permission] $reason failed: $e\n$st');
+      unawaited(Telemetry.recordNonFatal(e, st, reason: reason));
+      return PermissionState.denied;
+    } catch (e, st) {
+      debugPrint('[media_permission] $reason failed: $e\n$st');
+      unawaited(Telemetry.recordNonFatal(e, st, reason: reason));
+      return PermissionState.denied;
+    }
+  }
+
+  static Future<PermissionState> _safeRequestPermission(
+    PermissionRequestOption option, {
+    String reason = 'requestPermissionExtend',
+  }) async {
+    try {
+      return await PhotoManager.requestPermissionExtend(requestOption: option);
+    } on PlatformException catch (e, st) {
+      debugPrint('[media_permission] $reason failed: $e\n$st');
+      unawaited(Telemetry.recordNonFatal(e, st, reason: reason));
+      return PermissionState.denied;
+    } catch (e, st) {
+      debugPrint('[media_permission] $reason failed: $e\n$st');
+      unawaited(Telemetry.recordNonFatal(e, st, reason: reason));
+      return PermissionState.denied;
+    }
+  }
+
   static Future<PermissionState> _videoState() =>
-      PhotoManager.getPermissionState(requestOption: _videoRequestOption);
+      _safePermissionState(_videoRequestOption, reason: 'videoPermissionState');
 
   static Future<PermissionState> _audioState() =>
-      PhotoManager.getPermissionState(requestOption: _audioRequestOption);
+      _safePermissionState(_audioRequestOption, reason: 'audioPermissionState');
 
   static Future<bool> wasOnboardingSkipped() async {
     final prefs = await SharedPreferences.getInstance();
@@ -62,7 +101,7 @@ class MediaPermissionService {
   }
 
   static Future<bool> _permissionGranted(PermissionRequestOption option) async {
-    final state = await PhotoManager.getPermissionState(requestOption: option);
+    final state = await _safePermissionState(option);
     return state.isAuth || state.hasAccess;
   }
 
@@ -102,11 +141,13 @@ class MediaPermissionService {
 
   /// Shows system dialogs for video and audio (Photos/Videos + Music on Android).
   static Future<bool> requestMediaAccess() async {
-    final videoState = await PhotoManager.requestPermissionExtend(
-      requestOption: _videoRequestOption,
+    final videoState = await _safeRequestPermission(
+      _videoRequestOption,
+      reason: 'requestVideoPermission',
     );
-    await PhotoManager.requestPermissionExtend(
-      requestOption: _audioRequestOption,
+    await _safeRequestPermission(
+      _audioRequestOption,
+      reason: 'requestAudioPermission',
     );
     return videoState.isAuth || videoState.hasAccess;
   }
@@ -126,8 +167,9 @@ class MediaPermissionService {
       return FullMediaAccessResult.needsSettings;
     }
 
-    state = await PhotoManager.requestPermissionExtend(
-      requestOption: _videoRequestOption,
+    state = await _safeRequestPermission(
+      _videoRequestOption,
+      reason: 'requestFullVideoPermission',
     );
     if (state.isAuth) return FullMediaAccessResult.granted;
     if (state == PermissionState.limited) {
@@ -145,8 +187,9 @@ class MediaPermissionService {
       return FullMediaAccessResult.needsSettings;
     }
 
-    state = await PhotoManager.requestPermissionExtend(
-      requestOption: _audioRequestOption,
+    state = await _safeRequestPermission(
+      _audioRequestOption,
+      reason: 'requestFullAudioPermission',
     );
     if (state.isAuth) return FullMediaAccessResult.granted;
     if (state == PermissionState.limited) {
@@ -165,8 +208,9 @@ class MediaPermissionService {
         : RequestType.audio;
     final option = _optionFor(type);
     if (await _permissionGranted(option)) return true;
-    final state = await PhotoManager.requestPermissionExtend(
-      requestOption: option,
+    final state = await _safeRequestPermission(
+      option,
+      reason: 'ensureMediaAccessFor',
     );
     return state.isAuth || state.hasAccess;
   }

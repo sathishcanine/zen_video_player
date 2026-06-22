@@ -22,7 +22,6 @@ import 'services/audio_player_service.dart';
 import 'services/active_session_tracker.dart';
 import 'services/feature_announcement_service.dart';
 import 'services/pro_features_service.dart';
-import 'services/cast_service.dart';
 import 'services/locale_service.dart';
 import 'services/play_store_rating_service.dart';
 import 'services/push_notification_service.dart';
@@ -67,9 +66,8 @@ Future<void> main() async {
       // Defer heavy SDK init until after first frame (reduces ANR risk on update).
       WidgetsBinding.instance.addPostFrameCallback((_) {
         unawaited(Telemetry.init().then((_) {
-          if (!kIsWeb) {
-            unawaited(CastService.instance.init());
-          }
+          // Cast initializes lazily when the user opens the picker — avoids
+          // fatal Play Services / dynamite module errors on cold start.
           unawaited(AdsOrchestrator.init(coldStartUri: coldStartUri));
           ActiveSessionTracker.instance.start();
           unawaited(PlayStoreRatingService.recordCalendarDay());

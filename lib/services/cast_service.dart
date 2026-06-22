@@ -2,10 +2,12 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/foundation.dart' show debugPrint, kIsWeb;
+import 'package:flutter/services.dart';
 import 'package:flutter_chrome_cast/lib.dart';
 import 'package:path/path.dart' as p;
 import 'package:photo_manager/photo_manager.dart';
 
+import '../analytics/telemetry.dart';
 import 'cast_local_media_channel.dart';
 import 'local_cast_http_server.dart';
 
@@ -40,51 +42,126 @@ class CastService {
 
   final LocalCastHttpServer _localServer = LocalCastHttpServer();
   bool _initialized = false;
+  bool _initFailed = false;
+  bool _initInFlight = false;
 
   bool get isSupported =>
       !kIsWeb && (Platform.isAndroid || Platform.isIOS);
 
   bool get isInitialized => _initialized;
 
-  bool get isConnected =>
-      GoogleCastSessionManager.instance.connectionState ==
-      GoogleCastConnectState.connected;
+  /// `false` when Play Services / Cast framework is missing on this device.
+  bool get canUseCast => isSupported && _initialized && !_initFailed;
 
-  Stream<bool> get isConnectedStream =>
-      GoogleCastSessionManager.instance.currentSessionStream
-          .map((_) => isConnected);
+  bool get isConnected {
+    if (!canUseCast) return false;
+    try {
+      return GoogleCastSessionManager.instance.connectionState ==
+          GoogleCastConnectState.connected;
+    } catch (e) {
+      debugPrint('[cast] isConnected check failed: $e');
+      return false;
+    }
+  }
 
+  Stream<bool> get isConnectedStream {
+    if (!canUseCast) return Stream<bool>.value(false);
+    try {
+      return GoogleCastSessionManager.instance.currentSessionStream
+          .map((_) => isConnected)
+          .handleError((Object e, StackTrace st) {
+        debugPrint('[cast] connection stream error: $e\n$st');
+      });
+    } catch (e) {
+      debugPrint('[cast] connection stream unavailable: $e');
+      return Stream<bool>.value(false);
+    }
+  }
+
+  /// Safe to call on every cold start — never throws.
   Future<void> init() async {
-    if (!isSupported || _initialized) return;
-    const appId = GoogleCastDiscoveryCriteria.kDefaultApplicationId;
-    final GoogleCastOptions options;
-    if (Platform.isIOS) {
-      options = IOSGoogleCastOptions(
-        GoogleCastDiscoveryCriteriaInitialize.initWithApplicationID(appId),
+    if (!isSupported || _initialized || _initFailed || _initInFlight) return;
+    _initInFlight = true;
+    try {
+      const appId = GoogleCastDiscoveryCriteria.kDefaultApplicationId;
+      final GoogleCastOptions options;
+      if (Platform.isIOS) {
+        options = IOSGoogleCastOptions(
+          GoogleCastDiscoveryCriteriaInitialize.initWithApplicationID(appId),
+        );
+      } else {
+        options = GoogleCastOptionsAndroid(appId: appId);
+      }
+
+      final ok = await GoogleCastContext.instance
+          .setSharedInstanceWithOptions(options)
+          .timeout(const Duration(seconds: 10));
+      if (ok != true) {
+        _markInitFailed('Google Cast SDK returned false');
+        return;
+      }
+      _initialized = true;
+    } on PlatformException catch (e, st) {
+      _markInitFailed('${e.code}: ${e.message}', e, st);
+    } on TimeoutException catch (e, st) {
+      _markInitFailed('init timed out', e, st);
+    } catch (e, st) {
+      _markInitFailed(e.toString(), e, st);
+    } finally {
+      _initInFlight = false;
+    }
+  }
+
+  void _markInitFailed(
+    String reason, [
+    Object? exception,
+    StackTrace? stackTrace,
+  ]) {
+    _initFailed = true;
+    debugPrint('[cast] init unavailable: $reason');
+    if (exception != null) {
+      unawaited(
+        Telemetry.recordNonFatal(
+          exception,
+          stackTrace,
+          reason: 'cast_init_unavailable',
+          context: <String, String>{'detail': reason},
+        ),
       );
-    } else {
-      options = GoogleCastOptionsAndroid(appId: appId);
     }
-    final ok =
-        await GoogleCastContext.instance.setSharedInstanceWithOptions(options);
-    if (ok != true) {
-      throw StateError('Google Cast SDK failed to initialize');
-    }
-    _initialized = true;
   }
 
   Future<void> startDiscovery() async {
+    if (_initFailed) return;
     if (!_initialized) await init();
-    await GoogleCastDiscoveryManager.instance.startDiscovery();
+    if (!canUseCast) return;
+    try {
+      await GoogleCastDiscoveryManager.instance.startDiscovery();
+    } catch (e, st) {
+      debugPrint('[cast] startDiscovery failed: $e\n$st');
+    }
   }
 
   Future<void> stopDiscovery() async {
-    await GoogleCastDiscoveryManager.instance.stopDiscovery();
+    if (!canUseCast) return;
+    try {
+      await GoogleCastDiscoveryManager.instance.stopDiscovery();
+    } catch (e, st) {
+      debugPrint('[cast] stopDiscovery failed: $e\n$st');
+    }
   }
 
   Future<void> disconnect() async {
-    await GoogleCastRemoteMediaClient.instance.stop();
-    await GoogleCastSessionManager.instance.endSessionAndStopCasting();
+    if (!canUseCast) {
+      await _localServer.stop();
+      return;
+    }
+    try {
+      await GoogleCastRemoteMediaClient.instance.stop();
+      await GoogleCastSessionManager.instance.endSessionAndStopCasting();
+    } catch (e, st) {
+      debugPrint('[cast] disconnect failed: $e\n$st');
+    }
     await _localServer.stop();
   }
 
@@ -106,7 +183,13 @@ class CastService {
     GoogleCastDevice device, {
     CastMediaPayload? media,
   }) async {
+    if (_initFailed) {
+      throw StateError('cast_unavailable');
+    }
     if (!_initialized) await init();
+    if (!canUseCast) {
+      throw StateError('cast_unavailable');
+    }
 
     await _ensureSession(device);
 

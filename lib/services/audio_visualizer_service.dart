@@ -5,6 +5,7 @@ import 'package:flutter/foundation.dart';
 import 'package:just_audio/just_audio.dart';
 
 import 'audio_visualizer_channel.dart';
+import '../utils/safe_stream.dart';
 
 enum AudioVisualizerMode { bars, wave, circle }
 
@@ -66,21 +67,23 @@ class AudioVisualizerService extends ChangeNotifier {
   }
 
   Future<void> unbind() async {
-    _sessionSub?.cancel();
+    final sessionSub = _sessionSub;
+    final captureSub = _captureSub;
     _sessionSub = null;
-    _captureSub?.cancel();
     _captureSub = null;
     _player = null;
     hasRealData = false;
+    await safeCancelSubscription(sessionSub);
+    await safeCancelSubscription(captureSub);
     await AudioVisualizerChannel.stop();
     _decayToIdle();
     notifyListeners();
   }
 
   Future<void> _restartCapture(AudioPlayer player) async {
-    _sessionSub?.cancel();
+    await safeCancelSubscription(_sessionSub);
     _sessionSub = null;
-    _captureSub?.cancel();
+    await safeCancelSubscription(_captureSub);
     _captureSub = null;
     await AudioVisualizerChannel.stop();
     _player = player;
